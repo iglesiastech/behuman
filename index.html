@@ -288,14 +288,14 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
 /* ════════════════════════════════
    TURNOS PAGE
 ════════════════════════════════ */
-.booking-wrap{max-width:920px;margin:-2rem auto 4rem;padding:0 1.5rem}
-.booking-card{background:#fff;border-radius:28px;box-shadow:var(--sh2);overflow:hidden}
-.booking-steps-bar{background:var(--cream);padding:1.6rem 2rem;border-bottom:1px solid var(--cream-dk)}
-.steps{display:flex;align-items:center}
-.step{display:flex;align-items:center;gap:.65rem;flex:1}
-.step-num{width:34px;height:34px;border-radius:50%;border:2px solid var(--cream-dk);display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:600;color:var(--muted);transition:var(--tr);flex-shrink:0;background:#fff}
-.step-label{font-size:.76rem;font-weight:500;color:var(--muted);transition:var(--tr)}
-.step-line{flex:1;height:1px;background:var(--cream-dk);margin:0 .4rem}
+.booking-wrap{max-width:920px;margin:0 auto;padding:0 1.5rem 4rem}
+.booking-card{background:#fff;border-radius:28px;box-shadow:var(--sh2);overflow:hidden;margin-top:-3rem;position:relative;z-index:5}
+.booking-steps-bar{background:var(--cream);padding:1.4rem 2rem;border-bottom:1px solid var(--cream-dk)}
+.steps{display:flex;align-items:center;overflow:hidden}
+.step{display:flex;align-items:center;gap:.5rem;flex-shrink:0}
+.step-num{width:32px;height:32px;border-radius:50%;border:2px solid var(--cream-dk);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;color:var(--muted);transition:var(--tr);flex-shrink:0;background:#fff}
+.step-label{font-size:.74rem;font-weight:500;color:var(--muted);transition:var(--tr);white-space:nowrap}
+.step-line{flex:1;min-width:12px;height:1px;background:var(--cream-dk);margin:0 .3rem}
 .step.active .step-num{background:var(--teal);border-color:var(--teal);color:#fff}
 .step.active .step-label{color:var(--dark)}
 .step.done .step-num{background:var(--gold);border-color:var(--gold);color:#fff}
@@ -497,6 +497,8 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
 @media(max-width:480px){
   .products-grid{grid-template-columns:1fr}
   .slots-grid{grid-template-columns:repeat(4,1fr)}
+  .step-label{display:none}
+  .step-line{min-width:8px}
 }
 </style>
 </head>
@@ -525,10 +527,9 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
       <!-- Se muestra cuando NO hay sesión -->
       <button class="btn-nav" id="navBtnGuest" onclick="goTo('login')">Ingresar</button>
 
-      <!-- Se muestra cuando hay sesión de ADMIN -->
       <button class="btn-nav" id="navBtnAdmin"
         style="display:none;background:var(--gold);display:none;align-items:center;gap:.4rem"
-        onclick="window.location.href='/admin/index.html'">
+        onclick="goTo('admin')">
         ⚙️ Panel admin
       </button>
 
@@ -559,7 +560,7 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
   <!-- Mobile: botones de sesión -->
   <div id="mobBtnGuest"><button class="btn-primary" style="margin-top:1rem" onclick="goTo('login');closeMob()">Ingresar</button></div>
   <div id="mobBtnAdmin" style="display:none;flex-direction:column;align-items:center;gap:.75rem;margin-top:1rem">
-    <button class="btn-primary" style="background:var(--gold)" onclick="window.location.href='/admin/index.html'">⚙️ Panel admin</button>
+    <button class="btn-primary" style="background:var(--gold)" onclick="goTo('admin');closeMob()">⚙️ Panel admin</button>
     <button style="font-size:.8rem;color:rgba(240,232,216,.5);background:none;border:none;cursor:pointer;font-family:var(--fb)" onclick="doLogout()">Cerrar sesión</button>
   </div>
   <div id="mobBtnUser" style="display:none;flex-direction:column;align-items:center;gap:.75rem;margin-top:1rem">
@@ -945,7 +946,7 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
      TURNOS PAGE
 ════════════════════════════════════════════ -->
 <div class="page" id="page-turnos">
-  <div class="page-hero" style="padding-bottom:5rem">
+  <div class="page-hero" style="padding-bottom:4rem">
     <div class="container page-hero-content" style="text-align:center">
       <span style="font-size:.67rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:rgba(201,147,90,.7);display:block;margin-bottom:.65rem">Reservá tu espacio</span>
       <h1>Reservar turno</h1>
@@ -957,11 +958,13 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
     <div class="booking-card">
       <div class="booking-steps-bar">
         <div class="steps">
-          <div class="step active" id="si1"><div class="step-num">1</div><div class="step-label">Tipo de consulta</div></div>
+          <div class="step active" id="si1"><div class="step-num">1</div><div class="step-label">Consulta</div></div>
           <div class="step-line"></div>
-          <div class="step" id="si2"><div class="step-num">2</div><div class="step-label">Fecha y horario</div></div>
+          <div class="step" id="si2"><div class="step-num">2</div><div class="step-label">Fecha</div></div>
           <div class="step-line"></div>
-          <div class="step" id="si3"><div class="step-num">3</div><div class="step-label">Tus datos</div></div>
+          <div class="step" id="si3"><div class="step-num">3</div><div class="step-label">Datos</div></div>
+          <div class="step-line"></div>
+          <div class="step" id="si4"><div class="step-num">4</div><div class="step-label">Seña</div></div>
         </div>
       </div>
 
@@ -973,26 +976,63 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
             <div id="bstep1">
               <h3 style="font-family:var(--fd);font-size:1.2rem;margin-bottom:.4rem">¿Qué tipo de consulta?</h3>
               <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.4rem">Por videollamada o presencial en Buenos Aires.</p>
-              <div class="tipo-options">
-                <div class="tipo-opt" data-tipo="primera" data-precio="18000" data-dur="60 min" onclick="selTipo(this)">
-                  <div class="tipo-icon">🌱</div>
-                  <div class="tipo-info"><div class="tipo-name">Primera consulta</div><div class="tipo-desc">Anamnesis completa + plan inicial · 60 min</div></div>
-                  <div class="tipo-price">$18.000</div>
-                  <div class="tipo-check">✓</div>
-                </div>
-                <div class="tipo-opt" data-tipo="seguimiento" data-precio="12000" data-dur="45 min" onclick="selTipo(this)">
-                  <div class="tipo-icon">📊</div>
-                  <div class="tipo-info"><div class="tipo-name">Seguimiento</div><div class="tipo-desc">Revisión de evolución y ajuste de plan · 45 min</div></div>
-                  <div class="tipo-price">$12.000</div>
-                  <div class="tipo-check">✓</div>
-                </div>
-                <div class="tipo-opt" data-tipo="resultados" data-precio="14000" data-dur="45 min" onclick="selTipo(this)">
+              <div class="tipo-options" id="tipoOptions">
+                <!-- Se carga desde Supabase. Fallback: las 6 consultas reales -->
+                <div class="tipo-opt" data-tipo="integral" data-precio="0" data-dur="60 min" data-modalidad="ambas" onclick="selTipo(this)">
                   <div class="tipo-icon">🔬</div>
-                  <div class="tipo-info"><div class="tipo-name">Interpretación de análisis</div><div class="tipo-desc">Análisis funcional de laboratorio · 45 min</div></div>
-                  <div class="tipo-price">$14.000</div>
+                  <div class="tipo-info"><div class="tipo-name">Consulta Integral – Medicina Funcional</div><div class="tipo-desc">Historia clínica completa, evaluación funcional, plan nutricional y estrategia terapéutica · 60 min</div></div>
+                  <div class="tipo-price">A confirmar</div>
+                  <div class="tipo-check">✓</div>
+                </div>
+                <div class="tipo-opt" data-tipo="seguimiento" data-precio="0" data-dur="45 min" data-modalidad="ambas" onclick="selTipo(this)">
+                  <div class="tipo-icon">📊</div>
+                  <div class="tipo-info"><div class="tipo-name">Consulta de Seguimiento</div><div class="tipo-desc">Evaluación de evolución, ajustes de plan y revisión de adherencia · 45 min</div></div>
+                  <div class="tipo-price">A confirmar</div>
+                  <div class="tipo-check">✓</div>
+                </div>
+                <div class="tipo-opt" data-tipo="nutricional" data-precio="0" data-dur="45 min" data-modalidad="ambas" onclick="selTipo(this)">
+                  <div class="tipo-icon">🥗</div>
+                  <div class="tipo-info"><div class="tipo-name">Consulta Nutricional</div><div class="tipo-desc">Planificación alimentaria personalizada, evaluación de hábitos y plan nutricional · 45 min</div></div>
+                  <div class="tipo-price">A confirmar</div>
+                  <div class="tipo-check">✓</div>
+                </div>
+                <div class="tipo-opt" data-tipo="espontanea" data-precio="0" data-dur="20 min" data-modalidad="ambas" onclick="selTipo(this)">
+                  <div class="tipo-icon">💬</div>
+                  <div class="tipo-info"><div class="tipo-name">Consulta Espontánea</div><div class="tipo-desc">Resolución de dudas puntuales · Solo pacientes previos · 20 min</div></div>
+                  <div class="tipo-price">A confirmar</div>
+                  <div class="tipo-check">✓</div>
+                </div>
+                <div class="tipo-opt" data-tipo="pediatrica" data-precio="0" data-dur="60 min" data-modalidad="ambas" onclick="selTipo(this)">
+                  <div class="tipo-icon">👶</div>
+                  <div class="tipo-info"><div class="tipo-name">Consulta Pediátrica</div><div class="tipo-desc">Consulta integral en niños, evaluación clínica y estrategia nutricional · 60 min</div></div>
+                  <div class="tipo-price">A confirmar</div>
+                  <div class="tipo-check">✓</div>
+                </div>
+                <div class="tipo-opt" data-tipo="inbody" data-precio="0" data-dur="20 min" data-modalidad="presencial" onclick="selTipo(this)">
+                  <div class="tipo-icon">⚖️</div>
+                  <div class="tipo-info"><div class="tipo-name">Medición InBody</div><div class="tipo-desc">Composición corporal: masa muscular, grasa, agua y metabolismo · Presencial · 20 min</div></div>
+                  <div class="tipo-price">A confirmar</div>
                   <div class="tipo-check">✓</div>
                 </div>
               </div>
+
+              <!-- Selector modalidad — aparece solo si la consulta tiene "ambas" -->
+              <div id="modalidadWrap" style="display:none;margin-top:1.25rem">
+                <div style="font-size:.8rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.65rem">Modalidad de la consulta *</div>
+                <div style="display:flex;gap:.75rem">
+                  <div id="mod-presencial" onclick="selModalidad('presencial')" style="flex:1;padding:1rem;border:2px solid var(--cream-dk);border-radius:14px;cursor:pointer;text-align:center;transition:.18s">
+                    <div style="font-size:1.4rem;margin-bottom:.35rem">📍</div>
+                    <div style="font-size:.85rem;font-weight:600">Presencial</div>
+                    <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">En el consultorio</div>
+                  </div>
+                  <div id="mod-virtual" onclick="selModalidad('virtual')" style="flex:1;padding:1rem;border:2px solid var(--cream-dk);border-radius:14px;cursor:pointer;text-align:center;transition:.18s">
+                    <div style="font-size:1.4rem;margin-bottom:.35rem">💻</div>
+                    <div style="font-size:.85rem;font-weight:600">Virtual</div>
+                    <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">Por videollamada</div>
+                  </div>
+                </div>
+              </div>
+
               <div style="margin-top:1.75rem;display:flex;justify-content:flex-end">
                 <button class="btn-teal" id="btnBs1" onclick="bGoTo(2)" disabled style="opacity:.5;padding:.82rem 1.8rem;border-radius:100px;font-family:var(--fb);font-size:.76rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--teal);color:#fff;border:none;cursor:not-allowed">Continuar →</button>
               </div>
@@ -1034,11 +1074,78 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
                   </div>
                 </div>
                 <div class="form-group"><label class="form-label">Motivo (opcional)</label><textarea class="form-textarea" id="pMotivo" rows="3" placeholder="Contanos brevemente qué te trae"></textarea></div>
-                <div style="font-size:.78rem;color:var(--muted);background:var(--cream);border-radius:12px;padding:.7rem 1rem">📋 Recibirás confirmación por WhatsApp con los detalles del turno.</div>
               </div>
               <div style="margin-top:1.75rem;display:flex;gap:1rem;justify-content:space-between">
                 <button class="btn-outline" onclick="bGoTo(2)">← Volver</button>
-                <button class="btn-gold" onclick="submitBooking()" id="btnSubmit">Confirmar turno ✓</button>
+                <button class="btn-gold" onclick="validarYContinuar()" id="btnToStep4">Continuar → Seña</button>
+              </div>
+            </div>
+
+            <!-- STEP 4: SEÑA -->
+            <div id="bstep4" style="display:none">
+              <h3 style="font-family:var(--fd);font-size:1.2rem;margin-bottom:.4rem">Pagá la seña para confirmar</h3>
+              <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.5rem">La seña es del <strong>30% del valor de la consulta</strong> y asegura tu turno. El resto se abona el día de la consulta.</p>
+
+              <!-- Monto seña -->
+              <div style="background:linear-gradient(135deg,rgba(201,147,90,.1),rgba(58,125,140,.07));border-radius:16px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.25rem">Monto de la seña</div>
+                  <div style="font-family:var(--fd);font-size:2rem;color:var(--gold)" id="senaAmount">—</div>
+                  <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">30% de <span id="senaPrecioTotal">—</span></div>
+                </div>
+                <div style="font-size:2.5rem;opacity:.4">🤝</div>
+              </div>
+
+              <!-- Solo transferencia -->
+              <div style="background:var(--cream);border-radius:16px;padding:1.4rem;margin-bottom:1.4rem;border:2px solid var(--cream-dk)">
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem">
+                  <div style="font-size:1.75rem">🏦</div>
+                  <div>
+                    <div style="font-weight:600;font-size:.95rem">Transferencia bancaria</div>
+                    <div style="font-size:.78rem;color:var(--muted)">El turno queda pendiente hasta confirmar el pago</div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:.6rem;font-size:.88rem">
+                  <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--cream-dk)">
+                    <span style="color:var(--muted)">Banco</span><strong>Galicia</strong>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--cream-dk)">
+                    <span style="color:var(--muted)">CBU</span>
+                    <div style="display:flex;align-items:center;gap:.75rem">
+                      <strong>0070299-30-0042837510-9</strong>
+                      <span onclick="copiarCBU('0070299-30-0042837510-9')" style="font-size:.72rem;color:var(--teal);cursor:pointer;font-weight:600">Copiar</span>
+                    </div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--cream-dk)">
+                    <span style="color:var(--muted)">Alias</span>
+                    <div style="display:flex;align-items:center;gap:.75rem">
+                      <strong>behuman.pagos</strong>
+                      <span onclick="copiarCBU('behuman.pagos')" style="font-size:.72rem;color:var(--teal);cursor:pointer;font-weight:600">Copiar</span>
+                    </div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;padding:.5rem 0">
+                    <span style="color:var(--muted)">Titular</span><strong>Mariel Dobenau</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Aviso importante -->
+              <div style="background:rgba(212,133,58,.08);border:1.5px solid rgba(212,133,58,.25);border-radius:12px;padding:1rem 1.1rem;font-size:.82rem;color:#8A5020;line-height:1.7;margin-bottom:1.25rem">
+                ⚠️ <strong>Importante:</strong> Una vez hecha la transferencia, enviá el comprobante por WhatsApp al <strong>+54 9 11 7617-9836</strong> con tu <strong>nombre y apellido</strong>. El turno queda pendiente de confirmación hasta que revisemos el pago. <strong>Te llegará un mail de confirmación cuando lo aprobemos.</strong>
+              </div>
+
+              <!-- Nombre para identificar la transferencia -->
+              <div class="form-group" style="margin-bottom:1.25rem">
+                <label class="form-label">Tu nombre y apellido completo *</label>
+                <input type="text" class="form-input" id="senaApellido" placeholder="Tal como figura en la transferencia">
+                <div style="font-size:.74rem;color:var(--muted);margin-top:.35rem">Lo usamos para identificar tu pago más rápido.</div>
+              </div>
+
+              <div style="margin-top:1.25rem;display:flex;gap:1rem;justify-content:space-between">
+                <button class="btn-outline" onclick="bGoTo(3)">← Volver</button>
+                <button class="btn-gold" onclick="submitBooking()" id="btnSubmit" style="min-width:180px">
+                  Confirmar y pagar seña ✓
+                </button>
               </div>
             </div>
           </div>
@@ -1282,6 +1389,549 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
   </div>
 </div><!-- /page-login -->
 
+<!-- ════ ADMIN PAGE ════ -->
+<div class="page" id="page-admin">
+<style>
+.al{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 0px)}
+.asb{background:#1C1A18;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.asb-logo{padding:1.3rem 1.2rem .9rem;border-bottom:1px solid rgba(240,232,216,.07)}
+.asb-logo-t{font-family:var(--fd);font-size:1.15rem;color:var(--cream)}
+.asb-logo-s{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(240,232,216,.3);display:block;margin-top:.12rem}
+.asb-nav{padding:.75rem .55rem;flex:1}
+.asb-sec{font-size:.58rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(240,232,216,.28);padding:.38rem .6rem;margin-top:.55rem}
+.asb-it{display:flex;align-items:center;gap:.55rem;padding:.58rem .62rem;border-radius:8px;color:rgba(240,232,216,.55);font-size:.8rem;cursor:pointer;transition:var(--tf);width:100%;background:none;text-align:left;border:none;font-family:var(--fb)}
+.asb-it:hover{background:rgba(240,232,216,.06);color:var(--cream)}
+.asb-it.on{background:rgba(201,147,90,.14);color:var(--gold)}
+.ac{background:#F0EBE2;min-height:100vh}
+.atb{background:var(--cream);padding:.85rem 1.6rem;border-bottom:1px solid var(--cream-dk);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+.atb-title{font-family:var(--fd);font-size:1.1rem}
+.am{padding:1.5rem 1.6rem}
+.ap{display:none}.ap.on{display:block}
+.asg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-bottom:1.6rem}
+.asc{background:#fff;border-radius:13px;padding:1.1rem 1.25rem;box-shadow:0 2px 10px rgba(28,26,24,.07)}
+.asc.go{border-left:3px solid var(--gold)}.asc.te{border-left:3px solid var(--teal)}.asc.gr{border-left:3px solid #4A9B6F}.asc.re{border-left:3px solid #C4614A}
+.asc-l{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.38rem}
+.asc-v{font-family:var(--fd);font-size:1.75rem;color:var(--dark)}
+.atw{background:#fff;border-radius:13px;box-shadow:0 2px 10px rgba(28,26,24,.07);overflow:hidden}
+.ath{padding:1rem 1.3rem;border-bottom:1px solid var(--cream-dk);display:flex;align-items:center;justify-content:space-between;gap:.65rem;flex-wrap:wrap}
+.ath-title{font-family:var(--fd);font-size:1rem}
+.ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+.ic{background:#fff;border-radius:13px;overflow:hidden;box-shadow:0 2px 10px rgba(28,26,24,.07)}
+.ic-prev{position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--cream-dk);cursor:pointer}
+.ic-prev img{width:100%;height:100%;object-fit:cover;transition:transform var(--tr)}
+.ic:hover .ic-prev img{transform:scale(1.04)}
+.ic-ov{position:absolute;inset:0;background:rgba(28,26,24,.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity var(--tf)}
+.ic-prev:hover .ic-ov{opacity:1}
+.ic-btn{background:#fff;color:var(--dark);border:none;padding:.45rem .9rem;border-radius:100px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:var(--fb)}
+.ic-btn:hover{background:var(--gold);color:#fff}
+.ic-info{padding:.75rem .9rem}
+.ic-key{font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:.18rem}
+.ic-name{font-size:.82rem;font-weight:500}
+.ic-acts{display:flex;gap:.35rem;padding:.55rem .9rem;border-top:1px solid var(--cream-dk);background:var(--cream)}
+.ia{flex:1;padding:.4rem;border-radius:7px;font-size:.7rem;font-weight:500;text-align:center;cursor:pointer;transition:var(--tf);border:1.5px solid var(--cream-dk);background:#fff;color:var(--text);font-family:var(--fb)}
+.ia:hover{border-color:var(--teal);color:var(--teal)}
+.ia.p{background:var(--teal);border-color:var(--teal);color:#fff}
+.ia.p:hover{background:var(--teal-lt,#4E94A4)}
+.imgs-sec-title{font-family:var(--fd);font-size:.95rem;margin-bottom:.9rem;padding-bottom:.5rem;border-bottom:2px solid var(--cream-dk)}
+.tr-row{display:flex;align-items:center;gap:.9rem;padding:.82rem 1rem;background:#fff;border-radius:11px;margin-bottom:.55rem;cursor:pointer;transition:var(--tr);border:1.5px solid transparent}
+.tr-row:hover{border-color:var(--teal)}
+.tr-row.hf{border-left:3px solid #4A9B6F}
+.tr-row.nf{border-left:3px solid #D4853A}
+.tr-date{background:#2E2B28;color:var(--cream);border-radius:9px;padding:.55rem .8rem;text-align:center;min-width:50px;flex-shrink:0}
+.tr-day{font-family:var(--fd);font-size:1.25rem;line-height:1}
+.tr-mon{font-size:.56rem;text-transform:uppercase;letter-spacing:.09em;opacity:.6;margin-top:.08rem}
+.fi{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0}
+.fi.y{background:rgba(74,155,111,.12);color:#2E7A52}
+.fi.n{background:rgba(212,133,58,.12);color:#D4853A}
+.umb{display:none}
+.uz{border:2px dashed var(--cream-dk);border-radius:13px;padding:1.75rem;text-align:center;cursor:pointer;transition:var(--tf);background:#fff}
+.uz:hover,.uz.drag{border-color:var(--teal);background:rgba(58,125,140,.04)}
+.uz input{display:none}
+.up{height:4px;background:var(--cream-dk);border-radius:2px;overflow:hidden;margin-top:.65rem;display:none}
+.upb{height:100%;background:var(--teal);border-radius:2px;width:0%;transition:width .3s}
+.amb{position:fixed;inset:0;background:rgba(28,26,24,.55);backdrop-filter:blur(5px);z-index:500;display:none;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
+.amb.open{display:flex}
+.am-modal{background:#fff;border-radius:20px;width:100%;max-width:620px;box-shadow:0 24px 80px rgba(28,26,24,.2);margin:auto;overflow:hidden}
+.amh{padding:1.1rem 1.5rem;border-bottom:1px solid var(--cream-dk);display:flex;align-items:center;justify-content:space-between;background:var(--cream)}
+.amh-title{font-family:var(--fd);font-size:1.15rem}
+.amx{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--cream-dk);display:flex;align-items:center;justify-content:center;font-size:.78rem;cursor:pointer;background:none}
+.amx:hover{background:var(--cream-dk)}
+.amb-body{padding:1.5rem;max-height:72vh;overflow-y:auto}
+.amf{padding:.9rem 1.5rem;border-top:1px solid var(--cream-dk);display:flex;gap:.6rem;justify-content:flex-end;background:var(--cream)}
+.aps{display:inline-flex;padding:.2rem .65rem;border-radius:100px;font-size:.66rem;font-weight:600}
+.aps.pe{background:rgba(201,147,90,.14);color:#8A6030}
+.aps.co{background:rgba(74,155,111,.12);color:#2E7A52}
+.aps.ca{background:rgba(196,97,74,.12);color:#C4614A}
+@media(max-width:768px){.al{grid-template-columns:1fr}.asb{display:none}}
+</style>
+
+<div class="al">
+  <aside class="asb">
+    <div class="asb-logo"><div class="asb-logo-t">Be Human</div><span class="asb-logo-s">Panel Admin</span></div>
+    <nav class="asb-nav">
+      <div class="asb-sec">Principal</div>
+      <button class="asb-it on" onclick="showAP('dash',this)"><span>📊</span> Dashboard</button>
+      <div class="asb-sec">Gestión</div>
+      <button class="asb-it" onclick="showAP('fotos',this)"><span>🖼️</span> Fotos del sitio</button>
+      <button class="asb-it" onclick="showAP('turnos',this)"><span>📅</span> Turnos</button>
+      <button class="asb-it" onclick="showAP('senas',this)"><span>💰</span> Señas pendientes <span id="senasBadge" style="background:#C4614A;color:#fff;border-radius:100px;font-size:.6rem;padding:.1rem .4rem;margin-left:.25rem;display:none">0</span></button>
+      <button class="asb-it" onclick="showAP('fichas',this)"><span>📋</span> Fichas médicas</button>
+      <button class="asb-it" onclick="showAP('testis',this)"><span>⭐</span> Testimonios</button>
+      <button class="asb-it" onclick="showAP('calendario',this)"><span>📆</span> Calendario</button>
+      <button class="asb-it" onclick="showAP('horarios',this)"><span>🕐</span> Horarios bloqueados</button>
+      <button class="asb-it" onclick="showAP('consultas',this)"><span>💼</span> Tipos de consulta</button>
+      <div class="asb-sec">Cuenta</div>
+      <button class="asb-it" onclick="goTo('home')"><span>🏠</span> Ver sitio</button>
+      <button class="asb-it" onclick="doLogout()"><span>↩️</span> Cerrar sesión</button>
+    </nav>
+  </aside>
+  <main class="ac">
+    <div class="atb">
+      <div class="atb-title" id="atbTitle">Dashboard</div>
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <span style="font-size:.8rem;color:var(--muted)">Hola, <strong id="admName">Admin</strong></span>
+        <button onclick="goTo('home')" style="padding:.42rem .9rem;border-radius:100px;font-size:.7rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Ver sitio →</button>
+      </div>
+    </div>
+    <div class="am">
+
+      <!-- DASHBOARD -->
+      <div id="ap-dash" class="ap on">
+        <div class="asg" id="admSG">
+          <div class="asc go skeleton" style="height:80px"></div>
+          <div class="asc te skeleton" style="height:80px"></div>
+          <div class="asc gr skeleton" style="height:80px"></div>
+          <div class="asc re skeleton" style="height:80px"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.1rem">
+          <div class="atw" style="padding:1.25rem">
+            <div style="font-family:var(--fd);font-size:.95rem;margin-bottom:.9rem">Acciones rápidas</div>
+            <div style="display:flex;flex-direction:column;gap:.55rem">
+              <button class="btn-primary" style="justify-content:center;width:100%;font-size:.76rem" onclick="showAP('senas',null)">💰 Señas pendientes <span id="dashSenasBadge" style="background:rgba(255,255,255,.3);border-radius:100px;padding:.1rem .4rem;font-size:.65rem;margin-left:.25rem"></span></button>
+              <button class="btn-primary" style="justify-content:center;width:100%;font-size:.76rem;background:var(--teal-lt,#4E94A4)" onclick="showAP('fotos',null)">🖼️ Editar fotos del sitio</button>
+              <button class="btn-outline" style="justify-content:center;width:100%;font-size:.76rem" onclick="showAP('turnos',null)">📅 Turnos de hoy</button>
+              <button class="btn-outline" style="justify-content:center;width:100%;font-size:.76rem" onclick="showAP('fichas',null)">📋 Fichas médicas</button>
+            </div>
+          </div>
+          <div class="atw" style="padding:1.25rem">
+            <div style="font-family:var(--fd);font-size:.95rem;margin-bottom:.9rem">Estado</div>
+            <div style="font-size:.8rem;display:flex;flex-direction:column;gap:.55rem">
+              <div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--cream-dk)"><span>Sitio web</span><span style="background:rgba(74,155,111,.12);color:#2E7A52;padding:.18rem .6rem;border-radius:100px;font-size:.66rem;font-weight:600">✓ Online</span></div>
+              <div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--cream-dk)"><span>Base de datos</span><span style="background:rgba(74,155,111,.12);color:#2E7A52;padding:.18rem .6rem;border-radius:100px;font-size:.66rem;font-weight:600">✓ Conectada</span></div>
+              <div style="display:flex;justify-content:space-between;padding:.4rem 0"><span>Turnos online</span><span style="background:rgba(74,155,111,.12);color:#2E7A52;padding:.18rem .6rem;border-radius:100px;font-size:.66rem;font-weight:600">✓ Activo</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOTOS -->
+      <div id="ap-fotos" class="ap">
+        <p style="font-size:.83rem;color:var(--muted);margin-bottom:1.25rem">Hacé clic en cualquier foto para cambiarla. Los cambios se aplican en toda la web de inmediato.</p>
+        <div id="fotosContent"><div class="skeleton" style="height:200px;border-radius:13px"></div></div>
+      </div>
+
+      <!-- TURNOS -->
+      <div id="ap-turnos" class="ap">
+        <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1.1rem;flex-wrap:wrap">
+          <input type="date" id="aDate" style="padding:.52rem .9rem;border:1.5px solid var(--cream-dk);border-radius:10px;font-size:.8rem;outline:none;background:#fff;font-family:var(--fb)" onchange="loadATurnos()">
+          <button onclick="loadATurnos()" style="padding:.52rem 1.1rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Actualizar</button>
+        </div>
+        <div style="display:flex;gap:.85rem;margin-bottom:1.1rem;flex-wrap:wrap">
+          <div class="asc go" style="flex:1;min-width:130px;padding:.9rem 1.1rem"><div class="asc-l">Total</div><div class="asc-v" id="aST">—</div></div>
+          <div class="asc" style="flex:1;min-width:130px;padding:.9rem 1.1rem;border-left:3px solid #4A9B6F"><div class="asc-l">Con ficha</div><div class="asc-v" style="color:#4A9B6F" id="aSF">—</div></div>
+          <div class="asc" style="flex:1;min-width:130px;padding:.9rem 1.1rem;border-left:3px solid #D4853A"><div class="asc-l">Sin ficha</div><div class="asc-v" style="color:#D4853A" id="aSN">—</div></div>
+        </div>
+        <div id="aTList"></div>
+      </div>
+
+      <!-- SEÑAS PENDIENTES -->
+      <div id="ap-senas" class="ap">
+        <!-- Stats rápidos -->
+        <div style="display:flex;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap">
+          <div class="asc" style="flex:1;min-width:140px;padding:.9rem 1.1rem;border-left:3px solid #D4853A">
+            <div class="asc-l">Pendientes</div>
+            <div class="asc-v" style="color:#D4853A" id="sSenaPend">—</div>
+          </div>
+          <div class="asc" style="flex:1;min-width:140px;padding:.9rem 1.1rem;border-left:3px solid #4A9B6F">
+            <div class="asc-l">Aprobadas hoy</div>
+            <div class="asc-v" style="color:#4A9B6F" id="sSenaAprov">—</div>
+          </div>
+          <div class="asc" style="flex:1;min-width:140px;padding:.9rem 1.1rem;border-left:3px solid var(--gold)">
+            <div class="asc-l">Total señas cobradas</div>
+            <div class="asc-v" id="sSenaMonto" style="font-size:1.2rem">—</div>
+          </div>
+        </div>
+
+        <!-- Pendientes de aprobación -->
+        <div class="atw" style="margin-bottom:1.5rem">
+          <div class="ath" style="background:rgba(212,133,58,.06)">
+            <div class="ath-title" style="display:flex;align-items:center;gap:.5rem">
+              ⏳ Transferencias pendientes de aprobación
+              <span id="pendBadgeCount" style="background:#D4853A;color:#fff;border-radius:100px;font-size:.68rem;padding:.15rem .55rem">0</span>
+            </div>
+            <button onclick="loadASenas()" style="padding:.38rem .85rem;border-radius:100px;font-size:.7rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">↻ Actualizar</button>
+          </div>
+          <div id="sPendTable">
+            <table>
+              <thead><tr>
+                <th>Paciente</th>
+                <th>Turno</th>
+                <th>Seña</th>
+                <th>Nombre en transferencia</th>
+                <th>Registrado</th>
+                <th>Acciones</th>
+              </tr></thead>
+              <tbody id="sPendBody">
+                <tr><td colspan="6" style="text-align:center;padding:2.5rem;color:var(--muted)">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Historial completo -->
+        <div class="atw">
+          <div class="ath">
+            <div class="ath-title">Historial de señas</div>
+            <div style="display:flex;gap:.5rem;align-items:center">
+              <select id="senaFilterStatus" onchange="loadASenas()" style="padding:.42rem .75rem;border:1.5px solid var(--cream-dk);border-radius:9px;font-size:.78rem;outline:none;background:#fff;font-family:var(--fb)">
+                <option value="">Todas</option>
+                <option value="pending">Pendientes</option>
+                <option value="approved">Aprobadas</option>
+                <option value="rejected">Rechazadas</option>
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Paciente</th>
+              <th>Fecha turno</th>
+              <th>Hora</th>
+              <th>Consulta</th>
+              <th>Precio total</th>
+              <th>Seña</th>
+              <th>Método</th>
+              <th>Estado seña</th>
+              <th>Estado turno</th>
+              <th>Acciones</th>
+            </tr></thead>
+            <tbody id="sHistBody">
+              <tr><td colspan="10" style="text-align:center;padding:2.5rem;color:var(--muted)">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FICHAS -->
+      <div id="ap-fichas" class="ap">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;flex-wrap:wrap;gap:.65rem">
+          <input type="text" placeholder="🔍 Buscar paciente..." id="fichaQ" oninput="filterAFichas()" style="padding:.52rem .9rem;border:1.5px solid var(--cream-dk);border-radius:10px;font-size:.8rem;outline:none;background:#fff;font-family:var(--fb);width:220px">
+          <button onclick="openANuevaFicha()" style="padding:.52rem 1.1rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--gold);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">+ Nueva ficha</button>
+        </div>
+        <div class="atw">
+          <table>
+            <thead><tr><th>Paciente</th><th>Email</th><th>Última consulta</th><th>Consultas</th><th></th></tr></thead>
+            <tbody id="aFBody"><tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--muted)">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TESTIMONIOS -->
+      <div id="ap-testis" class="ap">
+        <div class="atw">
+          <div class="ath"><div class="ath-title">Testimonios</div></div>
+          <table>
+            <thead><tr><th>Autor</th><th>Texto</th><th>Programa</th><th>Activo</th><th></th></tr></thead>
+            <tbody id="aTBody"><tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--muted)">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CONSULTAS -->
+      <div id="ap-consultas" class="ap">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
+          <p style="font-size:.83rem;color:var(--muted);margin:0">Gestioná los tipos de consulta que aparecen en la página de turnos. Podés editarlas, desactivarlas o crear nuevas.</p>
+          <button onclick="openConsulta(null)" style="padding:.55rem 1.2rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--gold);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">+ Nueva consulta</button>
+        </div>
+
+        <!-- Cards de consultas -->
+        <div id="consultasGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.1rem">
+          <div class="skeleton" style="height:180px;border-radius:14px"></div>
+          <div class="skeleton" style="height:180px;border-radius:14px"></div>
+          <div class="skeleton" style="height:180px;border-radius:14px"></div>
+        </div>
+
+        <div style="margin-top:1.5rem;background:rgba(58,125,140,.07);border-radius:14px;padding:1.1rem 1.25rem;font-size:.82rem;color:var(--teal);line-height:1.7">
+          <strong>¿Cómo funciona?</strong><br>
+          Las consultas activas se muestran en la página de turnos para que los pacientes elijan. Si desactivás una, deja de aparecer pero no se borra. Podés reactivarla cuando quieras.
+        </div>
+      </div>
+
+      <!-- CALENDARIO -->
+      <div id="ap-calendario" class="ap">
+        <style>
+        .cal-admin-wrap{display:grid;grid-template-columns:1fr 320px;gap:1.25rem;align-items:flex-start}
+        .cal-admin-main{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(28,26,24,.07);overflow:hidden}
+        .cal-admin-head{padding:1rem 1.25rem;border-bottom:1px solid var(--cream-dk);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+        .cal-nav-btn2{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--cream-dk);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;transition:.16s}
+        .cal-nav-btn2:hover{background:var(--cream-dk)}
+        .cal-month-title{font-family:var(--fd);font-size:1.1rem;text-transform:capitalize}
+        .cal-grid-admin{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--cream-dk)}
+        .cal-dayname-admin{padding:.6rem;text-align:center;font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--cream-dk);background:var(--cream)}
+        .cal-cell{min-height:90px;padding:.4rem;border-right:1px solid var(--cream-dk);border-bottom:1px solid var(--cream-dk);position:relative;cursor:pointer;transition:.14s;vertical-align:top}
+        .cal-cell:hover{background:rgba(58,125,140,.04)}
+        .cal-cell.today{background:rgba(201,147,90,.05)}
+        .cal-cell.today .cal-cell-num{background:var(--gold);color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+        .cal-cell.other-month{background:#fafafa;opacity:.5}
+        .cal-cell.selected{background:rgba(58,125,140,.08);outline:2px solid var(--teal)}
+        .cal-cell-num{font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.3rem;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+        .cal-appt-pill{font-size:.65rem;font-weight:600;padding:.18rem .45rem;border-radius:4px;margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.3}
+        .cal-blocked-pill{font-size:.62rem;padding:.15rem .4rem;border-radius:4px;margin-bottom:.2rem;background:rgba(196,97,74,.12);color:#C4614A;border-left:2px solid #C4614A}
+        /* Panel lateral */
+        .cal-side{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(28,26,24,.07);overflow:hidden;position:sticky;top:90px}
+        .cal-side-head{padding:1rem 1.25rem;border-bottom:1px solid var(--cream-dk);background:var(--cream)}
+        .cal-side-title{font-family:var(--fd);font-size:1rem}
+        .cal-side-body{padding:1.1rem;max-height:500px;overflow-y:auto;display:flex;flex-direction:column;gap:.65rem}
+        .cal-appt-card{padding:.85rem;border-radius:10px;border:1.5px solid var(--cream-dk);cursor:pointer;transition:.15s}
+        .cal-appt-card:hover{border-color:var(--teal);background:rgba(58,125,140,.03)}
+        .cal-appt-time{font-family:var(--fd);font-size:1.1rem;color:var(--gold)}
+        .cal-appt-name{font-weight:600;font-size:.86rem;margin:.2rem 0}
+        .cal-appt-tipo{font-size:.74rem;color:var(--muted)}
+        .cal-appt-mod{font-size:.68rem;padding:.15rem .5rem;border-radius:100px;display:inline-flex;align-items:center;gap:.25rem;margin-top:.3rem}
+        .cal-blocked-card{padding:.75rem;border-radius:10px;background:rgba(196,97,74,.06);border:1.5px solid rgba(196,97,74,.2)}
+        /* Filtros */
+        .cal-filters{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;margin-bottom:1.1rem}
+        .medico-filter{padding:.45rem 1rem;border-radius:100px;font-size:.76rem;font-weight:500;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;transition:.15s;font-family:var(--fb);color:var(--text)}
+        .medico-filter:hover{border-color:var(--teal);color:var(--teal)}
+        .medico-filter.active{color:#fff;border-color:transparent}
+        /* Bloqueo rápido */
+        .block-quick{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(28,26,24,.07);padding:1.1rem;margin-top:1rem}
+        .block-quick-title{font-family:var(--fd);font-size:.95rem;margin-bottom:.85rem;display:flex;align-items:center;gap:.5rem}
+        </style>
+
+        <!-- Filtros médicos -->
+        <div class="cal-filters" id="calMedicoFilters">
+          <span style="font-size:.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.1em">Médico:</span>
+          <button class="medico-filter active" data-medico="" style="background:var(--teal)" onclick="filterCalMedico('',this)">Todos</button>
+          <!-- se llena dinámicamente -->
+        </div>
+
+        <div class="cal-admin-wrap">
+          <!-- Calendario principal -->
+          <div>
+            <div class="cal-admin-main">
+              <div class="cal-admin-head">
+                <div style="display:flex;align-items:center;gap:.75rem">
+                  <button class="cal-nav-btn2" onclick="calAdminPrev()">←</button>
+                  <div class="cal-month-title" id="calAdminMonthTitle"></div>
+                  <button class="cal-nav-btn2" onclick="calAdminNext()">→</button>
+                </div>
+                <div style="display:flex;gap:.5rem;align-items:center">
+                  <button onclick="calAdminGoToday()" style="padding:.38rem .85rem;border-radius:100px;font-size:.73rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Hoy</button>
+                  <button onclick="openBlockModal()" style="padding:.38rem .85rem;border-radius:100px;font-size:.73rem;font-weight:600;background:rgba(196,97,74,.1);color:#C4614A;border:1.5px solid rgba(196,97,74,.2);cursor:pointer;font-family:var(--fb)">+ Bloquear horario</button>
+                </div>
+              </div>
+              <div class="cal-grid-admin">
+                <div class="cal-dayname-admin">Dom</div>
+                <div class="cal-dayname-admin">Lun</div>
+                <div class="cal-dayname-admin">Mar</div>
+                <div class="cal-dayname-admin">Mié</div>
+                <div class="cal-dayname-admin">Jue</div>
+                <div class="cal-dayname-admin">Vie</div>
+                <div class="cal-dayname-admin">Sáb</div>
+              </div>
+              <div class="cal-grid-admin" id="calAdminGrid" style="border-top:none"></div>
+            </div>
+
+            <!-- Bloqueo rápido -->
+            <div class="block-quick">
+              <div class="block-quick-title">🚫 Bloquear horario rápido</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+                <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" id="bqDate"></div>
+                <div class="form-group"><label class="form-label">Médico</label><select class="form-select" id="bqMedico"><option value="">Todos</option></select></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+                <div class="form-group"><label class="form-label">Hora inicio</label><input type="time" class="form-input" id="bqDesde"></div>
+                <div class="form-group"><label class="form-label">Hora fin</label><input type="time" class="form-input" id="bqHasta"></div>
+              </div>
+              <div class="form-group" style="margin-bottom:.75rem"><label class="form-label">Motivo</label><input type="text" class="form-input" id="bqMotivo" placeholder="Ej: Reunión, Vacaciones, No disponible..."></div>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer;margin-bottom:.85rem">
+                <input type="checkbox" id="bqTodoDia" onchange="toggleBqTodoDia(this)" style="accent-color:var(--teal)">
+                Todo el día
+              </label>
+              <button onclick="saveBlockQuick()" style="width:100%;padding:.65rem;border-radius:100px;font-size:.76rem;font-weight:600;background:#C4614A;color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Bloquear horario</button>
+            </div>
+          </div>
+
+          <!-- Panel lateral: detalle del día -->
+          <div class="cal-side">
+            <div class="cal-side-head">
+              <div class="cal-side-title" id="calSideTitle">Seleccioná un día</div>
+              <div style="font-size:.74rem;color:var(--muted);margin-top:.15rem" id="calSideSubtitle"></div>
+            </div>
+            <div class="cal-side-body" id="calSideBody">
+              <div style="text-align:center;padding:2rem;color:var(--muted);font-size:.84rem">Hacé clic en un día del calendario para ver los turnos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HORARIOS -->
+      <div id="ap-horarios" class="ap">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.1rem">
+          <div class="atw" style="padding:1.25rem">
+            <div style="font-family:var(--fd);font-size:.95rem;margin-bottom:.9rem">Bloquear horario</div>
+            <div style="display:flex;flex-direction:column;gap:.75rem">
+              <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" id="bDate"></div>
+              <div class="form-group"><label class="form-label">Hora (vacío = todo el día)</label><input type="time" class="form-input" id="bTime"></div>
+              <div class="form-group"><label class="form-label">Motivo</label><input type="text" class="form-input" id="bReason" placeholder="Vacaciones, evento..."></div>
+              <button onclick="aBlockSlot()" style="padding:.65rem 1.4rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Bloquear</button>
+            </div>
+          </div>
+          <div class="atw">
+            <div class="ath"><div class="ath-title">Bloqueados</div></div>
+            <table><thead><tr><th>Fecha</th><th>Hora</th><th>Motivo</th><th></th></tr></thead><tbody id="aBBody"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Sin bloqueados</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL IMAGEN -->
+<div class="amb" id="imgMod">
+  <div class="am-modal">
+    <div class="amh"><div class="amh-title" id="imgModTitle">Cambiar imagen</div><button class="amx" onclick="closeAMod('imgMod')">✕</button></div>
+    <div class="amb-body">
+      <div style="margin-bottom:1.1rem"><div class="form-label" style="margin-bottom:.4rem">Imagen actual</div><img id="imgModCurrent" style="width:100%;max-height:180px;object-fit:cover;border-radius:11px;background:var(--cream-dk)" src="" alt=""></div>
+      <div style="display:flex;gap:.35rem;border-bottom:2px solid var(--cream-dk);margin-bottom:1.1rem">
+        <button id="itub" onclick="switchAImgTab('up',this)" style="padding:.55rem 1rem;font-size:.78rem;font-weight:500;cursor:pointer;border-bottom:2px solid var(--teal);margin-bottom:-2px;color:var(--teal);background:none;border-top:none;border-left:none;border-right:none;font-family:var(--fb)">📤 Subir</button>
+        <button id="iturb" onclick="switchAImgTab('url',this)" style="padding:.55rem 1rem;font-size:.78rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--muted);background:none;border-top:none;border-left:none;border-right:none;font-family:var(--fb)">🔗 URL</button>
+      </div>
+      <div id="itup">
+        <label class="uz" id="aUZ"><input type="file" id="aFI" accept="image/*" onchange="handleAFile(event)"><div style="font-size:1.8rem;margin-bottom:.4rem">📷</div><div style="font-size:.85rem;font-weight:500">Arrastrá o hacé clic</div><div style="font-size:.73rem;color:var(--muted);margin-top:.2rem">JPG, PNG, WebP · Máx 5MB</div><div id="aFN" style="margin-top:.4rem;font-size:.75rem;color:var(--teal);font-weight:500"></div></label>
+        <div class="up" id="aUP"><div class="upb" id="aUPB"></div></div>
+        <div id="aFPW" style="display:none;margin-top:.85rem"><img id="aFPI" style="width:100%;max-height:160px;object-fit:cover;border-radius:11px" src="" alt=""></div>
+      </div>
+      <div id="itur" style="display:none">
+        <div class="form-group"><label class="form-label">URL de la imagen</label><input type="url" class="form-input" id="aUI" placeholder="https://..."></div>
+        <button onclick="previewAUrl()" style="margin-top:.55rem;padding:.42rem .9rem;border-radius:100px;font-size:.72rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Vista previa</button>
+        <div id="aUPrW" style="display:none;margin-top:.75rem"><img id="aUPrI" style="width:100%;max-height:160px;object-fit:cover;border-radius:11px" src="" alt=""></div>
+      </div>
+    </div>
+    <div class="amf"><button onclick="closeAMod('imgMod')" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button><button id="imgSB" onclick="saveAImg()" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--gold);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar</button></div>
+  </div>
+</div>
+
+<!-- MODAL NUEVA FICHA -->
+<div class="amb" id="nfMod">
+  <div class="am-modal" style="max-width:720px">
+    <div class="amh"><div class="amh-title" id="nfModTitle">Nueva ficha médica</div><button class="amx" onclick="closeAMod('nfMod')">✕</button></div>
+    <div class="amb-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:1rem">
+        <div class="form-group"><label class="form-label">Nombre *</label><input type="text" class="form-input" id="nfN" placeholder="Nombre completo"></div>
+        <div class="form-group"><label class="form-label">Email *</label><input type="email" class="form-input" id="nfE" placeholder="email@ejemplo.com"></div>
+        <div class="form-group"><label class="form-label">Teléfono</label><input type="tel" class="form-input" id="nfT" placeholder="+54 9 11..."></div>
+        <div class="form-group"><label class="form-label">DNI</label><input type="text" class="form-input" id="nfD" placeholder="38.000.000"></div>
+        <div class="form-group"><label class="form-label">Fecha nacimiento</label><input type="date" class="form-input" id="nfNc"></div>
+        <div class="form-group"><label class="form-label">Sexo</label><select class="form-select" id="nfSx"><option value="">Seleccioná...</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option><option value="otro">Otro</option></select></div>
+        <div class="form-group"><label class="form-label">Peso (kg)</label><input type="number" class="form-input" id="nfP" placeholder="68.5" step="0.1"></div>
+        <div class="form-group"><label class="form-label">Altura (cm)</label><input type="number" class="form-input" id="nfH" placeholder="165"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <div class="form-group"><label class="form-label">Antecedentes personales</label><textarea class="form-textarea" id="nfAP" placeholder="Enfermedades, cirugías..."></textarea></div>
+        <div class="form-group"><label class="form-label">Medicación actual</label><textarea class="form-textarea" rows="2" id="nfMd" placeholder="Medicamentos..."></textarea></div>
+        <div class="form-group"><label class="form-label">Alergias</label><input type="text" class="form-input" id="nfAl" placeholder="Sin alergias conocidas"></div>
+        <div class="form-group"><label class="form-label">Motivo de consulta inicial</label><textarea class="form-textarea" id="nfMt" placeholder="¿Por qué viene?"></textarea></div>
+      </div>
+    </div>
+    <div class="amf"><button onclick="closeAMod('nfMod')" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button><button id="nfBtn" onclick="crearAFicha()" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--gold);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Crear ficha</button></div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR CONSULTA -->
+<div class="amb" id="consultaMod">
+  <div class="am-modal" style="max-width:560px">
+    <div class="amh">
+      <div class="amh-title" id="consultaModTitle">Nueva consulta</div>
+      <button class="amx" onclick="closeAMod('consultaMod')">✕</button>
+    </div>
+    <div class="amb-body">
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <input type="hidden" id="cEditId">
+        <div class="form-group">
+          <label class="form-label">Nombre de la consulta *</label>
+          <input type="text" class="form-input" id="cNombre" placeholder="Ej: Primera consulta">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <textarea class="form-textarea" id="cDesc" rows="2" placeholder="Ej: Anamnesis completa, revisión de estudios y plan inicial"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="form-group">
+            <label class="form-label">Precio (ARS) *</label>
+            <input type="number" class="form-input" id="cPrecio" placeholder="18000" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duración</label>
+            <input type="text" class="form-input" id="cDuracion" placeholder="60 min">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Modalidad</label>
+          <select class="form-select" id="cModalidad">
+            <option value="ambas">Presencial y virtual (el paciente elige)</option>
+            <option value="presencial">Solo presencial</option>
+            <option value="virtual">Solo virtual</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Requisito de paciente</label>
+          <select class="form-select" id="cSoloPrevios">
+            <option value="false">Cualquier persona puede reservar</option>
+            <option value="true">Solo pacientes previos (tienen ficha médica)</option>
+          </select>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">Si activás esto, el sistema verifica automáticamente que el paciente tenga ficha antes de dejarlos reservar.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ícono (emoji)</label>
+          <input type="text" class="form-input" id="cIcono" placeholder="🌱" maxlength="4" style="font-size:1.4rem;letter-spacing:.2rem">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select class="form-select" id="cActivo">
+            <option value="true">Activa — visible en el sitio</option>
+            <option value="false">Inactiva — no se muestra</option>
+          </select>
+        </div>
+        <div style="background:rgba(58,125,140,.07);border-radius:10px;padding:.75rem 1rem;font-size:.78rem;color:var(--teal)">
+          💡 Los cambios se reflejan en la página de turnos automáticamente.
+        </div>
+      </div>
+    </div>
+    <div class="amf">
+      <button onclick="closeAMod('consultaMod')" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button>
+      <button id="cSaveBtn" onclick="saveConsulta()" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--gold);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /page-admin -->
+<!-- BOTÓN ACCESO RÁPIDO ADMIN -->
+<div style="position:fixed;bottom:2rem;right:2rem;z-index:150;display:flex;flex-direction:column;align-items:flex-end;gap:.5rem">
+  <button onclick="goTo('admin')" style="
+    width:52px;height:52px;border-radius:50%;
+    background:var(--gold);color:#fff;
+    border:none;cursor:pointer;
+    font-size:1.3rem;
+    box-shadow:0 4px 20px rgba(201,147,90,.5);
+    transition:.18s;
+    display:flex;align-items:center;justify-content:center;
+  " title="Panel admin"
+  onmouseover="this.style.transform='scale(1.1)'"
+  onmouseout="this.style.transform='scale(1)'">⚙️</button>
+</div>
+
 <!-- CART DRAWER -->
 <div class="cart-ov" id="cartOv"></div>
 <div class="cart-dw" id="cartDw">
@@ -1302,17 +1952,22 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
 
 <script>
 /* ══ NAVIGATION ══ */
-const PAGES = ['home','programas','tienda','turnos','checkout','login'];
+const PAGES = ['home','programas','tienda','turnos','checkout','login','admin','admin-fichas'];
 function goTo(id){
-  PAGES.forEach(p => document.getElementById('page-'+p).classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
+  PAGES.forEach(p => {
+    const el = document.getElementById('page-'+p);
+    if(el) el.classList.remove('active');
+  });
+  const target = document.getElementById('page-'+id);
+  if(target) target.classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   const nl = document.getElementById('nl-'+id);
   if(nl) nl.classList.add('active');
   window.scrollTo(0,0);
   initReveal();
-  if(id==='tienda') renderProducts();
+  if(id==='tienda')   renderProducts();
   if(id==='checkout') renderCkItems();
+  if(id==='admin')    initAdminPage();
 }
 function closeMob(){ document.getElementById('mobMenu').classList.remove('open'); }
 
@@ -1450,7 +2105,7 @@ function filterProgs(tag,btn){
 }
 
 /* ══ TURNOS ══ */
-const BS={tipo:null,precio:null,fecha:null,hora:null,calY:new Date().getFullYear(),calM:new Date().getMonth()};
+const BS={tipo:null,precio:null,modalidad:null,fecha:null,hora:null,calY:new Date().getFullYear(),calM:new Date().getMonth()};
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DAYS=['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
 const TIPO_NAMES={primera:'Primera consulta',seguimiento:'Seguimiento',resultados:'Interpretación de análisis'};
@@ -1458,20 +2113,52 @@ const TIPO_NAMES={primera:'Primera consulta',seguimiento:'Seguimiento',resultado
 function selTipo(el){
   document.querySelectorAll('.tipo-opt').forEach(o=>o.classList.remove('selected'));
   el.classList.add('selected');
-  BS.tipo=el.dataset.tipo; BS.precio=parseInt(el.dataset.precio);
-  const btn=document.getElementById('btnBs1');
-  btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer';
+  BS.tipo       = el.dataset.tipo;
+  BS.precio     = parseInt(el.dataset.precio);
+  BS.modalidad  = null; // reset modalidad
+
+  // Mostrar selector de modalidad si la consulta tiene "ambas"
+  const modalidad = el.dataset.modalidad || 'ambas';
+  const wrap = document.getElementById('modalidadWrap');
+
+  if(modalidad === 'ambas') {
+    wrap.style.display = '';
+    // Deshabilitar continuar hasta que elija modalidad
+    const btn = document.getElementById('btnBs1');
+    btn.disabled = true; btn.style.opacity = '.5'; btn.style.cursor = 'not-allowed';
+  } else {
+    wrap.style.display = 'none';
+    BS.modalidad = modalidad;
+    // Si no hay que elegir, habilitar continuar
+    const btn = document.getElementById('btnBs1');
+    btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
+  }
+  updateSum();
+}
+
+function selModalidad(mod) {
+  BS.modalidad = mod;
+  ['presencial','virtual'].forEach(m => {
+    const el = document.getElementById('mod-'+m);
+    if(!el) return;
+    const sel = m === mod;
+    el.style.borderColor  = sel ? 'var(--teal)' : 'var(--cream-dk)';
+    el.style.background   = sel ? 'rgba(58,125,140,.05)' : '#fff';
+  });
+  // Habilitar continuar
+  const btn = document.getElementById('btnBs1');
+  btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
   updateSum();
 }
 
 function bGoTo(n){
-  [1,2,3].forEach(i=>{
+  [1,2,3,4].forEach(i=>{
     document.getElementById('bstep'+i).style.display=i===n?'':'none';
     const si=document.getElementById('si'+i);
-    si.classList.toggle('active',i===n);
-    si.classList.toggle('done',i<n);
+    if(si){ si.classList.toggle('active',i===n); si.classList.toggle('done',i<n); }
   });
   if(n===2) renderCal();
+  if(n===4) updateSenaAmount();
 }
 
 function renderCal(){
@@ -1513,33 +2200,194 @@ function selSlot(btn,h){
 function updateSum(){
   const e=document.getElementById('sumEmpty'); const c=document.getElementById('sumContent');
   const any=BS.tipo||BS.fecha; e.style.display=any?'none':''; c.style.display=any?'flex':'none';
-  if(BS.tipo){ document.getElementById('sumTipoRow').style.display=''; document.getElementById('sumTipoVal').textContent=TIPO_NAMES[BS.tipo]||BS.tipo; document.getElementById('sumPrecioRow').style.display=''; document.getElementById('sumPrecioVal').textContent=fmt(BS.precio); }
+  if(BS.tipo){
+    document.getElementById('sumTipoRow').style.display='';
+    document.getElementById('sumTipoVal').textContent = TIPO_NAMES[BS.tipo]||BS.tipo;
+    document.getElementById('sumPrecioRow').style.display='';
+    document.getElementById('sumPrecioVal').textContent = fmt(BS.precio);
+  }
+  if(BS.modalidad){
+    document.getElementById('sumFechaRow').style.display = BS.fecha ? '' : 'none';
+    // Mostrar modalidad en el resumen
+    let sumTipoEl = document.getElementById('sumTipoVal');
+    if(sumTipoEl && BS.modalidad){
+      const mod = BS.modalidad === 'presencial' ? ' · 📍 Presencial' : ' · 💻 Virtual';
+      sumTipoEl.textContent = (TIPO_NAMES[BS.tipo]||BS.tipo) + mod;
+    }
+  }
   if(BS.fecha){ const [y,mm,dd]=BS.fecha.split('-'); document.getElementById('sumFechaRow').style.display=''; document.getElementById('sumFechaVal').textContent=`${parseInt(dd)} de ${MONTHS[parseInt(mm)-1]} ${y}`; }
   if(BS.hora){ document.getElementById('sumHoraRow').style.display=''; document.getElementById('sumHoraVal').textContent=BS.hora+' hs'; }
 }
 
-function submitBooking(){
-  const nom=document.getElementById('pNombre').value.trim();
-  const email=document.getElementById('pEmail').value.trim();
-  const tel=document.getElementById('pTel').value.trim();
+// Consultas que requieren paciente previo — se carga dinámicamente desde Supabase
+// Este array es el fallback si no hay conexión
+const CONSULTAS_SOLO_PREVIOS = ['espontanea'];
+
+async function validarYContinuar() {
+  const nom   = document.getElementById('pNombre').value.trim();
+  const email = document.getElementById('pEmail').value.trim();
+  const tel   = document.getElementById('pTel').value.trim();
   if(!nom||!email||!tel){ toast('Completá nombre, email y teléfono','err'); return; }
-  const btn=document.getElementById('btnSubmit'); btn.disabled=true; btn.textContent='Confirmando...';
-  setTimeout(()=>{
-    document.getElementById('bookingFlow').style.display='none';
-    document.getElementById('confirmScreen').classList.add('show');
-  },1200);
+
+  // Verificar si esta consulta requiere paciente previo
+  // Primero intentar obtenerlo de Supabase, sino usar el array fallback
+  let requierePrevio = CONSULTAS_SOLO_PREVIOS.includes(BS.tipo);
+  try {
+    const sb = getSB();
+    if(sb) {
+      const { data: ct } = await sb
+        .from('consultation_types')
+        .select('solo_pacientes_previos')
+        .eq('id', BS.tipo)
+        .single();
+      if(ct) requierePrevio = !!ct.solo_pacientes_previos;
+    }
+  } catch(e) {}
+
+  if(requierePrevio) {
+    const btn = document.getElementById('btnToStep4');
+    btn.disabled = true; btn.textContent = 'Verificando...';
+    try {
+      const sb = getSB();
+      if(sb) {
+        const { data: fichas } = await sb
+          .from('fichas_medicas')
+          .select('id')
+          .eq('patient_email', email)
+          .limit(1);
+
+        const esPrevio = fichas && fichas.length > 0;
+        if(!esPrevio) {
+          btn.disabled = false; btn.textContent = 'Continuar → Seña';
+          let errBox = document.getElementById('previoError');
+          if(!errBox) {
+            errBox = document.createElement('div');
+            errBox.id = 'previoError';
+            errBox.style.cssText = 'background:rgba(196,97,74,.08);border:1.5px solid rgba(196,97,74,.25);border-radius:12px;padding:.9rem 1.1rem;font-size:.84rem;color:#C4614A;line-height:1.65;margin-top:1rem';
+            document.getElementById('bstep3').appendChild(errBox);
+          }
+          errBox.innerHTML = '⚠️ <strong>Consulta exclusiva para pacientes previos.</strong><br>Esta consulta está disponible solo para quienes ya se atendieron con Be Human. Si es tu primera vez, reservá una <strong>Consulta Integral</strong>.';
+          errBox.style.display = '';
+          return;
+        }
+        const errBox = document.getElementById('previoError');
+        if(errBox) errBox.style.display = 'none';
+      }
+    } catch(e) { console.warn('No se pudo verificar:', e.message); }
+    const btn2 = document.getElementById('btnToStep4');
+    btn2.disabled = false; btn2.textContent = 'Continuar → Seña';
+  }
+  bGoTo(4);
 }
 
-/* ══ CHECKOUT ══ */
-let ckPayMethod='mp'; let ckCuotas=1;
+/* ── SEÑA ── */
+const SENA_PCT = 0.30;
 
-function selPay(method,el){
-  ckPayMethod=method;
-  document.querySelectorAll('.pay-method').forEach(m=>m.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById('ck-cuotas').style.display=method==='mp'?'':'none';
-  document.getElementById('ck-transfer').style.display=method==='transferencia'?'':'none';
-  renderCkTotals();
+function updateSenaAmount(){
+  const sena = Math.round(BS.precio * SENA_PCT);
+  const el  = document.getElementById('senaAmount');
+  const elT = document.getElementById('senaPrecioTotal');
+  if(el)  el.textContent  = fmt(sena);
+  if(elT) elT.textContent = fmt(BS.precio);
+}
+
+function copiarCBU(txt){
+  navigator.clipboard.writeText(txt).then(()=>toast('Copiado ✓','ok'));
+}
+
+async function submitBooking(){
+  const nom   = document.getElementById('pNombre').value.trim();
+  const email = document.getElementById('pEmail').value.trim();
+  const tel   = document.getElementById('pTel').value.trim();
+  if(!nom||!email||!tel){ toast('Completá nombre, email y teléfono','err'); bGoTo(3); return; }
+
+  const apellido = document.getElementById('senaApellido')?.value.trim();
+  if(!apellido){ toast('Ingresá tu nombre y apellido para identificar la transferencia','err'); return; }
+
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  btn.textContent = 'Registrando turno...';
+
+  const sena = Math.round(BS.precio * SENA_PCT);
+  const [,mm,dd] = BS.fecha.split('-');
+  const fechaStr = `${parseInt(dd)} de ${MONTHS[parseInt(mm)-1]} ${BS.fecha.split('-')[0]}`;
+
+  const apptData = {
+    type:          BS.tipo,
+    date:          BS.fecha,
+    time:          BS.hora,
+    modalidad:     BS.modalidad || 'virtual',
+    medico_id:     null, // se asigna automáticamente al primer médico activo
+    status:        'pending_transfer',
+    patient_name:  nom,
+    patient_email: email,
+    patient_phone: tel,
+    notes:         document.getElementById('pMotivo')?.value.trim() || null,
+    source:        document.getElementById('pFuente')?.value || null,
+    price:         BS.precio,
+    sena_amount:   sena,
+    sena_method:   'transferencia',
+    sena_status:   'pending',
+    transfer_name: apellido,
+  };
+
+  try {
+    const sb = getSB();
+    if(sb){
+      await sb.from('appointments').insert(apptData);
+      // Crear ficha si no existe
+      try {
+        const { data: fe } = await sb.from('fichas_medicas').select('id').eq('patient_email',email).single();
+        if(!fe){
+          await sb.from('fichas_medicas').insert({
+            patient_name:nom, patient_email:email, patient_phone:tel,
+            motivo_consulta_inicial: document.getElementById('pMotivo')?.value.trim()||null,
+          });
+        }
+      } catch(e2){}
+      // Email pendiente via Edge Function
+      try {
+        await sb.functions.invoke('send-email',{
+          body:{ type:'turno_pendiente', to:email, data:{
+            nombre:nom, fecha:fechaStr, hora:BS.hora,
+            consulta:TIPO_NAMES[BS.tipo]||BS.tipo,
+            sena:fmt(sena), total:fmt(BS.precio), apellido
+          }}
+        });
+      } catch(e3){ console.warn('Email Edge Function no configurada'); }
+    }
+    showConfirmacionSena(nom, email, sena, fechaStr);
+  } catch(e){
+    showConfirmacionSena(nom, email, sena, fechaStr);
+  }
+}
+
+function showConfirmacionSena(nom, email, sena, fechaStr){
+  document.getElementById('bookingFlow').style.display='none';
+  document.getElementById('confirmScreen').innerHTML = `
+    <div style="text-align:center;padding:3rem 2rem">
+      <div style="width:72px;height:72px;background:rgba(212,133,58,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin:0 auto 1rem">⏳</div>
+      <h2 style="font-family:var(--fd);font-size:1.9rem;margin-bottom:.5rem">¡Turno registrado!</h2>
+      <p style="color:var(--muted);max-width:400px;margin:0 auto;font-size:.88rem;font-weight:300;line-height:1.7">
+        Tu turno está <strong>pendiente de confirmación</strong>. Te llegará un mail con los detalles.
+      </p>
+      <div style="background:var(--cream);border-radius:14px;padding:1.25rem;max-width:360px;margin:1.25rem auto;text-align:left;display:flex;flex-direction:column;gap:.6rem">
+        <div style="display:flex;justify-content:space-between;font-size:.84rem"><span style="color:var(--muted)">Consulta</span><span style="font-weight:500">${TIPO_NAMES[BS.tipo]||BS.tipo}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:.84rem"><span style="color:var(--muted)">Fecha y hora</span><span style="font-weight:500">${fechaStr} · ${BS.hora} hs</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:.84rem"><span style="color:var(--muted)">Seña a transferir</span><span style="font-weight:700;color:var(--gold)">${fmt(sena)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:.84rem"><span style="color:var(--muted)">Resto</span><span style="font-weight:500">${fmt(BS.precio-sena)} el día de la consulta</span></div>
+      </div>
+      <div style="background:rgba(212,133,58,.08);border:1.5px solid rgba(212,133,58,.2);border-radius:12px;padding:1rem 1.1rem;max-width:400px;margin:0 auto;font-size:.82rem;color:#8A5020;line-height:1.75;text-align:left">
+        📲 <strong>Próximo paso:</strong> Enviá el comprobante al WhatsApp <strong>+54 9 11 7617-9836</strong> con tu nombre y apellido. Te llegará un <strong>mail de confirmación</strong> cuando lo aprobemos.
+      </div>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1.5rem">
+        <button class="btn-outline" onclick="goTo('home')">Volver al inicio</button>
+        <a href="https://wa.me/5491176179836?text=Hola!%20Soy%20${encodeURIComponent(nom)}%2C%20reservé%20un%20turno%20para%20el%20${encodeURIComponent(fechaStr)}%20a%20las%20${BS.hora}%20hs.%20Les%20envío%20el%20comprobante." target="_blank" style="display:inline-flex;align-items:center;gap:.4rem;padding:.85rem 1.9rem;border-radius:100px;font-family:var(--fb);font-size:.76rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:#25D366;color:#fff;text-decoration:none">
+          💬 Enviar comprobante
+        </a>
+      </div>
+    </div>`;
+  document.getElementById('confirmScreen').classList.add('show');
 }
 
 function renderCkItems(){
@@ -1632,10 +2480,7 @@ async function afterLogin(user){
       document.getElementById('navBtnAdmin').innerHTML = `⚙️ Hola, ${nombre}`;
       setTimeout(()=>{
         setLoginLoading(false);
-        closeModal && closeModal('fichaModal');
-        goTo('home');
-        // Mostrar botón prominente para ir al admin
-        toast(`¡Hola ${nombre}! Usá el botón "Panel admin" para gestionar el sitio.`, 'ok', 5000);
+        goTo('admin');
       }, 600);
     } else {
       setLoginLoading(true, '¡Bienvenida!');
@@ -1776,22 +2621,958 @@ async function checkExistingSession(){
     if(session){ await afterLogin(session.user); }
   }catch(e){}
 }
-/* ══ NAV: actualizar según sesión ══ */
-function updateNavUI(role) {
-  const isAdmin   = role === 'admin';
-  const isUser    = role === 'user';
-  const isGuest   = !role;
+/* ══ ADMIN JS ══ */
+const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas',testis:'Testimonios',calendario:'Calendario',horarios:'Horarios bloqueados',consultas:'Tipos de consulta'};
 
-  // Desktop
+const AMONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const AMONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const ATIPO = {primera_vez:'Primera consulta',primera:'Primera consulta',seguimiento:'Seguimiento',resultados:'Análisis'};
+
+let aCurrImgKey = null, aSelFile = null, aAllFichas = [];
+
+function showAP(id, btn) {
+  document.querySelectorAll('.ap').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.asb-it').forEach(b => b.classList.remove('on'));
+  document.getElementById('ap-'+id)?.classList.add('on');
+  if (btn) btn.classList.add('on');
+  const t = document.getElementById('atbTitle');
+  if (t) t.textContent = ATITLES[id] || id;
+  if (id==='fotos')    loadAFotos();
+  if (id==='turnos')   { const d=document.getElementById('aDate'); if(d&&!d.value) d.value=new Date().toISOString().split('T')[0]; loadATurnos(); }
+  if (id==='senas')    loadASenas();
+  if (id==='fichas')   loadAFichas();
+  if (id==='testis')   loadATestis();
+  if (id==='horarios')   loadABlocked();
+  if (id==='calendario') initCalendario();
+  if (id==='consultas')  loadAConsultas();
+  if (id==='dash')     loadADash();
+}
+
+/* ── SEÑAS ── */
+const SENA_STATUS_LABELS = { pending:'Pendiente', approved:'Aprobada', rejected:'Rechazada' };
+const TURNO_STATUS_LABELS = { pending:'Pendiente', pending_payment:'Esperando pago', pending_transfer:'Esperando transferencia', confirmed:'Confirmado', cancelled:'Cancelado', completed:'Completado' };
+
+async function loadASenas() {
+  const sb = getSB(); if(!sb) return;
+  const filterStatus = document.getElementById('senaFilterStatus')?.value || '';
+  try {
+    const { data: pend } = await sb.from('appointments').select('*').eq('sena_method','transferencia').eq('sena_status','pending').order('created_at',{ascending:false});
+    const today = new Date().toISOString().split('T')[0];
+    const { data: aprovHoy } = await sb.from('appointments').select('sena_amount').eq('sena_status','approved').gte('updated_at',today);
+    const { data: allAprov } = await sb.from('appointments').select('sena_amount').eq('sena_status','approved');
+    const pendCount = pend?.length||0;
+    document.getElementById('sSenaPend').textContent  = pendCount;
+    document.getElementById('sSenaAprov').textContent = aprovHoy?.length||0;
+    document.getElementById('sSenaMonto').textContent = fmt((allAprov||[]).reduce((s,r)=>s+(r.sena_amount||0),0));
+    document.getElementById('pendBadgeCount').textContent = pendCount;
+    const badge = document.getElementById('senasBadge');
+    if(badge){ badge.textContent=pendCount; badge.style.display=pendCount>0?'':'none'; }
+    renderSPend(pend||[]);
+    let q = sb.from('appointments').select('*').not('sena_method','is',null).order('created_at',{ascending:false});
+    if(filterStatus) q = q.eq('sena_status',filterStatus);
+    const { data: hist } = await q;
+    renderSHist(hist||[]);
+  } catch(e) {
+    document.getElementById('sPendBody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function renderSPend(rows) {
+  const tbody = document.getElementById('sPendBody');
+  if(!rows.length) { tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:2.5rem"><div style="font-size:1.75rem;margin-bottom:.5rem">✅</div><div style="color:var(--muted);font-size:.88rem">No hay transferencias pendientes</div></td></tr>`; return; }
+  tbody.innerHTML = rows.map(r=>`
+    <tr>
+      <td><div style="font-weight:600">${r.patient_name}</div><div style="font-size:.73rem;color:var(--muted)">${r.patient_email}</div>${r.patient_phone?`<div style="font-size:.73rem;color:var(--muted)">${r.patient_phone}</div>`:''}</td>
+      <td><div style="font-weight:500">${formatADate(r.date)}</div><div style="font-size:.73rem;color:var(--muted)">${(r.time||'').slice(0,5)} hs · ${ATIPO[r.type]||r.type}</div></td>
+      <td><div style="font-family:var(--fd);font-size:1.1rem;color:var(--gold)">${fmt(r.sena_amount||0)}</div><div style="font-size:.72rem;color:var(--muted)">de ${fmt(r.price||0)}</div></td>
+      <td style="font-weight:500">${r.transfer_name||'—'}</td>
+      <td style="font-size:.78rem;color:var(--muted)">${timeAgoA(r.created_at)}</td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:.4rem">
+          <button onclick="aprobarSena('${r.id}')" style="padding:.45rem .9rem;border-radius:100px;font-size:.72rem;font-weight:600;background:#4A9B6F;color:#fff;border:none;cursor:pointer;font-family:var(--fb);white-space:nowrap">✓ Aprobar</button>
+          <button onclick="rechazarSena('${r.id}')" style="padding:.45rem .9rem;border-radius:100px;font-size:.72rem;font-weight:600;background:rgba(196,97,74,.1);color:#C4614A;border:1.5px solid rgba(196,97,74,.25);cursor:pointer;font-family:var(--fb);white-space:nowrap">✕ Rechazar</button>
+          <a href="https://wa.me/${(r.patient_phone||'').replace(/\D/g,'')}?text=Hola%20${encodeURIComponent(r.patient_name)}!%20Confirmamos%20tu%20turno%20para%20el%20${encodeURIComponent(formatADate(r.date))}%20a%20las%20${(r.time||'').slice(0,5)}%20hs." target="_blank" style="padding:.45rem .9rem;border-radius:100px;font-size:.72rem;font-weight:600;background:#25D366;color:#fff;border:none;cursor:pointer;font-family:var(--fb);text-align:center;text-decoration:none;display:block;white-space:nowrap">💬 WhatsApp</a>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function renderSHist(rows) {
+  const tbody = document.getElementById('sHistBody');
+  if(!rows.length) { tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted)">Sin registros</td></tr>`; return; }
+  tbody.innerHTML = rows.map(r=>{
+    const ss=r.sena_status||'pending';
+    const ts=r.status||'pending';
+    const ssColor={pending:'#D4853A',approved:'#4A9B6F',rejected:'#C4614A'}[ss]||'var(--muted)';
+    const ssBg={pending:'rgba(212,133,58,.1)',approved:'rgba(74,155,111,.1)',rejected:'rgba(196,97,74,.1)'}[ss]||'rgba(138,132,128,.1)';
+    return `<tr>
+      <td><div style="font-weight:600;font-size:.83rem">${r.patient_name}</div><div style="font-size:.72rem;color:var(--muted)">${r.patient_email}</div></td>
+      <td style="font-size:.82rem">${formatADate(r.date)}</td>
+      <td style="font-size:.82rem">${(r.time||'').slice(0,5)} hs</td>
+      <td style="font-size:.79rem">${ATIPO[r.type]||r.type||'—'}</td>
+      <td style="font-family:var(--fd);color:var(--text)">${fmt(r.price||0)}</td>
+      <td style="font-family:var(--fd);color:var(--gold)">${fmt(r.sena_amount||0)}</td>
+      <td style="font-size:.79rem">${r.sena_method==='mp'?'💳 MP':'🏦 Transferencia'}</td>
+      <td><span style="background:${ssBg};color:${ssColor};padding:.2rem .6rem;border-radius:100px;font-size:.67rem;font-weight:600">${SENA_STATUS_LABELS[ss]||ss}</span></td>
+      <td><span style="background:rgba(58,125,140,.1);color:var(--teal);padding:.2rem .6rem;border-radius:100px;font-size:.67rem;font-weight:600">${TURNO_STATUS_LABELS[ts]||ts}</span></td>
+      <td>${ss==='pending'?`<div style="display:flex;gap:.3rem"><button onclick="aprobarSena('${r.id}')" style="padding:.32rem .65rem;border-radius:100px;font-size:.67rem;font-weight:600;background:#4A9B6F;color:#fff;border:none;cursor:pointer;font-family:var(--fb)">✓</button><button onclick="rechazarSena('${r.id}')" style="padding:.32rem .65rem;border-radius:100px;font-size:.67rem;font-weight:600;background:rgba(196,97,74,.1);color:#C4614A;border:1.5px solid rgba(196,97,74,.25);cursor:pointer;font-family:var(--fb)">✕</button></div>`:'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function aprobarSena(id) {
+  if(!confirm('¿Confirmar que recibiste la transferencia y aprobar el turno?')) return;
+  try {
+    const sb = getSB();
+    // Traer datos del turno para el email
+    const { data: appt } = await sb.from('appointments').select('*').eq('id',id).single();
+
+    await sb.from('appointments').update({
+      sena_status: 'approved',
+      status: 'confirmed',
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+
+    // Enviar email de confirmación al paciente
+    if(appt) {
+      const [,mm,dd] = appt.date.split('-');
+      const fechaStr = `${parseInt(dd)} de ${AMONTHS_L[parseInt(mm)-1]} ${appt.date.split('-')[0]}`;
+      try {
+        await sb.functions.invoke('send-email', {
+          body: {
+            type: 'turno_confirmado',
+            to:   appt.patient_email,
+            data: {
+              nombre:   appt.patient_name,
+              fecha:    fechaStr,
+              hora:     (appt.time||'').slice(0,5),
+              consulta: ATIPO[appt.type] || appt.type,
+              sena:     fmt(appt.sena_amount||0),
+              resto:    fmt((appt.price||0) - (appt.sena_amount||0)),
+            }
+          }
+        });
+        toast('✓ Turno confirmado · Email enviado a ' + appt.patient_email, 'ok', 5000);
+      } catch(emailErr) {
+        toast('✓ Turno confirmado (email no configurado aún)', 'ok');
+      }
+    } else {
+      toast('✓ Turno confirmado', 'ok');
+    }
+
+    loadASenas();
+    loadADash();
+  } catch(e) { toast('Error: '+e.message, 'err'); }
+}
+
+async function rechazarSena(id) {
+  if(!confirm('¿Rechazar esta transferencia? El turno quedará cancelado.')) return;
+  try {
+    await getSB().from('appointments').update({sena_status:'rejected',status:'cancelled',updated_at:new Date().toISOString()}).eq('id',id);
+    toast('Transferencia rechazada','ok');
+    loadASenas();
+  } catch(e) { toast('Error: '+e.message,'err'); }
+}
+
+/* ── DASHBOARD ── */
+async function loadADash() {
+  const sb = getSB(); if (!sb) return;
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const [{ count: tc }, { count: mc }, { count: pc }, { count: sc }] = await Promise.all([
+      sb.from('appointments').select('*',{count:'exact',head:true}).eq('date',today),
+      sb.from('fichas_medicas').select('*',{count:'exact',head:true}),
+      sb.from('appointments').select('*',{count:'exact',head:true}).eq('sena_status','pending').eq('sena_method','transferencia'),
+      sb.from('appointments').select('*',{count:'exact',head:true}).eq('status','pending'),
+    ]);
+    document.getElementById('admSG').innerHTML = `
+      <div class="asc go"><div class="asc-l">Turnos hoy</div><div class="asc-v">${tc||0}</div></div>
+      <div class="asc te"><div class="asc-l">Fichas médicas</div><div class="asc-v">${mc||0}</div></div>
+      <div class="asc" style="border-left:3px solid #D4853A"><div class="asc-l">Señas pendientes</div><div class="asc-v" style="color:#D4853A">${pc||0}</div></div>
+      <div class="asc re"><div class="asc-l">Turnos sin confirmar</div><div class="asc-v">${sc||0}</div></div>`;
+    // Badge en botón señas
+    const db = document.getElementById('dashSenasBadge');
+    if(db && pc > 0) db.textContent = pc + ' pendiente' + (pc>1?'s':'');
+    // Badge sidebar
+    const sb2 = document.getElementById('senasBadge');
+    if(sb2){ sb2.textContent=pc||0; sb2.style.display=(pc||0)>0?'':'none'; }
+  } catch(e) {
+    document.getElementById('admSG').innerHTML = `
+      <div class="asc go"><div class="asc-l">Turnos hoy</div><div class="asc-v">—</div></div>
+      <div class="asc te"><div class="asc-l">Fichas</div><div class="asc-v">—</div></div>
+      <div class="asc" style="border-left:3px solid #D4853A"><div class="asc-l">Señas pendientes</div><div class="asc-v">—</div></div>
+      <div class="asc re"><div class="asc-l">Sin confirmar</div><div class="asc-v">—</div></div>`;
+  }
+}
+
+/* ── FOTOS ── */
+const SITE_IMGS = [
+  {key:'hero_consultorio_1', name:'Hero — foto principal', section:'hero'},
+  {key:'hero_dra',           name:'Hero — Dra. Dobenau',  section:'hero'},
+  {key:'hero_consultorio_2', name:'Hero — foto derecha',  section:'hero'},
+  {key:'mariel_portrait',    name:'Sección Mariel',        section:'general'},
+  {key:'prog_reset_21',      name:'Programa Reset 21',     section:'programas'},
+  {key:'prog_activacion',    name:'Programa Performance',  section:'programas'},
+  {key:'prog_indomables',    name:'Programa Indomables',   section:'programas'},
+  {key:'prog_reset_mujer',   name:'Programa Reset Mujer',  section:'programas'},
+  {key:'programas_hero_bg',  name:'Fondo página Programas',section:'programas'},
+  {key:'tienda_hero_bg',     name:'Fondo página Tienda',   section:'tienda'},
+  {key:'portal_bg',          name:'Fondo página Login',    section:'general'},
+];
+
+async function loadAFotos() {
+  const container = document.getElementById('fotosContent');
+  if (!container) return;
+  let urls = {};
+  try {
+    const sb = getSB();
+    if (sb) {
+      const { data } = await sb.from('site_images').select('key,url,updated_at');
+      (data||[]).forEach(r => { urls[r.key] = r; });
+    }
+  } catch(e) {}
+
+  container.innerHTML = SITE_IMGS.map(img => {
+    const rec = urls[img.key];
+    const src = rec?.url || `https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=50`;
+    const updated = rec?.updated_at ? 'Actualizado ' + timeAgoA(rec.updated_at) : 'Sin actualizar';
+    return `
+      <div class="ic">
+        <div class="ic-prev" onclick="openAImgEditor('${img.key}','${img.name}','${src}')">
+          <img id="aip-${img.key}" src="${src}" alt="${img.name}">
+          <div class="ic-ov"><button class="ic-btn">✏️ Cambiar</button></div>
+        </div>
+        <div class="ic-info">
+          <div class="ic-key">${img.key}</div>
+          <div class="ic-name">${img.name}</div>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">${updated}</div>
+        </div>
+        <div class="ic-acts">
+          <button class="ia p" onclick="openAImgEditor('${img.key}','${img.name}','${src}')">✏️ Cambiar</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Wrap en secciones
+  const sections = [{id:'hero',label:'🏠 Hero — Homepage'},{id:'programas',label:'📚 Programas'},{id:'tienda',label:'🛍️ Tienda'},{id:'general',label:'👤 General'}];
+  let html = '';
+  sections.forEach(sec => {
+    const secImgs = SITE_IMGS.filter(i => i.section === sec.id);
+    const secUrls = secImgs.map(img => {
+      const rec = urls[img.key];
+      const src = rec?.url || `https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=50`;
+      const updated = rec?.updated_at ? 'Actualizado ' + timeAgoA(rec.updated_at) : 'Sin actualizar';
+      return `<div class="ic">
+        <div class="ic-prev" onclick="openAImgEditor('${img.key}','${img.name}','${src}')">
+          <img id="aip-${img.key}" src="${src}" alt="${img.name}">
+          <div class="ic-ov"><button class="ic-btn">✏️ Cambiar</button></div>
+        </div>
+        <div class="ic-info"><div class="ic-key">${img.key}</div><div class="ic-name">${img.name}</div><div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">${updated}</div></div>
+        <div class="ic-acts"><button class="ia p" onclick="openAImgEditor('${img.key}','${img.name}','${src}')">✏️ Cambiar</button></div>
+      </div>`;
+    }).join('');
+    html += `<div style="margin-bottom:1.75rem"><div class="imgs-sec-title">${sec.label}</div><div class="ig">${secUrls}</div></div>`;
+  });
+  container.innerHTML = html;
+}
+
+function openAImgEditor(key, name, currentSrc) {
+  aCurrImgKey = key; aSelFile = null;
+  document.getElementById('imgModTitle').textContent = 'Cambiar: ' + name;
+  document.getElementById('imgModCurrent').src = currentSrc;
+  document.getElementById('aFN').textContent = '';
+  document.getElementById('aFPW').style.display = 'none';
+  document.getElementById('aUPrW').style.display = 'none';
+  document.getElementById('aUI').value = '';
+  document.getElementById('aUP').style.display = 'none';
+  document.getElementById('aFI').value = '';
+  openAMod('imgMod');
+}
+
+function switchAImgTab(tab, btn) {
+  document.getElementById('itup').style.display = tab==='up'  ? '' : 'none';
+  document.getElementById('itur').style.display = tab==='url' ? '' : 'none';
+  document.getElementById('itub').style.borderBottomColor  = tab==='up'  ? 'var(--teal)' : 'transparent';
+  document.getElementById('iturb').style.borderBottomColor = tab==='url' ? 'var(--teal)' : 'transparent';
+  document.getElementById('itub').style.color  = tab==='up'  ? 'var(--teal)' : 'var(--muted)';
+  document.getElementById('iturb').style.color = tab==='url' ? 'var(--teal)' : 'var(--muted)';
+}
+
+function handleAFile(e) {
+  const file = e.target.files[0]; if (!file) return;
+  aSelFile = file;
+  document.getElementById('aFN').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = ev => { document.getElementById('aFPI').src = ev.target.result; document.getElementById('aFPW').style.display = ''; };
+  reader.readAsDataURL(file);
+}
+
+function previewAUrl() {
+  const url = document.getElementById('aUI').value.trim(); if (!url) return;
+  document.getElementById('aUPrI').src = url;
+  document.getElementById('aUPrW').style.display = '';
+}
+
+async function saveAImg() {
+  const isUp = document.getElementById('itup').style.display !== 'none';
+  const btn = document.getElementById('imgSB');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const sb = getSB();
+    if (!sb) throw new Error('Supabase no configurado');
+    let url;
+    if (isUp) {
+      if (!aSelFile) { toast('Seleccioná un archivo','err'); return; }
+      const ext = aSelFile.name.split('.').pop();
+      const path = `site-images/${aCurrImgKey}-${Date.now()}.${ext}`;
+      const { error: ue } = await sb.storage.from('site-images').upload(path, aSelFile, {upsert:true});
+      if (ue) throw ue;
+      const { data: { publicUrl } } = sb.storage.from('site-images').getPublicUrl(path);
+      url = publicUrl;
+    } else {
+      url = document.getElementById('aUI').value.trim();
+      if (!url) { toast('Ingresá una URL','err'); return; }
+    }
+    await sb.from('site_images').upsert({key:aCurrImgKey, url, updated_at: new Date().toISOString()});
+    // Actualizar preview en la grilla
+    document.querySelectorAll(`[id="aip-${aCurrImgKey}"]`).forEach(el => el.src = url);
+    // Actualizar también las imágenes del sitio visible
+    document.querySelectorAll(`[data-site-img="${aCurrImgKey}"]`).forEach(el => el.src = url);
+    toast('✓ Imagen actualizada en toda la web','ok');
+    closeAMod('imgMod');
+    loadAFotos();
+  } catch(e) {
+    toast('Error: '+e.message,'err');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Guardar';
+  }
+}
+
+/* ── TURNOS ── */
+async function loadATurnos() {
+  const date = document.getElementById('aDate')?.value;
+  if (!date) return;
+  const list = document.getElementById('aTList');
+  list.innerHTML = '<div class="skeleton" style="height:68px;border-radius:11px;margin-bottom:.55rem"></div>'.repeat(3);
+  const [,mm,dd] = date.split('-');
+  let appts = [];
+  try {
+    const sb = getSB();
+    const { data } = await sb.from('appointments').select('*').eq('date',date).order('time');
+    appts = data || [];
+  } catch(e) {
+    appts = [{id:'d1',patient_name:'Valentina R.',patient_email:'val@demo.com',type:'primera_vez',time:'09:00:00',status:'confirmed'},{id:'d2',patient_name:'Martín G.',patient_email:'mar@demo.com',type:'seguimiento',time:'10:30:00',status:'pending'}];
+  }
+  if (!appts.length) { list.innerHTML = '<div style="text-align:center;padding:2.5rem;color:var(--muted)">No hay turnos para este día</div>'; document.getElementById('aST').textContent=0; document.getElementById('aSF').textContent=0; document.getElementById('aSN').textContent=0; return; }
+
+  let fichasMap = {};
+  try { const sb=getSB(); const {data}=await sb.from('fichas_medicas').select('patient_email').in('patient_email',[...new Set(appts.map(a=>a.patient_email))]); (data||[]).forEach(f=>fichasMap[f.patient_email]=true); } catch(e) {}
+
+  const cf = appts.filter(a=>fichasMap[a.patient_email]).length;
+  document.getElementById('aST').textContent = appts.length;
+  document.getElementById('aSF').textContent = cf;
+  document.getElementById('aSN').textContent = appts.length - cf;
+
+  list.innerHTML = appts.map(a => {
+    const hf = !!fichasMap[a.patient_email];
+    const sl = {pending:'Pendiente',confirmed:'Confirmado',cancelled:'Cancelado',completed:'Completado',pending_transfer:'Esperando transferencia',pending_payment:'Esperando pago'}[a.status]||a.status;
+    const sc = {pending:'pe',confirmed:'co',cancelled:'ca',completed:'co',pending_transfer:'pe',pending_payment:'pe'}[a.status]||'pe';
+    return `<div class="tr-row ${hf?'hf':'nf'}" onclick="openATurno('${a.patient_email}','${a.patient_name}','${a.id}','${a.type||'seguimiento'}')">
+      <div class="tr-date"><div class="tr-day">${parseInt(dd)}</div><div class="tr-mon">${AMONTHS[parseInt(mm)-1]}</div></div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.15rem">
+          <span style="font-weight:600;font-size:.88rem">${a.patient_name}</span>
+          <span style="font-size:.65rem;font-weight:600;padding:.1rem .5rem;border-radius:100px;background:${hf?'rgba(58,125,140,.12)':'rgba(212,133,58,.12)'};color:${hf?'var(--teal)':'#D4853A'}">
+            ${hf ? '↩ Paciente conocido' : '★ Primera vez'}
+          </span>
+        </div>
+        <div style="font-size:.75rem;color:var(--muted)">${a.patient_email} · ${ATIPO[a.type]||a.type||'Consulta'} <span class="aps ${sc}">${sl}</span></div>
+      </div>
+      <div style="font-family:var(--fd);font-size:1.05rem;color:var(--gold);white-space:nowrap">${(a.time||'').slice(0,5)} hs</div>
+      <div class="fi ${hf?'y':'n'}" title="${hf?'Paciente conocido — tiene ficha':'Primera vez — se creó ficha automáticamente'}">${hf?'✓':'★'}</div>
+    </div>`;
+  }).join('');
+}
+
+async function openATurno(email, nombre, apptId, tipo) {
+  // Si tiene ficha → abrir modal con ficha. Si no → ofrecer crear.
+  let ficha = null;
+  try { const sb=getSB(); const {data}=await sb.from('fichas_medicas').select('*').eq('patient_email',email).single(); ficha=data; } catch(e) {}
+  if (!ficha) {
+    if (confirm(`${nombre} no tiene ficha médica. ¿Querés crear una ahora?`)) openANuevaFicha(email, nombre);
+    return;
+  }
+  toast(`Ficha de ${nombre}: ${ficha.antecedentes_personales||'Sin antecedentes registrados'}. Usá el panel de Fichas para ver el detalle completo.`, 'ok', 5000);
+}
+
+/* ── FICHAS ── */
+async function loadAFichas() {
+  const tbody = document.getElementById('aFBody');
+  try {
+    const sb = getSB();
+    const { data } = await sb.from('fichas_medicas').select('*, evoluciones(id,fecha)').order('patient_name');
+    aAllFichas = data || [];
+    renderAFichas(aAllFichas);
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--muted)">Conectá Supabase para ver fichas</td></tr>';
+  }
+}
+
+function renderAFichas(fichas) {
+  const tbody = document.getElementById('aFBody');
+  if (!fichas.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--muted)">No hay fichas aún</td></tr>'; return; }
+  tbody.innerHTML = fichas.map(f => {
+    const evs = f.evoluciones||[];
+    const last = evs.length ? evs.sort((a,b)=>b.fecha.localeCompare(a.fecha))[0].fecha : null;
+    return `<tr>
+      <td><div style="font-weight:600">${f.patient_name}</div>${f.dni?`<div style="font-size:.73rem;color:var(--muted)">DNI ${f.dni}</div>`:''}</td>
+      <td style="color:var(--muted)">${f.patient_email}</td>
+      <td>${last?formatADate(last):'—'}</td>
+      <td><span style="background:rgba(58,125,140,.12);color:var(--teal);padding:.2rem .65rem;border-radius:100px;font-size:.68rem;font-weight:600">${evs.length} consulta${evs.length!==1?'s':''}</span></td>
+      <td><button onclick="toast('Ficha de ${f.patient_name}: ${(f.antecedentes_personales||'Sin antecedentes').slice(0,80)}...','ok',5000)" style="padding:.38rem .85rem;border-radius:100px;font-size:.7rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Ver</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterAFichas() {
+  const q = document.getElementById('fichaQ')?.value.toLowerCase()||'';
+  renderAFichas(q ? aAllFichas.filter(f => f.patient_name.toLowerCase().includes(q)||f.patient_email.toLowerCase().includes(q)) : aAllFichas);
+}
+
+function openANuevaFicha(email='', nombre='') {
+  document.getElementById('nfN').value = nombre;
+  document.getElementById('nfE').value = email;
+  document.getElementById('nfModTitle').textContent = email ? `Nueva ficha: ${nombre}` : 'Nueva ficha médica';
+  openAMod('nfMod');
+}
+
+async function crearAFicha() {
+  const nombre = document.getElementById('nfN').value.trim();
+  const email  = document.getElementById('nfE').value.trim();
+  if (!nombre||!email) { toast('Nombre y email son obligatorios','err'); return; }
+  const btn = document.getElementById('nfBtn');
+  btn.disabled=true; btn.textContent='Creando...';
+  try {
+    const sb = getSB();
+    await sb.from('fichas_medicas').insert({
+      patient_name:nombre, patient_email:email,
+      patient_phone:document.getElementById('nfT').value.trim()||null,
+      dni:document.getElementById('nfD').value.trim()||null,
+      fecha_nacimiento:document.getElementById('nfNc').value||null,
+      sexo:document.getElementById('nfSx').value||null,
+      peso_kg:parseFloat(document.getElementById('nfP').value)||null,
+      altura_cm:parseInt(document.getElementById('nfH').value)||null,
+      antecedentes_personales:document.getElementById('nfAP').value.trim()||null,
+      medicacion_actual:document.getElementById('nfMd').value.trim()||null,
+      alergias:document.getElementById('nfAl').value.trim()||null,
+      motivo_consulta_inicial:document.getElementById('nfMt').value.trim()||null,
+    });
+    toast('Ficha creada ✓','ok');
+    closeAMod('nfMod');
+    loadAFichas();
+  } catch(e) {
+    toast(e.message.includes('duplicate')?'Ya existe una ficha para ese email':e.message,'err');
+  } finally { btn.disabled=false; btn.textContent='Crear ficha'; }
+}
+
+/* ── TESTIMONIOS ── */
+async function loadATestis() {
+  const tbody = document.getElementById('aTBody');
+  try {
+    const sb = getSB();
+    const { data } = await sb.from('testimonials').select('*').order('sort_order');
+    if (!data?.length) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--muted)">Sin testimonios</td></tr>'; return; }
+    tbody.innerHTML = data.map(t=>`<tr>
+      <td style="font-weight:600">${t.author_name}</td>
+      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8rem">${t.text}</td>
+      <td>${t.program||'—'}</td>
+      <td><span style="background:${t.active?'rgba(74,155,111,.12)':'rgba(138,132,128,.1)'};color:${t.active?'#2E7A52':'var(--muted)'};padding:.2rem .65rem;border-radius:100px;font-size:.68rem;font-weight:600">${t.active?'Sí':'No'}</span></td>
+      <td><button onclick="toggleATestis('${t.id}',${!t.active})" style="padding:.38rem .85rem;border-radius:100px;font-size:.7rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">${t.active?'Ocultar':'Mostrar'}</button></td>
+    </tr>`).join('');
+  } catch(e) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--muted)">Error al cargar</td></tr>'; }
+}
+async function toggleATestis(id, active) {
+  try { await getSB().from('testimonials').update({active}).eq('id',id); loadATestis(); } catch(e) {}
+}
+
+/* ── CALENDARIO ADMIN ── */
+let calState = {
+  year:  new Date().getFullYear(),
+  month: new Date().getMonth(),
+  selectedDate: new Date().toISOString().split('T')[0],
+  medicoId: '',
+  medicos: [],
+  appts: [],
+  blocked: [],
+};
+
+const CAL_MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const CAL_COLORS = ['#3A7D8C','#C9935A','#4A9B6F','#7B5EA7','#C4614A','#2D6A79'];
+
+async function initCalendario() {
+  await loadMedicos();
+  await loadCalData();
+  renderCalAdmin();
+}
+
+async function loadMedicos() {
+  try {
+    const sb = getSB();
+    const { data } = await sb.from('medicos').select('*').eq('activo', true).order('nombre');
+    calState.medicos = data || [];
+  } catch(e) {
+    calState.medicos = [{ id:'', nombre:'Dra. Mariel Dobenau', color:'#3A7D8C' }];
+  }
+
+  // Llenar filtros
+  const filters = document.getElementById('calMedicoFilters');
+  const bqMedico = document.getElementById('bqMedico');
+  calState.medicos.forEach((m, i) => {
+    const color = m.color || CAL_COLORS[i % CAL_COLORS.length];
+    // Botón filtro
+    const btn = document.createElement('button');
+    btn.className = 'medico-filter';
+    btn.dataset.medico = m.id;
+    btn.style.cssText = `border-color:${color};color:${color}`;
+    btn.textContent = m.nombre;
+    btn.onclick = () => filterCalMedico(m.id, btn, color);
+    filters.appendChild(btn);
+    // Select bloqueo
+    const opt = document.createElement('option');
+    opt.value = m.id; opt.textContent = m.nombre;
+    bqMedico.appendChild(opt);
+  });
+}
+
+function filterCalMedico(id, btn, color) {
+  document.querySelectorAll('.medico-filter').forEach(b => {
+    b.style.background = '';
+    b.style.color = b.dataset.medico ? b.style.borderColor || 'var(--teal)' : 'var(--text)';
+    b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  btn.style.background = color || 'var(--teal)';
+  btn.style.color = '#fff';
+  calState.medicoId = id;
+  loadCalData().then(() => renderCalAdmin());
+}
+
+async function loadCalData() {
+  const sb = getSB(); if(!sb) return;
+  const firstDay = `${calState.year}-${String(calState.month+1).padStart(2,'0')}-01`;
+  const lastDay  = `${calState.year}-${String(calState.month+1).padStart(2,'0')}-${new Date(calState.year, calState.month+1, 0).getDate()}`;
+  try {
+    let apptQ = sb.from('appointments').select('*').gte('date', firstDay).lte('date', lastDay).not('status','eq','cancelled');
+    if(calState.medicoId) apptQ = apptQ.eq('medico_id', calState.medicoId);
+    const { data: appts } = await apptQ.order('time');
+    calState.appts = appts || [];
+
+    let blockQ = sb.from('blocked_slots').select('*').gte('date', firstDay).lte('date', lastDay);
+    if(calState.medicoId) blockQ = blockQ.or(`medico_id.eq.${calState.medicoId},medico_id.is.null`);
+    const { data: blocked } = await blockQ;
+    calState.blocked = blocked || [];
+  } catch(e) {
+    calState.appts = []; calState.blocked = [];
+  }
+}
+
+function renderCalAdmin() {
+  const { year, month } = calState;
+  document.getElementById('calAdminMonthTitle').textContent = `${CAL_MONTHS_ES[month]} ${year}`;
+
+  const grid     = document.getElementById('calAdminGrid');
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInM  = new Date(year, month+1, 0).getDate();
+  const prevDays = new Date(year, month, 0).getDate();
+  const today    = new Date().toISOString().split('T')[0];
+
+  let html = '';
+
+  // Días del mes anterior
+  for(let i = firstDay-1; i >= 0; i--) {
+    html += `<div class="cal-cell other-month"><div class="cal-cell-num" style="color:var(--muted)">${prevDays-i}</div></div>`;
+  }
+
+  // Días del mes
+  for(let d = 1; d <= daysInM; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday    = dateStr === today;
+    const isSelected = dateStr === calState.selectedDate;
+    const dayAppts   = calState.appts.filter(a => a.date === dateStr);
+    const dayBlocked = calState.blocked.filter(b => b.date === dateStr);
+
+    // Pills de turnos (máx 3 visible)
+    let pills = dayAppts.slice(0, 3).map(a => {
+      const medico = calState.medicos.find(m => m.id === a.medico_id);
+      const color  = medico?.color || '#3A7D8C';
+      return `<div class="cal-appt-pill" style="background:${color}20;color:${color};border-left:2px solid ${color}" title="${a.patient_name} · ${(a.time||'').slice(0,5)}">${(a.time||'').slice(0,5)} ${a.patient_name.split(' ')[0]}</div>`;
+    }).join('');
+
+    if(dayAppts.length > 3) pills += `<div style="font-size:.62rem;color:var(--muted);padding:.1rem .3rem">+${dayAppts.length-3} más</div>`;
+
+    // Pills bloqueados
+    const bPills = dayBlocked.slice(0,2).map(b =>
+      `<div class="cal-blocked-pill">🚫 ${b.todo_el_dia ? 'Todo el día' : (b.time||'').slice(0,5)+' '+((b.motivo||'').slice(0,10))}</div>`
+    ).join('');
+
+    // Badge total
+    const total = dayAppts.length;
+    const badge = total > 0 ? `<div style="position:absolute;top:.35rem;right:.4rem;width:18px;height:18px;border-radius:50%;background:var(--teal);color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center">${total}</div>` : '';
+
+    html += `<div class="cal-cell${isToday?' today':''}${isSelected?' selected':''}" onclick="selectCalDay('${dateStr}')">
+      ${badge}
+      <div class="cal-cell-num">${d}</div>
+      ${pills}${bPills}
+    </div>`;
+  }
+
+  // Días del mes siguiente
+  const totalCells = firstDay + daysInM;
+  const remaining  = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for(let d = 1; d <= remaining; d++) {
+    html += `<div class="cal-cell other-month"><div class="cal-cell-num" style="color:var(--muted)">${d}</div></div>`;
+  }
+
+  grid.innerHTML = html;
+
+  // Si hay día seleccionado, mostrar detalle
+  if(calState.selectedDate) renderCalSide(calState.selectedDate);
+}
+
+function selectCalDay(dateStr) {
+  calState.selectedDate = dateStr;
+  // Actualizar fecha en bloqueo rápido
+  const bqDate = document.getElementById('bqDate');
+  if(bqDate) bqDate.value = dateStr;
+  renderCalAdmin();
+  renderCalSide(dateStr);
+}
+
+function renderCalSide(dateStr) {
+  const [y, mm, dd] = dateStr.split('-');
+  const label = `${parseInt(dd)} de ${CAL_MONTHS_ES[parseInt(mm)-1]} ${y}`;
+  document.getElementById('calSideTitle').textContent = label;
+
+  const dayAppts   = calState.appts.filter(a => a.date === dateStr).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+  const dayBlocked = calState.blocked.filter(b => b.date === dateStr);
+
+  document.getElementById('calSideSubtitle').textContent =
+    `${dayAppts.length} turno${dayAppts.length!==1?'s':''} · ${dayBlocked.length} bloqueado${dayBlocked.length!==1?'s':''}`;
+
+  const body = document.getElementById('calSideBody');
+  let html = '';
+
+  // Bloqueados primero
+  dayBlocked.forEach(b => {
+    html += `<div class="cal-blocked-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+        <span style="font-size:.72rem;font-weight:700;color:#C4614A;text-transform:uppercase;letter-spacing:.08em">🚫 Bloqueado</span>
+        <button onclick="deleteCalBlock('${b.id}')" style="font-size:.7rem;color:#C4614A;background:none;border:none;cursor:pointer">✕ Borrar</button>
+      </div>
+      <div style="font-size:.82rem;font-weight:500">${b.todo_el_dia ? 'Todo el día' : `${(b.time||'').slice(0,5)} hs`}</div>
+      ${b.motivo ? `<div style="font-size:.76rem;color:var(--muted);margin-top:.2rem">${b.motivo}</div>` : ''}
+    </div>`;
+  });
+
+  // Turnos
+  if(!dayAppts.length && !dayBlocked.length) {
+    html = `<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.84rem">Sin turnos ni bloqueos para este día</div>`;
+  }
+
+  dayAppts.forEach(a => {
+    const medico = calState.medicos.find(m => m.id === a.medico_id);
+    const color  = medico?.color || '#3A7D8C';
+    const statusLabel = {pending:'Pendiente',confirmed:'Confirmado',pending_transfer:'Esperando transferencia',completed:'Completado'}[a.status] || a.status;
+    const statusColor = {pending:'#D4853A',confirmed:'#4A9B6F',pending_transfer:'#D4853A',completed:'#3A7D8C'}[a.status] || '#8A7F74';
+    const modalidadLabel = a.modalidad === 'presencial' ? '📍 Presencial' : '💻 Virtual';
+
+    html += `<div class="cal-appt-card" style="border-left:3px solid ${color}">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="cal-appt-time">${(a.time||'').slice(0,5)} hs</div>
+        <span style="font-size:.68rem;font-weight:600;padding:.18rem .55rem;border-radius:100px;background:${statusColor}18;color:${statusColor}">${statusLabel}</span>
+      </div>
+      <div class="cal-appt-name">${a.patient_name}</div>
+      <div class="cal-appt-tipo">${ATIPO[a.type]||a.type||'—'}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.4rem">
+        <span class="cal-appt-mod" style="background:${color}15;color:${color}">${modalidadLabel}</span>
+        ${medico ? `<span style="font-size:.68rem;color:var(--muted)">${medico.nombre}</span>` : ''}
+      </div>
+      ${a.patient_phone ? `<div style="margin-top:.45rem">
+        <a href="https://wa.me/${(a.patient_phone||'').replace(/\D/g,'')}" target="_blank" style="font-size:.7rem;color:#25D366;font-weight:600;text-decoration:none">💬 WhatsApp</a>
+      </div>` : ''}
+      ${a.sena_status === 'pending' ? `<div style="margin-top:.4rem;font-size:.7rem;background:rgba(212,133,58,.1);color:#8A5020;padding:.25rem .5rem;border-radius:6px">⏳ Transferencia pendiente</div>` : ''}
+    </div>`;
+  });
+
+  body.innerHTML = html;
+}
+
+async function deleteCalBlock(id) {
+  if(!confirm('¿Borrar este bloqueo?')) return;
+  try {
+    await getSB().from('blocked_slots').delete().eq('id', id);
+    toast('Bloqueo eliminado ✓', 'ok');
+    await loadCalData();
+    renderCalAdmin();
+  } catch(e) { toast('Error: '+e.message, 'err'); }
+}
+
+function toggleBqTodoDia(cb) {
+  const desde  = document.getElementById('bqDesde');
+  const hasta  = document.getElementById('bqHasta');
+  desde.disabled = cb.checked;
+  hasta.disabled  = cb.checked;
+  if(cb.checked) { desde.value = ''; hasta.value = ''; }
+}
+
+async function saveBlockQuick() {
+  const date     = document.getElementById('bqDate').value;
+  const medicoId = document.getElementById('bqMedico').value;
+  const motivo   = document.getElementById('bqMotivo').value.trim();
+  const todoDia  = document.getElementById('bqTodoDia').checked;
+  const desde    = document.getElementById('bqDesde').value;
+
+  if(!date) { toast('Seleccioná una fecha','err'); return; }
+  if(!todoDia && !desde) { toast('Indicá la hora de inicio o tildá "Todo el día"','err'); return; }
+
+  try {
+    await getSB().from('blocked_slots').insert({
+      date,
+      time:        todoDia ? null : desde,
+      todo_el_dia: todoDia,
+      motivo:      motivo || null,
+      medico_id:   medicoId || null,
+    });
+    toast('Horario bloqueado ✓','ok');
+    // Limpiar
+    document.getElementById('bqMotivo').value = '';
+    document.getElementById('bqDesde').value  = '';
+    document.getElementById('bqHasta').value  = '';
+    document.getElementById('bqTodoDia').checked = false;
+    await loadCalData();
+    renderCalAdmin();
+  } catch(e) { toast('Error: '+e.message,'err'); }
+}
+
+function calAdminPrev() {
+  calState.month--;
+  if(calState.month < 0) { calState.month = 11; calState.year--; }
+  loadCalData().then(() => renderCalAdmin());
+}
+function calAdminNext() {
+  calState.month++;
+  if(calState.month > 11) { calState.month = 0; calState.year++; }
+  loadCalData().then(() => renderCalAdmin());
+}
+function calAdminGoToday() {
+  const now = new Date();
+  calState.year  = now.getFullYear();
+  calState.month = now.getMonth();
+  calState.selectedDate = now.toISOString().split('T')[0];
+  loadCalData().then(() => renderCalAdmin());
+}
+
+/* ── CONSULTAS ── */
+
+const CONSULTAS_DEFAULT = [
+  { id:'integral',    nombre:'Consulta Integral – Medicina Funcional', descripcion:'Historia clínica completa, evaluación funcional, plan nutricional y estrategia terapéutica',       precio:0, duracion:'60 min', icono:'🔬', modalidad:'ambas',      activo:true },
+  { id:'seguimiento', nombre:'Consulta de Seguimiento',                 descripcion:'Evaluación de evolución, ajustes de plan y revisión de adherencia',                                precio:0, duracion:'45 min', icono:'📊', modalidad:'ambas',      activo:true },
+  { id:'nutricional', nombre:'Consulta Nutricional',                    descripcion:'Planificación alimentaria personalizada, evaluación de hábitos y plan nutricional',                precio:0, duracion:'45 min', icono:'🥗', modalidad:'ambas',      activo:true },
+  { id:'espontanea',  nombre:'Consulta Espontánea',                     descripcion:'Resolución de dudas puntuales. Solo pacientes previos',                                           precio:0, duracion:'20 min', icono:'💬', modalidad:'ambas',      activo:true },
+  { id:'pediatrica',  nombre:'Consulta Pediátrica',                     descripcion:'Consulta integral en niños, evaluación clínica y estrategia nutricional',                         precio:0, duracion:'60 min', icono:'👶', modalidad:'ambas',      activo:true },
+  { id:'inbody',      nombre:'Medición InBody',                         descripcion:'Composición corporal: masa muscular, grasa corporal, agua y metabolismo basal. Solo presencial',  precio:0, duracion:'20 min', icono:'⚖️', modalidad:'presencial', activo:true },
+];
+
+async function loadAConsultas() {
+  const grid = document.getElementById('consultasGrid');
+  let consultas = [];
+  try {
+    const sb = getSB();
+    const { data } = await sb.from('consultation_types').select('*').order('sort_order');
+    consultas = data?.length ? data : CONSULTAS_DEFAULT;
+  } catch(e) { consultas = CONSULTAS_DEFAULT; }
+  renderConsultasGrid(consultas);
+}
+
+function renderConsultasGrid(consultas) {
+  const grid = document.getElementById('consultasGrid');
+  if(!consultas.length) { grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">No hay consultas. Creá una nueva.</div>`; return; }
+  grid.innerHTML = consultas.map(c=>`
+    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(28,26,24,.07);overflow:hidden;border:1.5px solid ${c.activo?'transparent':'rgba(196,97,74,.2)'}">
+      <div style="padding:1.1rem 1.25rem;border-bottom:1px solid var(--cream-dk);display:flex;align-items:center;gap:.75rem">
+        <div style="font-size:1.75rem">${c.icono||'📋'}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:.92rem">${c.nombre}</div>
+          <span style="font-size:.7rem;background:${c.activo?'rgba(74,155,111,.1)':'rgba(196,97,74,.1)'};color:${c.activo?'#2E7A52':'#C4614A'};padding:.15rem .55rem;border-radius:100px;font-weight:600">${c.activo?'● Activa':'● Inactiva'}</span>
+          ${c.solo_pacientes_previos?`<span style="font-size:.67rem;background:rgba(201,147,90,.12);color:var(--gold-dk);padding:.15rem .55rem;border-radius:100px;font-weight:600">🔒 Solo previos</span>`:''}
+        </div>
+      </div>
+      <div style="padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.5rem">
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.5">${c.descripcion||'—'}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.25rem">
+          <div style="font-family:var(--fd);font-size:1.25rem;color:var(--gold)">${fmt(c.precio)}</div>
+          <div style="display:flex;gap:.4rem;align-items:center">
+            <div style="font-size:.72rem;color:var(--muted);background:var(--cream);padding:.22rem .6rem;border-radius:100px">${c.duracion||'—'}</div>
+            <div style="font-size:.72rem;padding:.22rem .6rem;border-radius:100px;font-weight:600;background:${c.modalidad==='presencial'?'rgba(201,147,90,.12)':c.modalidad==='virtual'?'rgba(58,125,140,.1)':'rgba(138,132,128,.1)'};color:${c.modalidad==='presencial'?'var(--gold-dk)':c.modalidad==='virtual'?'var(--teal)':'var(--muted)'}">
+              ${c.modalidad==='presencial'?'📍 Presencial':c.modalidad==='virtual'?'💻 Virtual':'📍💻 Ambas'}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:.75rem 1.25rem;border-top:1px solid var(--cream-dk);background:var(--cream);display:flex;gap:.5rem">
+        <button onclick='openConsulta(${JSON.stringify(c)})' style="flex:1;padding:.45rem;border-radius:8px;font-size:.74rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">✏️ Editar</button>
+        <button onclick="toggleConsulta('${c.id}',${!c.activo})" style="flex:1;padding:.45rem;border-radius:8px;font-size:.74rem;font-weight:600;background:#fff;color:${c.activo?'#C4614A':'#2E7A52'};border:1.5px solid ${c.activo?'rgba(196,97,74,.3)':'rgba(74,155,111,.3)'};cursor:pointer;font-family:var(--fb)">${c.activo?'⊘ Desactivar':'✓ Activar'}</button>
+        <button onclick="deleteConsulta('${c.id}','${c.nombre}')" style="width:36px;padding:.45rem;border-radius:8px;font-size:.82rem;background:#fff;color:#C4614A;border:1.5px solid rgba(196,97,74,.2);cursor:pointer" title="Eliminar">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function openConsulta(c) {
+  document.getElementById('cEditId').value   = c?.id||'';
+  document.getElementById('cNombre').value   = c?.nombre||'';
+  document.getElementById('cDesc').value     = c?.descripcion||'';
+  document.getElementById('cPrecio').value   = c?.precio||'';
+  document.getElementById('cDuracion').value  = c?.duracion||'';
+  document.getElementById('cModalidad').value    = c?.modalidad||'ambas';
+  document.getElementById('cSoloPrevios').value  = c?.solo_pacientes_previos ? 'true' : 'false';
+  document.getElementById('cIcono').value         = c?.icono||'';
+  document.getElementById('cActivo').value        = c?.activo!==false?'true':'false';
+  document.getElementById('consultaModTitle').textContent = c?.id ? `Editar: ${c.nombre}` : 'Nueva consulta';
+  openAMod('consultaMod');
+}
+
+async function saveConsulta() {
+  const nombre = document.getElementById('cNombre').value.trim();
+  const precio = parseInt(document.getElementById('cPrecio').value);
+  if(!nombre||!precio){ toast('Nombre y precio son obligatorios','err'); return; }
+  const id = document.getElementById('cEditId').value;
+  const data = {
+    nombre, precio,
+    descripcion: document.getElementById('cDesc').value.trim()||null,
+    duracion:    document.getElementById('cDuracion').value.trim()||null,
+    modalidad:              document.getElementById('cModalidad').value||'ambas',
+    solo_pacientes_previos: document.getElementById('cSoloPrevios').value === 'true',
+    icono:                  document.getElementById('cIcono').value.trim()||'📋',
+    activo:                 document.getElementById('cActivo').value==='true',
+  };
+  const btn = document.getElementById('cSaveBtn');
+  btn.disabled=true; btn.textContent='Guardando...';
+  try {
+    const sb = getSB();
+    if(id){ await sb.from('consultation_types').update(data).eq('id',id); toast('Consulta actualizada ✓','ok'); }
+    else  { data.sort_order=Date.now(); await sb.from('consultation_types').insert(data); toast('Consulta creada ✓','ok'); }
+    closeAMod('consultaMod');
+    loadAConsultas();
+    loadConsultasEnTurnos();
+  } catch(e){ toast('Error: '+e.message,'err'); }
+  finally { btn.disabled=false; btn.textContent='Guardar'; }
+}
+
+async function toggleConsulta(id, activo) {
+  try {
+    await getSB().from('consultation_types').update({activo}).eq('id',id);
+    toast(activo?'Consulta activada ✓':'Consulta desactivada','ok');
+    loadAConsultas(); loadConsultasEnTurnos();
+  } catch(e){ toast('Error: '+e.message,'err'); }
+}
+
+async function deleteConsulta(id, nombre) {
+  if(!confirm(`¿Eliminar "${nombre}"? No se puede deshacer.`)) return;
+  try {
+    await getSB().from('consultation_types').delete().eq('id',id);
+    toast('Consulta eliminada','ok');
+    loadAConsultas(); loadConsultasEnTurnos();
+  } catch(e){ toast('Error: '+e.message,'err'); }
+}
+
+async function loadConsultasEnTurnos() {
+  let consultas = [];
+  try {
+    const sb = getSB();
+    const { data } = await sb.from('consultation_types').select('*').eq('activo',true).order('sort_order');
+    consultas = data?.length ? data : CONSULTAS_DEFAULT;
+  } catch(e){ consultas = CONSULTAS_DEFAULT; }
+  const container = document.querySelector('.tipo-options');
+  if(!container) return;
+  container.innerHTML = consultas.map(c=>`
+    <div class="tipo-opt" data-tipo="${c.id}" data-precio="${c.precio}" data-dur="${c.duracion||'45 min'}" data-modalidad="${c.modalidad||'ambas'}" onclick="selTipo(this)">
+      <div class="tipo-icon">${c.icono||'📋'}</div>
+      <div class="tipo-info">
+        <div class="tipo-name">${c.nombre}</div>
+        <div class="tipo-desc">${c.descripcion||''} · ${c.duracion||''}</div>
+      </div>
+      <div class="tipo-price">${fmt(c.precio)}</div>
+      <div class="tipo-check">✓</div>
+    </div>`).join('');
+}
+
+/* ── HORARIOS BLOQUEADOS ── */
+async function loadABlocked() {
+  const tbody = document.getElementById('aBBody');
+  try {
+    const sb = getSB();
+    const { data } = await sb.from('blocked_slots').select('*').order('date').order('time');
+    if (!data?.length) { tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Sin bloqueados</td></tr>'; return; }
+    tbody.innerHTML = data.map(b=>`<tr>
+      <td>${formatADate(b.date)}</td>
+      <td>${b.time?b.time.slice(0,5)+' hs':'Todo el día'}</td>
+      <td>${b.reason||'—'}</td>
+      <td><button onclick="deleteABlock('${b.id}')" style="padding:.32rem .75rem;border-radius:100px;font-size:.7rem;font-weight:600;border:1.5px solid rgba(196,97,74,.3);color:#C4614A;background:#fff;cursor:pointer;font-family:var(--fb)">✕ Borrar</button></td>
+    </tr>`).join('');
+  } catch(e) {}
+}
+async function aBlockSlot() {
+  const date=document.getElementById('bDate').value; if(!date){toast('Seleccioná una fecha','err');return;}
+  try { await getSB().from('blocked_slots').insert({date,time:document.getElementById('bTime').value||null,reason:document.getElementById('bReason').value.trim()||null}); toast('Horario bloqueado ✓','ok'); loadABlocked(); } catch(e){toast('Error: '+e.message,'err');}
+}
+async function deleteABlock(id) {
+  try { await getSB().from('blocked_slots').delete().eq('id',id); loadABlocked(); } catch(e){}
+}
+
+/* ── MODAL ── */
+function openAMod(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeAMod(id) { document.getElementById(id)?.classList.remove('open'); }
+document.addEventListener('click', e => { if(e.target.classList.contains('amb')) e.target.classList.remove('open'); });
+
+/* ── HELPERS ── */
+function formatADate(str) {
+  if(!str) return '—';
+  const [y,m,d] = str.split('-');
+  return `${parseInt(d)} de ${AMONTHS_L[parseInt(m)-1]} ${y}`;
+}
+function timeAgoA(str) {
+  const diff = Date.now() - new Date(str);
+  const m = Math.floor(diff/60000);
+  if(m<60) return `hace ${m}m`;
+  if(m<1440) return `hace ${Math.floor(m/60)}h`;
+  return `hace ${Math.floor(m/1440)}d`;
+}
+
+/* ══ INIT ADMIN ══ */
+function initAdminPage() {
+  const sb = getSB();
+  if(sb) sb.auth.getUser().then(({data:{user}})=>{ 
+    if(user){ const n=document.getElementById('admName'); if(n) n.textContent=user.email.split('@')[0]; }
+  }).catch(()=>{});
+  loadADash();
+}
+function updateNavUI(role) {
+  const isAdmin = role === 'admin';
+  const isUser  = role === 'user';
+  const isGuest = !role;
+
   document.getElementById('navBtnGuest').style.display  = isGuest  ? ''     : 'none';
   document.getElementById('navBtnAdmin').style.display  = isAdmin  ? 'flex' : 'none';
   document.getElementById('navBtnUser').style.display   = isUser   ? ''     : 'none';
   document.getElementById('navBtnLogout').style.display = !isGuest ? ''     : 'none';
 
-  // Mobile
   document.getElementById('mobBtnGuest').style.display  = isGuest  ? ''     : 'none';
   document.getElementById('mobBtnAdmin').style.display  = isAdmin  ? 'flex' : 'none';
   document.getElementById('mobBtnUser').style.display   = isUser   ? 'flex' : 'none';
+
+  // Botón flotante admin
+  const qb = document.getElementById('adminQuickBtn');
+  if (qb) qb.style.display = isAdmin ? 'flex' : 'none';
 }
 
 async function checkSession() {
@@ -1844,6 +3625,8 @@ async function doLogout() {
 
 // Ejecutar al cargar
 checkSession();
+// Cargar consultas desde DB al iniciar (si Supabase está configurado)
+loadConsultasEnTurnos();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </body>
