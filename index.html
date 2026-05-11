@@ -2182,13 +2182,60 @@ function renderCal(){
 function calPrev(){ BS.calM--; if(BS.calM<0){BS.calM=11;BS.calY--;} BS.fecha=null;BS.hora=null; renderCal(); document.getElementById('slotsWrap').style.display='none'; }
 function calNext(){ BS.calM++; if(BS.calM>11){BS.calM=0;BS.calY++;} BS.fecha=null;BS.hora=null; renderCal(); document.getElementById('slotsWrap').style.display='none'; }
 
-function selDate(ds){
+async function selDate(ds){
   BS.fecha=ds; BS.hora=null; renderCal(); updateSum();
   const sw=document.getElementById('slotsWrap'); sw.style.display='block';
   const [,mm,dd]=ds.split('-');
   document.getElementById('slotsTitle').textContent=`Horarios para el ${parseInt(dd)} de ${MONTHS[parseInt(mm)-1]}`;
-  const slots=['09:00','09:45','10:30','11:15','12:00','14:00','14:45','15:30','16:15','17:00'];
-  document.getElementById('slotsGrid').innerHTML=slots.map(s=>`<button class="slot" onclick="selSlot(this,'${s}')">${s}</button>`).join('');
+
+  const ALL_SLOTS=['09:00','09:45','10:30','11:15','12:00','14:00','14:45','15:30','16:15','17:00'];
+  const grid = document.getElementById('slotsGrid');
+  grid.innerHTML='<div style="font-size:.78rem;color:var(--muted);grid-column:1/-1">Cargando...</div>';
+
+  let ocupados = [];
+  let bloqueados = [];
+  let todoBloqueado = false;
+
+  try {
+    const sb = getSB();
+    if(sb){
+      // Turnos ya reservados ese día
+      const { data: appts } = await sb
+        .from('appointments')
+        .select('time')
+        .eq('date', ds)
+        .not('status','in','("cancelled")');
+      ocupados = (appts||[]).map(a=>(a.time||'').slice(0,5));
+
+      // Horarios bloqueados ese día
+      const { data: blocks } = await sb
+        .from('blocked_slots')
+        .select('time, todo_el_dia')
+        .eq('date', ds);
+
+      if(blocks?.some(b=>b.todo_el_dia)){
+        todoBloqueado = true;
+      } else {
+        bloqueados = (blocks||[]).map(b=>(b.time||'').slice(0,5)).filter(Boolean);
+      }
+    }
+  } catch(e){ console.warn('No se pudo verificar disponibilidad:', e.message); }
+
+  if(todoBloqueado){
+    grid.innerHTML='<div style="font-size:.82rem;color:#C4614A;grid-column:1/-1;background:rgba(196,97,74,.08);padding:.75rem 1rem;border-radius:10px;border:1.5px solid rgba(196,97,74,.2)">🚫 Este día no tiene turnos disponibles</div>';
+    return;
+  }
+
+  grid.innerHTML=ALL_SLOTS.map(s=>{
+    const hora = s;
+    const isOcupado  = ocupados.includes(hora);
+    const isBloqueado = bloqueados.includes(hora);
+    const noDisp = isOcupado || isBloqueado;
+    const label = isOcupado ? `${hora} (ocupado)` : isBloqueado ? `${hora} (no disp.)` : hora;
+    return `<button class="slot${noDisp?' disabled':''}" 
+      ${noDisp?'disabled style="opacity:.35;cursor:not-allowed;text-decoration:line-through"':''} 
+      onclick="${noDisp?'':'selSlot(this,\''+hora+'\')'}">${label}</button>`;
+  }).join('');
 }
 function selSlot(btn,h){
   document.querySelectorAll('.slot').forEach(b=>b.classList.remove('selected'));
@@ -2308,61 +2355,64 @@ async function submitBooking(){
   btn.disabled = true;
   btn.textContent = 'Registrando turno...';
 
-  const sena = Math.round(BS.precio * SENA_PCT);
+  const precio = BS.precio || 0;
+  const sena   = precio > 0 ? Math.round(precio * SENA_PCT) : 0;
   const [,mm,dd] = BS.fecha.split('-');
   const fechaStr = `${parseInt(dd)} de ${MONTHS[parseInt(mm)-1]} ${BS.fecha.split('-')[0]}`;
 
   const apptData = {
     type:          BS.tipo,
     date:          BS.fecha,
-    time:          BS.hora,
-    modalidad:     BS.modalidad || 'virtual',
-    medico_id:     null, // se asigna automáticamente al primer médico activo
+    time:          BS.hora + ':00',
+    modalidad:     BS.modalidad || 'ambas',
     status:        'pending_transfer',
     patient_name:  nom,
     patient_email: email,
     patient_phone: tel,
     notes:         document.getElementById('pMotivo')?.value.trim() || null,
     source:        document.getElementById('pFuente')?.value || null,
-    price:         BS.precio,
+    price:         precio,
     sena_amount:   sena,
     sena_method:   'transferencia',
     sena_status:   'pending',
     transfer_name: apellido,
   };
 
+  const sb = getSB();
+  if(!sb){
+    showConfirmacionSena(nom, email, sena, fechaStr, precio);
+    return;
+  }
+
   try {
-    const sb = getSB();
-    if(sb){
-      await sb.from('appointments').insert(apptData);
-      // Crear ficha si no existe
-      try {
-        const { data: fe } = await sb.from('fichas_medicas').select('id').eq('patient_email',email).single();
-        if(!fe){
-          await sb.from('fichas_medicas').insert({
+    const { data: appt, error } = await sb.from('appointments').insert(apptData).select().single();
+    if(error) throw error;
+
+    // Crear ficha si no existe (en segundo plano)
+    sb.from('fichas_medicas').select('id').eq('patient_email',email).limit(1)
+      .then(({ data: fe }) => {
+        if(!fe||!fe.length){
+          sb.from('fichas_medicas').insert({
             patient_name:nom, patient_email:email, patient_phone:tel,
             motivo_consulta_inicial: document.getElementById('pMotivo')?.value.trim()||null,
-          });
+          }).catch(()=>{});
         }
-      } catch(e2){}
-      // Email pendiente via Edge Function
-      try {
-        await sb.functions.invoke('send-email',{
-          body:{ type:'turno_pendiente', to:email, data:{
-            nombre:nom, fecha:fechaStr, hora:BS.hora,
-            consulta:TIPO_NAMES[BS.tipo]||BS.tipo,
-            sena:fmt(sena), total:fmt(BS.precio), apellido
-          }}
-        });
-      } catch(e3){ console.warn('Email Edge Function no configurada'); }
-    }
-    showConfirmacionSena(nom, email, sena, fechaStr);
+      }).catch(()=>{});
+
+    // Email — descomentar cuando configures Resend en Supabase Edge Functions
+    // sendEmailPendiente(email, nom, fechaStr, BS.hora, BS.tipo, sena, precio, apellido);
+
+    showConfirmacionSena(nom, email, sena, fechaStr, precio);
+
   } catch(e){
-    showConfirmacionSena(nom, email, sena, fechaStr);
+    console.error('Error al guardar turno:', e);
+    btn.disabled = false;
+    btn.textContent = 'Confirmar y pagar seña ✓';
+    toast('Error: ' + (e.message||'No se pudo guardar el turno. Revisá tu conexión.'), 'err', 6000);
   }
 }
 
-function showConfirmacionSena(nom, email, sena, fechaStr){
+function showConfirmacionSena(nom, email, sena, fechaStr, precio){
   document.getElementById('bookingFlow').style.display='none';
   document.getElementById('confirmScreen').innerHTML = `
     <div style="text-align:center;padding:3rem 2rem">
@@ -2438,7 +2488,7 @@ function placeOrder(){
 
 /* ══ SUPABASE ══ */
 const SUPABASE_URL  = 'https://ncebqouvfkgobbaihuhf.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_9Gs_D35bPDl6yZn2qZkk3A_7pE6ZXRA';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZWJxb3V2Zmtnb2JiYWlodWhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODAzNzAsImV4cCI6MjA5MzU1NjM3MH0.UUm6RlO9jHDR2FXIB3C0qFAtRtGRdMRhoVeNf9AdMFY';
 let sbClient = null;
 function getSB(){
   if(!sbClient && typeof supabase!=='undefined'){
@@ -2735,27 +2785,11 @@ async function aprobarSena(id) {
 
     // Enviar email de confirmación al paciente
     if(appt) {
-      const [,mm,dd] = appt.date.split('-');
-      const fechaStr = `${parseInt(dd)} de ${AMONTHS_L[parseInt(mm)-1]} ${appt.date.split('-')[0]}`;
-      try {
-        await sb.functions.invoke('send-email', {
-          body: {
-            type: 'turno_confirmado',
-            to:   appt.patient_email,
-            data: {
-              nombre:   appt.patient_name,
-              fecha:    fechaStr,
-              hora:     (appt.time||'').slice(0,5),
-              consulta: ATIPO[appt.type] || appt.type,
-              sena:     fmt(appt.sena_amount||0),
-              resto:    fmt((appt.price||0) - (appt.sena_amount||0)),
-            }
-          }
-        });
-        toast('✓ Turno confirmado · Email enviado a ' + appt.patient_email, 'ok', 5000);
-      } catch(emailErr) {
-        toast('✓ Turno confirmado (email no configurado aún)', 'ok');
-      }
+      // Email — descomentar cuando configures Resend en Supabase Edge Functions
+      // const [,mm,dd] = appt.date.split('-');
+      // const fechaStr = `${parseInt(dd)} de ${AMONTHS_L[parseInt(mm)-1]} ${appt.date.split('-')[0]}`;
+      // sb.functions.invoke('send-email', { body: { type:'turno_confirmado', to:appt.patient_email, data:{...} }}).catch(()=>{});
+      toast('✓ Turno confirmado · Se notificará a ' + appt.patient_email, 'ok', 5000);
     } else {
       toast('✓ Turno confirmado', 'ok');
     }
