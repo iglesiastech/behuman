@@ -1968,6 +1968,7 @@ function goTo(id){
   if(id==='tienda')   renderProducts();
   if(id==='checkout') renderCkItems();
   if(id==='admin')    initAdminPage();
+  if(id==='turnos')   loadConsultasEnTurnos();
 }
 function closeMob(){ document.getElementById('mobMenu').classList.remove('open'); }
 
@@ -3522,11 +3523,22 @@ async function deleteConsulta(id, nombre) {
 async function loadConsultasEnTurnos() {
   let consultas = [];
   try {
+    // Esperar hasta que Supabase esté disponible (máx 5 segundos)
+    let intentos = 0;
+    while(!getSB() && intentos < 20) {
+      await new Promise(r => setTimeout(r, 250));
+      intentos++;
+    }
     const sb = getSB();
-    const { data } = await sb.from('consultation_types').select('*').eq('activo',true).order('sort_order');
+    if(!sb) throw new Error('Supabase no disponible');
+    const { data, error } = await sb.from('consultation_types').select('*').eq('activo',true).order('sort_order');
+    if(error) throw error;
     consultas = data?.length ? data : CONSULTAS_DEFAULT;
-  } catch(e){ consultas = CONSULTAS_DEFAULT; }
-  const container = document.querySelector('.tipo-options');
+  } catch(e){
+    console.warn('Usando consultas por defecto:', e.message);
+    consultas = CONSULTAS_DEFAULT;
+  }
+  const container = document.querySelector('#tipoOptions');
   if(!container) return;
   container.innerHTML = consultas.map(c=>`
     <div class="tipo-opt" data-tipo="${c.id}" data-precio="${c.precio}" data-dur="${c.duracion||'45 min'}" data-modalidad="${c.modalidad||'ambas'}" onclick="selTipo(this)">
@@ -3535,7 +3547,7 @@ async function loadConsultasEnTurnos() {
         <div class="tipo-name">${c.nombre}</div>
         <div class="tipo-desc">${c.descripcion||''} · ${c.duracion||''}</div>
       </div>
-      <div class="tipo-price">${fmt(c.precio)}</div>
+      <div class="tipo-price">${c.precio > 0 ? fmt(c.precio) : 'A confirmar'}</div>
       <div class="tipo-check">✓</div>
     </div>`).join('');
 }
@@ -3659,8 +3671,15 @@ async function doLogout() {
 
 // Ejecutar al cargar
 checkSession();
-// Cargar consultas desde DB al iniciar (si Supabase está configurado)
-loadConsultasEnTurnos();
+// Cargar consultas desde Supabase al iniciar
+// Espera a que el script de Supabase esté disponible
+(function waitForSupabase() {
+  if(typeof supabase !== 'undefined') {
+    loadConsultasEnTurnos();
+  } else {
+    setTimeout(waitForSupabase, 100);
+  }
+})();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </body>
