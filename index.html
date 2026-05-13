@@ -1458,27 +1458,51 @@ const SENA_STATUS_LABELS = { pending:'Pendiente', approved:'Aprobada', rejected:
 const TURNO_STATUS_LABELS = { pending:'Pendiente', pending_payment:'Esperando pago', pending_transfer:'Esperando transferencia', confirmed:'Confirmado', cancelled:'Cancelado', completed:'Completado' };
 
 async function loadASenas() {
-  const sb = getSB(); if(!sb) return;
   const filterStatus = document.getElementById('senaFilterStatus')?.value || '';
+  const today = new Date().toISOString().split('T')[0];
+  const h = {
+    'apikey': SUPABASE_ANON,
+    'Authorization': 'Bearer ' + (_authToken || SUPABASE_ANON),
+    'Content-Type': 'application/json'
+  };
+
   try {
-    const { data: pend } = await sb.from('appointments').select('*').eq('sena_method','transferencia').eq('sena_status','pending').order('created_at',{ascending:false});
-    const today = new Date().toISOString().split('T')[0];
-    const { data: aprovHoy } = await sb.from('appointments').select('sena_amount').eq('sena_status','approved').gte('updated_at',today);
-    const { data: allAprov } = await sb.from('appointments').select('sena_amount').eq('sena_status','approved');
-    const pendCount = pend?.length||0;
-    document.getElementById('sSenaPend').textContent  = pendCount;
-    document.getElementById('sSenaAprov').textContent = aprovHoy?.length||0;
-    document.getElementById('sSenaMonto').textContent = fmt((allAprov||[]).reduce((s,r)=>s+(r.sena_amount||0),0));
-    document.getElementById('pendBadgeCount').textContent = pendCount;
+    // Pendientes
+    const r1 = await fetch(`${SUPABASE_URL}/rest/v1/appointments?sena_method=eq.transferencia&sena_status=eq.pending&order=created_at.desc`, {headers:h});
+    const pend = await r1.json();
+
+    // Aprobadas hoy
+    const r2 = await fetch(`${SUPABASE_URL}/rest/v1/appointments?sena_status=eq.approved&updated_at=gte.${today}&select=sena_amount`, {headers:h});
+    const aprovHoy = await r2.json();
+
+    // Todas aprobadas (para monto total)
+    const r3 = await fetch(`${SUPABASE_URL}/rest/v1/appointments?sena_status=eq.approved&select=sena_amount`, {headers:h});
+    const allAprov = await r3.json();
+
+    // Historial con filtro opcional
+    const filterQ = filterStatus ? `&sena_status=eq.${filterStatus}` : '';
+    const r4 = await fetch(`${SUPABASE_URL}/rest/v1/appointments?sena_method=neq.null${filterQ}&order=created_at.desc`, {headers:h});
+    const hist = await r4.json();
+
+    const pendCount = Array.isArray(pend) ? pend.length : 0;
+    const el_sp = document.getElementById('sSenaPend');
+    const el_sa = document.getElementById('sSenaAprov');
+    const el_sm = document.getElementById('sSenaMonto');
+    const el_pb = document.getElementById('pendBadgeCount');
     const badge = document.getElementById('senasBadge');
+
+    if(el_sp) el_sp.textContent = pendCount;
+    if(el_sa) el_sa.textContent = Array.isArray(aprovHoy) ? aprovHoy.length : 0;
+    if(el_sm) el_sm.textContent = fmt((Array.isArray(allAprov)?allAprov:[]).reduce((s,r)=>s+(r.sena_amount||0),0));
+    if(el_pb) el_pb.textContent = pendCount;
     if(badge){ badge.textContent=pendCount; badge.style.display=pendCount>0?'':'none'; }
-    renderSPend(pend||[]);
-    let q = sb.from('appointments').select('*').not('sena_method','is',null).order('created_at',{ascending:false});
-    if(filterStatus) q = q.eq('sena_status',filterStatus);
-    const { data: hist } = await q;
-    renderSHist(hist||[]);
+
+    renderSPend(Array.isArray(pend) ? pend : []);
+    renderSHist(Array.isArray(hist) ? hist : []);
+
   } catch(e) {
-    document.getElementById('sPendBody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Error: ${e.message}</td></tr>`;
+    const tb = document.getElementById('sPendBody');
+    if(tb) tb.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Error: ${e.message}</td></tr>`;
   }
 }
 
@@ -1528,39 +1552,72 @@ function renderSHist(rows) {
 async function aprobarSena(id) {
   if(!confirm('¿Confirmar que recibiste la transferencia y aprobar el turno?')) return;
   try {
-    const sb = getSB();
-    // Traer datos del turno para el email
-    const { data: appt } = await sb.from('appointments').select('*').eq('id',id).single();
+    const headers = {
+      'apikey': SUPABASE_ANON,
+      'Authorization': 'Bearer ' + (_authToken || SUPABASE_ANON),
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    };
 
-    await sb.from('appointments').update({
-      sena_status: 'approved',
-      status: 'confirmed',
-      updated_at: new Date().toISOString()
-    }).eq('id', id);
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/appointments?id=eq.${id}`,
+      {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({
+          sena_status: 'approved',
+          status: 'confirmed',
+          updated_at: new Date().toISOString()
+        })
+      }
+    );
 
-    // Enviar email de confirmación al paciente
-    if(appt) {
-      // Email — descomentar cuando configures Resend en Supabase Edge Functions
-      // const [,mm,dd] = appt.date.split('-');
-      // const fechaStr = `${parseInt(dd)} de ${AMONTHS_L[parseInt(mm)-1]} ${appt.date.split('-')[0]}`;
-      // sb.functions.invoke('send-email', { body: { type:'turno_confirmado', to:appt.patient_email, data:{...} }}).catch(()=>{});
-      toast('✓ Turno confirmado · Se notificará a ' + appt.patient_email, 'ok', 5000);
-    } else {
-      toast('✓ Turno confirmado', 'ok');
+    if(!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.message || res.statusText);
     }
 
+    toast('✓ Turno confirmado y seña aprobada', 'ok', 4000);
     loadASenas();
     loadADash();
-  } catch(e) { toast('Error: '+e.message, 'err'); }
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+  }
 }
 
 async function rechazarSena(id) {
   if(!confirm('¿Rechazar esta transferencia? El turno quedará cancelado.')) return;
   try {
-    await getSB().from('appointments').update({sena_status:'rejected',status:'cancelled',updated_at:new Date().toISOString()}).eq('id',id);
-    toast('Transferencia rechazada','ok');
+    const headers = {
+      'apikey': SUPABASE_ANON,
+      'Authorization': 'Bearer ' + (_authToken || SUPABASE_ANON),
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    };
+
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/appointments?id=eq.${id}`,
+      {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({
+          sena_status: 'rejected',
+          status: 'cancelled',
+          updated_at: new Date().toISOString()
+        })
+      }
+    );
+
+    if(!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.message || res.statusText);
+    }
+
+    toast('Transferencia rechazada y turno cancelado', 'ok');
     loadASenas();
-  } catch(e) { toast('Error: '+e.message,'err'); }
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+  }
 }
 
 /* ── DASHBOARD ── */
