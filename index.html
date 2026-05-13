@@ -1963,9 +1963,10 @@ async function initCalendario() {
 
 async function loadMedicos() {
   try {
-    const sb = getSB();
-    const { data } = await sb.from('medicos').select('*').eq('activo', true).order('nombre');
-    calState.medicos = data || [];
+    const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/medicos?activo=eq.true&order=nombre`, {headers:h});
+    const data = await r.json();
+    calState.medicos = Array.isArray(data) ? data : [];
   } catch(e) {
     calState.medicos = [{ id:'', nombre:'Dra. Mariel Dobenau', color:'#3A7D8C' }];
   }
@@ -2004,19 +2005,41 @@ function filterCalMedico(id, btn, color) {
 }
 
 async function loadCalData() {
-  const sb = getSB(); if(!sb) return;
   const firstDay = `${calState.year}-${String(calState.month+1).padStart(2,'0')}-01`;
   const lastDay  = `${calState.year}-${String(calState.month+1).padStart(2,'0')}-${new Date(calState.year, calState.month+1, 0).getDate()}`;
-  try {
-    let apptQ = sb.from('appointments').select('*').gte('date', firstDay).lte('date', lastDay).not('status','eq','cancelled');
-    if(calState.medicoId) apptQ = apptQ.eq('medico_id', calState.medicoId);
-    const { data: appts } = await apptQ.order('time');
-    calState.appts = appts || [];
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
 
-    let blockQ = sb.from('blocked_slots').select('*').gte('date', firstDay).lte('date', lastDay);
-    if(calState.medicoId) blockQ = blockQ.or(`medico_id.eq.${calState.medicoId},medico_id.is.null`);
-    const { data: blocked } = await blockQ;
-    calState.blocked = blocked || [];
+  try {
+    // Si hay médica seleccionada, obtener sus tipos de consulta
+    let consultaIds = [];
+    if(calState.medicoId) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/medico_consultas?medico_id=eq.${calState.medicoId}&select=consulta_id`, {headers:h});
+      const mc = await r.json();
+      consultaIds = Array.isArray(mc) ? mc.map(x=>x.consulta_id) : [];
+    }
+
+    // Traer turnos del mes
+    let apptUrl = `${SUPABASE_URL}/rest/v1/appointments?date=gte.${firstDay}&date=lte.${lastDay}&status=neq.cancelled&order=time`;
+    if(calState.medicoId) {
+      // Filtrar por médica asignada al turno O por tipo de consulta que la médica realiza
+      if(consultaIds.length) {
+        apptUrl += `&or=(medico_id.eq.${calState.medicoId},type.in.(${consultaIds.join(',')}))`;
+      } else {
+        apptUrl += `&medico_id=eq.${calState.medicoId}`;
+      }
+    }
+    const r1 = await fetch(apptUrl, {headers:h});
+    calState.appts = await r1.json() || [];
+
+    // Traer bloqueados del mes
+    let blockUrl = `${SUPABASE_URL}/rest/v1/blocked_slots?date=gte.${firstDay}&date=lte.${lastDay}`;
+    if(calState.medicoId) blockUrl += `&or=(medico_id.eq.${calState.medicoId},medico_id.is.null)`;
+    const r2 = await fetch(blockUrl, {headers:h});
+    calState.blocked = await r2.json() || [];
+
+    if(!Array.isArray(calState.appts)) calState.appts = [];
+    if(!Array.isArray(calState.blocked)) calState.blocked = [];
+
   } catch(e) {
     calState.appts = []; calState.blocked = [];
   }
@@ -2626,19 +2649,49 @@ function renderConsultasGrid(consultas) {
     </div>`).join('');
 }
 
-function openConsulta(c) {
-  document.getElementById('cEditId').value   = c?.id||'';
-  document.getElementById('cNombre').value   = c?.nombre||'';
-  document.getElementById('cDesc').value     = c?.descripcion||'';
-  document.getElementById('cPrecio').value   = c?.precio||'';
-  document.getElementById('cDuracion').value  = c?.duracion||'';
-  document.getElementById('cModalidad').value    = c?.modalidad||'ambas';
-  document.getElementById('cSoloPrevios').value  = c?.solo_pacientes_previos ? 'true' : 'false';
-  document.getElementById('cIcono').value         = c?.icono||'';
-  document.getElementById('cActivo').value        = c?.activo!==false?'true':'false';
-  document.getElementById('consultaModTitle').textContent = c?.id ? `Editar: ${c.nombre}` : 'Nueva consulta';
+async function openConsulta(c) {
+  document.getElementById('cEditId').value         = c?.id||'';
+  document.getElementById('cNombre').value         = c?.nombre||'';
+  document.getElementById('cDesc').value           = c?.descripcion||'';
+  document.getElementById('cPrecio').value         = c?.precio||'';
+  document.getElementById('cDuracion').value       = c?.duracion||'';
+  document.getElementById('cModalidad').value      = c?.modalidad||'ambas';
+  document.getElementById('cSoloPrevios').value    = c?.solo_pacientes_previos ? 'true' : 'false';
+  document.getElementById('cIcono').value          = c?.icono||'';
+  document.getElementById('cActivo').value         = c?.activo!==false?'true':'false';
+  document.getElementById('consultaModTitle').textContent = c?.id ? 'Editar: '+c.nombre : 'Nueva consulta';
+
+  // Cargar médicas con checkboxes
+  const wrap = document.getElementById('cMedicasWrap');
+  if(wrap) {
+    wrap.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">Cargando...</div>';
+    try {
+      const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + (_authToken||SUPABASE_ANON) };
+      const r1 = await fetch(SUPABASE_URL+'/rest/v1/medicos?activo=eq.true&order=nombre', {headers:h});
+      const medicos = await r1.json();
+      let asignadas = [];
+      if(c?.id) {
+        const r2 = await fetch(SUPABASE_URL+'/rest/v1/medico_consultas?consulta_id=eq.'+c.id+'&select=medico_id', {headers:h});
+        const mc = await r2.json();
+        asignadas = (Array.isArray(mc)?mc:[]).map(x=>x.medico_id);
+      }
+      if(!Array.isArray(medicos)||!medicos.length) {
+        wrap.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">No hay médicas cargadas aún.</div>';
+      } else {
+        wrap.innerHTML = medicos.map(m =>
+          '<label style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;cursor:pointer;padding:.3rem 0">'+
+          '<input type="checkbox" value="'+m.id+'" '+(asignadas.includes(m.id)?'checked':'')+' style="accent-color:var(--teal);width:15px;height:15px">'+
+          '<span style="width:10px;height:10px;border-radius:50%;background:'+(m.color||'#3A7D8C')+';flex-shrink:0;display:inline-block"></span>'+
+          ' '+m.nombre+' <span style="color:var(--muted);font-size:.75rem">· '+(m.especialidad||'')+'</span></label>'
+        ).join('');
+      }
+    } catch(e) {
+      wrap.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">Error: '+e.message+'</div>';
+    }
+  }
   openAMod('consultaMod');
 }
+
 
 async function saveConsulta() {
   const nombre = document.getElementById('cNombre').value.trim();
@@ -2658,8 +2711,33 @@ async function saveConsulta() {
   btn.disabled=true; btn.textContent='Guardando...';
   try {
     const sb = getSB();
-    if(id){ await sb.from('consultation_types').update(data).eq('id',id); toast('Consulta actualizada ✓','ok'); }
-    else  { data.sort_order=Date.now(); await sb.from('consultation_types').insert(data); toast('Consulta creada ✓','ok'); }
+    let consultaId = id;
+    if(id){
+      await sb.from('consultation_types').update(data).eq('id',id);
+      toast('Consulta actualizada ✓','ok');
+    } else {
+      data.sort_order = Date.now();
+      const { data: nueva } = await sb.from('consultation_types').insert(data);
+      consultaId = nueva?.id || id;
+      toast('Consulta creada ✓','ok');
+    }
+
+    // Guardar médicas asignadas
+    if(consultaId) {
+      const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON), 'Content-Type':'application/json' };
+      // Borrar asignaciones anteriores
+      await fetch(`${SUPABASE_URL}/rest/v1/medico_consultas?consulta_id=eq.${consultaId}`, { method:'DELETE', headers:h });
+      // Insertar las nuevas
+      const checks = [...document.querySelectorAll('#cMedicasWrap input[type="checkbox"]:checked')];
+      if(checks.length) {
+        const rows = checks.map(cb => ({ medico_id: cb.value, consulta_id: consultaId }));
+        await fetch(`${SUPABASE_URL}/rest/v1/medico_consultas`, {
+          method: 'POST', headers: {...h, 'Prefer':'return=minimal'},
+          body: JSON.stringify(rows)
+        });
+      }
+    }
+
     closeAMod('consultaMod');
     loadAConsultas();
     loadConsultasEnTurnos();
@@ -4627,8 +4705,15 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
             <option value="false">Inactiva — no se muestra</option>
           </select>
         </div>
+        <div class="form-group">
+          <label class="form-label">Médicas que realizan esta consulta</label>
+          <div id="cMedicasWrap" style="display:flex;flex-direction:column;gap:.4rem;background:var(--cream);border-radius:10px;padding:.75rem;min-height:40px">
+            <div style="font-size:.78rem;color:var(--muted)">Cargando médicas...</div>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">Las consultas aparecerán en el calendario de cada médica seleccionada.</div>
+        </div>
         <div style="background:rgba(58,125,140,.07);border-radius:10px;padding:.75rem 1rem;font-size:.78rem;color:var(--teal)">
-          💡 Los cambios se reflejan en la página de turnos automáticamente.
+          💡 Los cambios se reflejan en el calendario y la página de turnos automáticamente.
         </div>
       </div>
     </div>
