@@ -1373,43 +1373,63 @@ async function doRegister(){
   const p1    = document.getElementById('rPass').value;
   const p2    = document.getElementById('rPass2').value;
 
-  if(!nom || !email || !p1){ showErr('Completá todos los campos'); return; }
-  if(p1 !== p2)             { showErr('Las contraseñas no coinciden'); return; }
-  if(p1.length < 8)         { showErr('La contraseña debe tener al menos 8 caracteres'); return; }
-
-  const sb = getSB();
-  if(!sb){ showErr('Supabase no está configurado.'); return; }
+  if(!nom||!email||!p1){ showErr('Completá todos los campos'); return; }
+  if(p1 !== p2)         { showErr('Las contraseñas no coinciden'); return; }
+  if(p1.length < 6)     { showErr('La contraseña debe tener al menos 6 caracteres'); return; }
 
   const btn = document.getElementById('rBtn');
-  btn.disabled = true;
-  btn.textContent = 'Creando cuenta...';
+  btn.disabled = true; btn.textContent = 'Creando cuenta...';
 
-  try{
-    const { data, error } = await sb.auth.signUp({
-      email,
-      password: p1,
-      options: { data: { full_name: nom } }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: p1, data: { full_name: nom } })
     });
-    if(error) throw error;
+    const data = await res.json();
 
-    if(data.user && !data.session){
-      // Requiere confirmación de email
-      toast('¡Cuenta creada! Revisá tu email para confirmarla.', 'ok');
-      switchLoginTab('login');
-    } else if(data.session){
-      await afterLogin(data.user);
+    if(!res.ok) {
+      const msgs = {
+        'User already registered': 'Ya existe una cuenta con ese email. Iniciá sesión.',
+        'Password should be at least 6 characters': 'La contraseña debe tener al menos 6 caracteres.',
+        'email rate limit exceeded': 'Demasiados intentos. Esperá unos minutos.',
+      };
+      throw new Error(msgs[data.msg||data.error_description] || data.msg || data.error_description || 'Error al crear la cuenta');
     }
-  }catch(e){
-    const msgs = {
-      'User already registered': 'Ya existe una cuenta con ese email.',
-      'Password should be at least 6 characters': 'La contraseña debe tener al menos 6 caracteres.',
-    };
-    showErr(msgs[e.message] || e.message);
-  }finally{
-    btn.disabled = false;
-    btn.textContent = 'Crear cuenta';
+
+    if(data.access_token) {
+      // Sin verificación de email — loguear directo
+      _authToken = data.access_token;
+      localStorage.setItem('bh_token', data.access_token);
+      if(data.refresh_token) localStorage.setItem('bh_refresh', data.refresh_token);
+      // Crear perfil
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+data.access_token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ id: data.user.id, full_name: nom, email })
+        });
+      } catch(e2) {}
+      await afterLogin(data.user);
+
+    } else if(data.id || (data.user && data.user.id)) {
+      // Requiere confirmación de email
+      const userId = data.id || data.user?.id;
+      document.getElementById('loginErr').style.display = 'none';
+      const div = document.createElement('div');
+      div.style.cssText = 'background:rgba(74,155,111,.08);border:1.5px solid rgba(74,155,111,.2);border-radius:12px;padding:1rem 1.1rem;font-size:.84rem;color:#2E7A52;line-height:1.65;margin-top:1rem;text-align:center';
+      div.innerHTML = '✅ <strong>¡Cuenta creada!</strong><br>Te enviamos un email a <strong>'+email+'</strong>.<br><span style="font-size:.78rem">Revisá tu bandeja de entrada y spam, y hacé clic en el link de confirmación.</span>';
+      btn.parentElement.insertBefore(div, btn.nextSibling);
+    } else {
+      throw new Error('Respuesta inesperada. Intentá de nuevo.');
+    }
+  } catch(e) {
+    showErr(e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Crear cuenta';
   }
 }
+
 
 async function doForgot(){
   const email = document.getElementById('lEmail').value.trim();
