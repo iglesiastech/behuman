@@ -2436,121 +2436,270 @@ function switchProgAdmTab(tab, btn) {
   btn.classList.add('active');
   document.getElementById('progAdm-contenido').style.display = tab==='contenido' ? '' : 'none';
   document.getElementById('progAdm-miembros').style.display  = tab==='miembros'  ? '' : 'none';
+  document.getElementById('progAdm-preview').style.display   = tab==='preview'   ? '' : 'none';
   if(tab==='contenido') loadProgContent();
   if(tab==='miembros')  loadProgMembers();
+  if(tab==='preview')   loadAdmPreview();
 }
+
+
+/* ── ADMIN: CONTENIDO DE PROGRAMAS (Módulos + Lecciones + Descargables) ── */
+
+let currentAdmModId  = null;
 
 async function loadProgContent() {
-  const sb = getSB();
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
   const list = document.getElementById('progAdmContentList');
   if(!list) return;
+  list.innerHTML = '<div style="color:var(--muted);font-size:.84rem;padding:.5rem">Cargando...</div>';
+
   try {
-    const { data: content } = await sb.from('program_content').select('*').eq('program_id', currentAdmProgId).order('week').order('sort_order');
-    if(!content?.length) { list.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">Sin contenido aún. Agregá el primero.</div>'; return; }
-    const TI = {video:'▶️',pdf:'📄',audio:'🎧',text:'📝',link:'🔗'};
-    const weeks = {};
-    content.forEach(c=>{ const w=c.week||1; if(!weeks[w]) weeks[w]=[]; weeks[w].push(c); });
-    let html='';
-    Object.entries(weeks).sort(([a],[b])=>+a-+b).forEach(([week,items])=>{
-      html+=`<div style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:.75rem 0 .4rem">Semana ${week}</div>`;
-      items.forEach(item=>{
-        html+=`<div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:#fff;border-radius:10px;margin-bottom:.45rem;border:1.5px solid var(--cream-dk)">
-          <div style="font-size:1.1rem">${TI[item.content_type]||'📄'}</div>
-          <div style="flex:1">
-            <div style="font-size:.86rem;font-weight:500">${item.title}</div>
-            <div style="font-size:.72rem;color:var(--muted)">${item.content_type}${item.duration_min?' · '+item.duration_min+' min':''} ${item.is_preview?'· 🔓 Preview gratis':''}</div>
-            ${item.url?`<div style="font-size:.7rem;color:var(--teal);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px">${item.url}</div>`:''}
-          </div>
-          <button onclick="deleteContent('${item.id}')" style="width:28px;height:28px;border-radius:50%;background:rgba(196,97,74,.08);color:#C4614A;border:none;cursor:pointer;font-size:.75rem">✕</button>
+    // Traer módulos
+    const r1 = await fetch(`${SUPABASE_URL}/rest/v1/program_modules?program_id=eq.${currentAdmProgId}&order=sort_order`, {headers:h});
+    const modulos = await r1.json();
+
+    // Para cada módulo, traer lecciones
+    for(let mod of (Array.isArray(modulos)?modulos:[])) {
+      const r2 = await fetch(`${SUPABASE_URL}/rest/v1/program_lessons?module_id=eq.${mod.id}&order=sort_order`, {headers:h});
+      mod.lecciones = await r2.json() || [];
+    }
+
+    // Traer descargables
+    const r3 = await fetch(`${SUPABASE_URL}/rest/v1/program_files?program_id=eq.${currentAdmProgId}&order=sort_order`, {headers:h});
+    const downloads = await r3.json() || [];
+
+    if(!Array.isArray(modulos)||!modulos.length) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:2rem;color:var(--muted)">
+          <div style="font-size:1.5rem;margin-bottom:.5rem">📚</div>
+          <p style="font-size:.85rem">Sin módulos todavía. Creá el primero.</p>
         </div>`;
-      });
-    });
-    list.innerHTML = html;
-  } catch(e) { list.innerHTML='<div style="color:var(--muted)">Error: '+e.message+'</div>'; }
+    } else {
+      list.innerHTML = modulos.map(mod=>`
+        <div style="border:1.5px solid var(--cream-dk);border-radius:12px;overflow:hidden;margin-bottom:.85rem">
+          <!-- Header módulo -->
+          <div style="background:var(--dark);padding:.85rem 1.1rem;display:flex;align-items:center;gap:.75rem">
+            <div style="font-family:var(--fd);color:var(--cream);font-size:.95rem;flex:1">${mod.title}</div>
+            <div style="display:flex;gap:.4rem">
+              <button onclick="openAddLesson('${mod.id}')" style="padding:.32rem .7rem;border-radius:100px;font-size:.68rem;font-weight:600;background:rgba(201,147,90,.2);color:var(--gold);border:none;cursor:pointer;font-family:var(--fb)">+ Lección</button>
+              <button onclick="openEditModuleModal('${mod.id}')" style="padding:.32rem .7rem;border-radius:100px;font-size:.68rem;font-weight:600;background:rgba(255,255,255,.1);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">✏️</button>
+              <button onclick="deleteModule('${mod.id}')" style="padding:.32rem .7rem;border-radius:100px;font-size:.68rem;font-weight:600;background:rgba(196,97,74,.2);color:#E07A66;border:none;cursor:pointer;font-family:var(--fb)">🗑️</button>
+            </div>
+          </div>
+          <!-- Lecciones -->
+          <div style="padding:.6rem">
+            ${mod.lecciones.length ? mod.lecciones.map((l,i)=>`
+              <div style="display:flex;align-items:center;gap:.65rem;padding:.6rem .75rem;background:#fff;border-radius:8px;margin-bottom:.35rem;border:1px solid #f0f0f0">
+                <div style="width:24px;height:24px;border-radius:50%;background:rgba(58,125,140,.1);color:var(--teal);font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
+                <div style="flex:1">
+                  <div style="font-size:.84rem;font-weight:500">${l.title}</div>
+                  <div style="font-size:.7rem;color:var(--muted)">${l.video_url?'▶ Video':'📄 Sin video'} ${l.duration_sec?'· '+Math.round(l.duration_sec/60)+' min':''}</div>
+                </div>
+                <div style="display:flex;gap:.3rem">
+                  <button onclick="editLesson(${JSON.stringify(l).replace(/"/g,'&quot;')})" style="padding:.28rem .6rem;border-radius:6px;font-size:.68rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">✏️</button>
+                  <button onclick="deleteLesson('${l.id}')" style="padding:.28rem .6rem;border-radius:6px;font-size:.68rem;font-weight:600;background:rgba(196,97,74,.1);color:#C4614A;border:1px solid rgba(196,97,74,.2);cursor:pointer;font-family:var(--fb)">✕</button>
+                </div>
+              </div>`).join('')
+            : '<div style="padding:.5rem .75rem;font-size:.8rem;color:var(--muted)">Sin lecciones en este módulo</div>'}
+          </div>
+        </div>`).join('');
+    }
+
+    // Sección descargables
+    list.innerHTML += `
+      <div style="margin-top:1.25rem;border-top:2px solid var(--cream-dk);padding-top:1rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">📎 Archivos descargables</div>
+          <button onclick="openAddDownload()" style="padding:.35rem .85rem;border-radius:100px;font-size:.72rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">+ Agregar</button>
+        </div>
+        <div id="downloadsList">${Array.isArray(downloads)&&downloads.length ? downloads.map(d=>`
+          <div style="display:flex;align-items:center;gap:.65rem;padding:.6rem .75rem;background:#fff;border-radius:8px;margin-bottom:.35rem;border:1px solid #f0f0f0">
+            <div style="font-size:1.1rem">📄</div>
+            <div style="flex:1">
+              <div style="font-size:.84rem;font-weight:500">${d.title}</div>
+              <div style="font-size:.7rem;color:var(--muted)">${d.description||d.file_type||''}</div>
+            </div>
+            <button onclick="deleteDownload('${d.id}')" style="padding:.28rem .6rem;border-radius:6px;font-size:.68rem;background:rgba(196,97,74,.1);color:#C4614A;border:1px solid rgba(196,97,74,.2);cursor:pointer;font-family:var(--fb)">✕</button>
+          </div>`).join('') : '<div style="font-size:.8rem;color:var(--muted);padding:.35rem">Sin archivos descargables</div>'}
+        </div>
+      </div>`;
+
+  } catch(e) { list.innerHTML = `<div style="color:var(--muted)">Error: ${e.message}</div>`; }
 }
 
-function openAddContent() {
-  document.getElementById('addContentForm').style.display='';
-  document.getElementById('ctTitle').value='';
-  document.getElementById('ctUrl').value='';
-  document.getElementById('ctDesc').value='';
-  document.getElementById('ctDur').value='';
-  document.getElementById('ctPreview').checked=false;
+// ── Módulos ──
+async function addModule() {
+  const title = document.getElementById('modTitle')?.value.trim();
+  const cover = document.getElementById('modCover')?.value.trim();
+  const desc  = document.getElementById('modDesc')?.value.trim();
+  if(!title){ toast('El nombre del módulo es obligatorio','err'); return; }
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON), 'Content-Type':'application/json', 'Prefer':'return=minimal' };
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/program_modules`, { method:'POST', headers:h,
+      body: JSON.stringify({ program_id: currentAdmProgId, title, cover_url: cover||null, description: desc||null, sort_order: Date.now() }) });
+    document.getElementById('modTitle').value = '';
+    document.getElementById('modCover').value = '';
+    document.getElementById('modDesc').value  = '';
+    document.getElementById('addModuleForm').style.display = 'none';
+    toast('Módulo creado ✓','ok');
+    loadProgContent();
+  } catch(e){ toast('Error: '+e.message,'err'); }
 }
 
-async function saveContent() {
-  const title = document.getElementById('ctTitle').value.trim();
+function openEditModuleModal(id) {
+  // Buscar el módulo por ID en el state
+  const mod = cursoState?.modulos?.find(m=>m.id===id);
+  const title = mod?.title || prompt('Nombre del módulo:');
+  if(title) editModule(id, title);
+}
+
+async function editModule(id, currentTitle) {
+  const title = prompt('Nombre del módulo:', currentTitle);
+  if(!title) return;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON), 'Content-Type':'application/json' };
+  await fetch(`${SUPABASE_URL}/rest/v1/program_modules?id=eq.${id}`, { method:'PATCH', headers:h, body: JSON.stringify({title}) });
+  toast('Módulo actualizado ✓','ok');
+  loadProgContent();
+}
+
+async function deleteModule(id) {
+  if(!confirm('¿Eliminar este módulo y todas sus lecciones?')) return;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
+  await fetch(`${SUPABASE_URL}/rest/v1/program_modules?id=eq.${id}`, { method:'DELETE', headers:h });
+  toast('Módulo eliminado','ok');
+  loadProgContent();
+}
+
+// ── Lecciones ──
+function openAddLesson(modId) {
+  currentAdmModId = modId;
+  document.getElementById('lessonId').value        = '';
+  document.getElementById('lessonTitle').value     = '';
+  document.getElementById('lessonVideo').value     = '';
+  document.getElementById('lessonThumb').value     = '';
+  document.getElementById('lessonDur').value       = '';
+  document.getElementById('lessonDesc').value      = '';
+  document.getElementById('lessonPreview').checked = false;
+  document.getElementById('lessonModTitle').textContent = 'Nueva lección';
+  openAMod('lessonMod');
+}
+
+function editLesson(l) {
+  currentAdmModId = l.module_id;
+  document.getElementById('lessonId').value        = l.id;
+  document.getElementById('lessonTitle').value     = l.title||'';
+  document.getElementById('lessonVideo').value     = l.video_url||'';
+  document.getElementById('lessonThumb').value     = l.thumbnail_url||'';
+  document.getElementById('lessonDur').value       = l.duration_sec ? Math.round(l.duration_sec/60) : '';
+  document.getElementById('lessonDesc').value      = l.description||'';
+  document.getElementById('lessonPreview').checked = !!l.is_preview;
+  document.getElementById('lessonModTitle').textContent = 'Editar lección';
+  openAMod('lessonMod');
+}
+
+async function saveLesson() {
+  const title = document.getElementById('lessonTitle').value.trim();
   if(!title){ toast('El título es obligatorio','err'); return; }
+  const id = document.getElementById('lessonId').value;
   const data = {
+    module_id:    currentAdmModId,
     program_id:   currentAdmProgId,
     title,
-    content_type: document.getElementById('ctType').value,
-    week:         parseInt(document.getElementById('ctWeek').value)||1,
-    duration_min: parseInt(document.getElementById('ctDur').value)||null,
-    url:          document.getElementById('ctUrl').value.trim()||null,
-    description:  document.getElementById('ctDesc').value.trim()||null,
-    is_preview:   document.getElementById('ctPreview').checked,
+    video_url:     document.getElementById('lessonVideo').value.trim()||null,
+    thumbnail_url: document.getElementById('lessonThumb').value.trim()||null,
+    duration_sec:  (parseInt(document.getElementById('lessonDur').value)||0)*60,
+    description:  document.getElementById('lessonDesc').value.trim()||null,
+    is_preview:   document.getElementById('lessonPreview').checked,
     sort_order:   Date.now(),
   };
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON), 'Content-Type':'application/json', 'Prefer':'return=minimal' };
   try {
-    await getSB().from('program_content').insert(data);
-    toast('Contenido agregado ✓','ok');
-    document.getElementById('addContentForm').style.display='none';
+    if(id) {
+      await fetch(`${SUPABASE_URL}/rest/v1/program_lessons?id=eq.${id}`, { method:'PATCH', headers:h, body: JSON.stringify(data) });
+      toast('Lección actualizada ✓','ok');
+    } else {
+      await fetch(`${SUPABASE_URL}/rest/v1/program_lessons`, { method:'POST', headers:h, body: JSON.stringify(data) });
+      toast('Lección creada ✓','ok');
+    }
+    closeAMod('lessonMod');
     loadProgContent();
   } catch(e){ toast('Error: '+e.message,'err'); }
 }
 
-async function deleteContent(id) {
-  if(!confirm('¿Eliminar este contenido?')) return;
+async function deleteLesson(id) {
+  if(!confirm('¿Eliminar esta lección?')) return;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
+  await fetch(`${SUPABASE_URL}/rest/v1/program_lessons?id=eq.${id}`, { method:'DELETE', headers:h });
+  toast('Lección eliminada','ok');
+  loadProgContent();
+}
+
+// ── Descargables ──
+function openAddDownload() {
+  document.getElementById('dlTitle').value = '';
+  document.getElementById('dlUrl').value   = '';
+  document.getElementById('dlDesc').value  = '';
+  document.getElementById('dlType').value  = 'pdf';
+  openAMod('downloadMod');
+}
+
+async function saveDownload() {
+  const title = document.getElementById('dlTitle').value.trim();
+  const url   = document.getElementById('dlUrl').value.trim();
+  if(!title||!url){ toast('Título y URL son obligatorios','err'); return; }
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON), 'Content-Type':'application/json', 'Prefer':'return=minimal' };
   try {
-    await getSB().from('program_content').delete().eq('id',id);
-    toast('Contenido eliminado','ok');
+    await fetch(`${SUPABASE_URL}/rest/v1/program_files`, { method:'POST', headers:h,
+      body: JSON.stringify({ program_id: currentAdmProgId, title, file_url: url, file_type: document.getElementById('dlType').value, sort_order: Date.now() }) });
+    toast('Archivo agregado ✓','ok');
+    closeAMod('downloadMod');
     loadProgContent();
   } catch(e){ toast('Error: '+e.message,'err'); }
 }
 
+async function deleteDownload(id) {
+  if(!confirm('¿Eliminar este archivo?')) return;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
+  await fetch(`${SUPABASE_URL}/rest/v1/program_files?id=eq.${id}`, { method:'DELETE', headers:h });
+  toast('Archivo eliminado','ok');
+  loadProgContent();
+}
+
+// ── Miembros ──
 async function loadProgMembers() {
-  const sb = getSB();
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
   const list = document.getElementById('progAdmMemberList');
   if(!list) return;
   try {
-    const { data: members } = await sb
-      .from('memberships')
-      .select('*, profiles(full_name, id)')
-      .eq('program_id', currentAdmProgId)
-      .order('created_at', {ascending:false});
-
-    if(!members?.length){ list.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">Sin miembros aún.</div>'; return; }
-
-    const SC = {active:'#4A9B6F',cancelled:'#C4614A',expired:'#D4853A',pending:'#8A7F74'};
-    const SL = {active:'Activo',cancelled:'Cancelado',expired:'Vencido',pending:'Pendiente'};
-    const AT = {purchased:'Comprado',manual:'Manual',gift:'Regalo'};
-
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/memberships?program_id=eq.${currentAdmProgId}&order=created_at.desc`, {headers:h});
+    const members = await r.json();
+    if(!Array.isArray(members)||!members.length){ list.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">Sin miembros aún.</div>'; return; }
+    const SC={active:'#4A9B6F',cancelled:'#C4614A',expired:'#D4853A',pending:'#8A7F74'};
+    const SL={active:'Activo',cancelled:'Cancelado',expired:'Vencido',pending:'Pendiente'};
+    const AT={purchased:'Comprado',manual:'Manual',gift:'Regalo'};
     list.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.83rem">
       <thead><tr style="background:var(--cream)">
-        <th style="padding:.6rem .85rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Usuario</th>
-        <th style="padding:.6rem .85rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Acceso</th>
-        <th style="padding:.6rem .85rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Estado</th>
-        <th style="padding:.6rem .85rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Notas</th>
+        <th style="padding:.6rem .85rem;text-align:left;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Usuario</th>
+        <th style="padding:.6rem .85rem;text-align:left;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Acceso</th>
+        <th style="padding:.6rem .85rem;text-align:left;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Estado</th>
+        <th style="padding:.6rem .85rem;text-align:left;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Notas</th>
         <th style="padding:.6rem .85rem"></th>
       </tr></thead>
       <tbody>${members.map(m=>{
-        const sc = SC[m.status]||'#8A7F74';
+        const sc=SC[m.status]||'#8A7F74';
         return `<tr style="border-bottom:1px solid var(--cream-dk)">
-          <td style="padding:.75rem .85rem"><div style="font-weight:500">${m.profiles?.full_name||'—'}</div><div style="font-size:.72rem;color:var(--muted)">${m.progress||0}% completado</div></td>
+          <td style="padding:.75rem .85rem"><div style="font-weight:500">${m.user_id||'—'}</div><div style="font-size:.72rem;color:var(--muted)">${m.progress||0}% completado</div></td>
           <td style="padding:.75rem .85rem"><span style="font-size:.72rem;background:rgba(201,147,90,.1);color:var(--gold-dk);padding:.18rem .55rem;border-radius:100px;font-weight:600">${AT[m.access_type]||m.access_type}</span></td>
           <td style="padding:.75rem .85rem"><span style="font-size:.72rem;background:${sc}18;color:${sc};padding:.18rem .55rem;border-radius:100px;font-weight:600">${SL[m.status]||m.status}</span></td>
           <td style="padding:.75rem .85rem;font-size:.78rem;color:var(--muted)">${m.notes||'—'}</td>
           <td style="padding:.75rem .85rem">
             ${m.status==='active'
-              ? `<button onclick="toggleMembership('${m.id}','cancelled')" style="padding:.32rem .7rem;border-radius:100px;font-size:.68rem;font-weight:600;background:rgba(196,97,74,.1);color:#C4614A;border:1.5px solid rgba(196,97,74,.25);cursor:pointer;font-family:var(--fb)">Desactivar</button>`
-              : `<button onclick="toggleMembership('${m.id}','active')" style="padding:.32rem .7rem;border-radius:100px;font-size:.68rem;font-weight:600;background:rgba(74,155,111,.1);color:#2E7A52;border:1.5px solid rgba(74,155,111,.25);cursor:pointer;font-family:var(--fb)">Activar</button>`
-            }
+              ?`<button onclick="toggleMembership('${m.id}','cancelled')" style="padding:.32rem .7rem;border-radius:100px;font-size:.68rem;font-weight:600;background:rgba(196,97,74,.1);color:#C4614A;border:1.5px solid rgba(196,97,74,.25);cursor:pointer;font-family:var(--fb)">Desactivar</button>`
+              :`<button onclick="toggleMembership('${m.id}','active')" style="padding:.32rem .7rem;border-radius:100px;font-size:.68rem;font-weight:600;background:rgba(74,155,111,.1);color:#2E7A52;border:1.5px solid rgba(74,155,111,.25);cursor:pointer;font-family:var(--fb)">Activar</button>`}
           </td>
-        </tr>`}).join('')}
-      </tbody>
-    </table>`;
-  } catch(e){ list.innerHTML='<div style="color:var(--muted)">Error: '+e.message+'</div>'; }
+        </tr>`;}).join('')}
+      </tbody></table>`;
+  } catch(e){ list.innerHTML=`<div style="color:var(--muted)">Error: ${e.message}</div>`; }
 }
 
 function openAddMember() { document.getElementById('addMemberForm').style.display=''; }
@@ -2558,41 +2707,198 @@ function openAddMember() { document.getElementById('addMemberForm').style.displa
 async function saveMember() {
   const email = document.getElementById('mbEmail').value.trim();
   if(!email){ toast('Ingresá el email del usuario','err'); return; }
-  const sb = getSB();
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON), 'Content-Type':'application/json', 'Prefer':'return=minimal' };
+  const expires = document.getElementById('mbExpires').value || null;
   try {
-    // Buscar el user_id por email
-    const { data: users } = await sb.from('profiles').select('id,full_name').ilike('id',
-      `(SELECT id FROM auth.users WHERE email = '${email}')`
-    );
-    // Alternativa: buscar en auth directamente no es posible desde cliente
-    // Usar RPC o buscar por email en profiles si lo tenemos
-    // Por ahora usamos el email para crear la membresía con un insert especial
-    const expires = document.getElementById('mbExpires').value || null;
-    await sb.from('memberships').insert({
-      program_id:  currentAdmProgId,
-      user_id:     email, // temporal — se reemplaza con el UUID real
-      status:      'active',
-      access_type: document.getElementById('mbType').value,
-      notes:       document.getElementById('mbNotes').value.trim()||null,
-      expires_at:  expires ? new Date(expires).toISOString() : null,
-    });
-    toast('Acceso otorgado ✓','ok');
-    document.getElementById('addMemberForm').style.display='none';
-    loadProgMembers();
-  } catch(e){
-    toast('Error: Asegurate que el usuario exista en el sistema','err');
-  }
-}
-
-async function toggleMembership(id, newStatus) {
-  const msg = newStatus==='cancelled' ? '¿Desactivar el acceso de este usuario?' : '¿Reactivar el acceso de este usuario?';
-  if(!confirm(msg)) return;
-  try {
-    await getSB().from('memberships').update({status:newStatus}).eq('id',id);
-    toast(newStatus==='active'?'Acceso activado ✓':'Acceso desactivado','ok');
+    // Buscar el user_id desde profiles por email (necesita función o vista)
+    // Por ahora insertamos con nota para asociar manualmente
+    await fetch(`${SUPABASE_URL}/rest/v1/memberships`, { method:'POST', headers:h,
+      body: JSON.stringify({
+        program_id:  currentAdmProgId,
+        user_id:     '00000000-0000-0000-0000-000000000000', // placeholder
+        status:      'pending',
+        access_type: document.getElementById('mbType').value,
+        notes:       `Email: ${email} · ${document.getElementById('mbNotes').value.trim()||'Acceso manual'}`,
+        expires_at:  expires ? new Date(expires).toISOString() : null,
+      }) });
+    toast('Acceso registrado. El usuario debe registrarse con ese email para activarlo.','ok',5000);
+    document.getElementById('addMemberForm').style.display = 'none';
     loadProgMembers();
   } catch(e){ toast('Error: '+e.message,'err'); }
 }
+
+async function toggleMembership(id, newStatus) {
+  if(!confirm(newStatus==='cancelled'?'¿Desactivar el acceso?':'¿Reactivar el acceso?')) return;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON), 'Content-Type':'application/json' };
+  await fetch(`${SUPABASE_URL}/rest/v1/memberships?id=eq.${id}`, { method:'PATCH', headers:h, body: JSON.stringify({status:newStatus}) });
+  toast(newStatus==='active'?'Acceso activado ✓':'Acceso desactivado','ok');
+  loadProgMembers();
+}
+
+
+/* ── ADMIN PREVIEW ── */
+let admPreviewState = { modulos:[], downloads:[], moduloActual:null };
+
+async function loadAdmPreview() {
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
+  try {
+    const r1 = await fetch(`${SUPABASE_URL}/rest/v1/program_modules?program_id=eq.${currentAdmProgId}&order=sort_order`, {headers:h});
+    admPreviewState.modulos = await r1.json() || [];
+    for(let mod of admPreviewState.modulos) {
+      const r2 = await fetch(`${SUPABASE_URL}/rest/v1/program_lessons?module_id=eq.${mod.id}&order=sort_order`, {headers:h});
+      mod.lecciones = await r2.json() || [];
+    }
+    const r3 = await fetch(`${SUPABASE_URL}/rest/v1/program_files?program_id=eq.${currentAdmProgId}&order=sort_order`, {headers:h});
+    admPreviewState.downloads = await r3.json() || [];
+  } catch(e) {}
+  renderAdmPreviewGrid();
+}
+
+function renderAdmPreviewGrid() {
+  admPreviewState.moduloActual = null;
+  document.getElementById('admPreviewModulos').style.display  = '';
+  document.getElementById('admPreviewLanding').style.display  = 'none';
+  document.getElementById('admPreviewPlayer').style.display   = 'none';
+
+  const grid = document.getElementById('admPreviewGrid');
+  if(!admPreviewState.modulos.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">Sin módulos aún.</div>';
+    return;
+  }
+  grid.innerHTML = admPreviewState.modulos.map((mod, idx) => {
+    const total = mod.lecciones?.length || 0;
+    const coverStyle = mod.cover_url
+      ? `background-image:url(${mod.cover_url});background-size:cover;background-position:center`
+      : `background:#1C1A18`;
+    return `<div onclick="admPreviewOpenModulo('${mod.id}')" style="background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08);transition:.18s" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''">
+      <div style="aspect-ratio:16/9;${coverStyle};display:flex;align-items:flex-end;justify-content:space-between;padding:.5rem .6rem">
+        <span style="font-size:.62rem;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.06em">${idx+1}</span>
+        <span style="font-size:.62rem;color:rgba(255,255,255,.6)">${total} lec.</span>
+      </div>
+      <div style="padding:.65rem .75rem">
+        <div style="font-size:.82rem;font-weight:600;color:#1C1A18;line-height:1.3">${mod.title}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function admPreviewOpenModulo(modId) {
+  const mod = admPreviewState.modulos.find(m=>m.id===modId);
+  if(!mod) return;
+  admPreviewState.moduloActual = mod;
+
+  document.getElementById('admPreviewModulos').style.display  = 'none';
+  document.getElementById('admPreviewLanding').style.display  = '';
+  document.getElementById('admPreviewPlayer').style.display   = 'none';
+
+  document.getElementById('admLandingModTitle').textContent = mod.title;
+  const descEl = document.getElementById('admLandingModDesc');
+  descEl.innerHTML = (mod.description||'').replace(/\n/g,'<br>');
+  descEl.style.display = mod.description ? '' : 'none';
+  document.getElementById('admLandingBar').style.width = '0%';
+  document.getElementById('admLandingPct').textContent = `${mod.lecciones?.length||0} lecciones`;
+
+  // Archivos del módulo
+  const modFiles = admPreviewState.downloads.filter(d=>d.module_id===modId || !d.module_id);
+  const filesEl = document.getElementById('admLandingFiles');
+  const filesListEl = document.getElementById('admLandingFilesList');
+  if(modFiles.length) {
+    filesEl.style.display = '';
+    const icons = {pdf:'📄',doc:'📝',xls:'📊',zip:'📦',img:'🖼️',otro:'📎'};
+    filesListEl.innerHTML = modFiles.map(d=>`
+      <a href="${d.file_url}" target="_blank" class="download-item" style="text-decoration:none">
+        <div class="download-icon" style="background:rgba(58,125,140,.08)">${icons[d.file_type]||'📎'}</div>
+        <div><div class="download-name">${d.title}</div><div class="download-type">${d.file_type?.toUpperCase()||'Archivo'}</div></div>
+        <div style="margin-left:auto;font-size:.8rem;color:var(--teal);font-weight:500">⬇ Descargar</div>
+      </a>`).join('');
+  } else { filesEl.style.display = 'none'; }
+
+  // Lecciones
+  const lecEl = document.getElementById('admLandingLecciones');
+  if(!mod.lecciones?.length) {
+    lecEl.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--muted);font-size:.82rem">Sin lecciones en este módulo.</div>';
+  } else {
+    lecEl.innerHTML = mod.lecciones.map((l,i) => {
+      const thumb = l.thumbnail_url || getYTThumb(l.video_url);
+      const dur   = fmtDur(l.duration_sec);
+      return `<div onclick="admPreviewOpenLeccion('${l.id}')" style="display:flex;align-items:center;gap:.85rem;padding:.85rem 1rem;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:.12s" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background=''">
+        <div style="width:28px;height:28px;border-radius:50%;border:2px solid #e0e0e0;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#666;flex-shrink:0">${i+1}</div>
+        <div style="width:70px;height:46px;border-radius:6px;background:#1C1A18;flex-shrink:0;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">
+          ${thumb ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">
+            ${dur?`<div style="position:absolute;bottom:2px;right:3px;background:rgba(0,0,0,.75);color:#fff;font-size:.58rem;padding:1px 3px;border-radius:2px">${dur}</div>`:''}` : `<div style="color:rgba(255,255,255,.4)">▶</div>`}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.84rem;font-weight:500;color:#1C1A18">${l.title}</div>
+          ${l.description?`<div style="font-size:.73rem;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.description.split('\n')[0]}</div>`:''}
+        </div>
+        <div style="width:20px;height:20px;border-radius:50%;border:2px solid #e0e0e0;flex-shrink:0"></div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function admPreviewOpenLeccion(leccionId) {
+  const mod = admPreviewState.moduloActual;
+  const l   = mod?.lecciones?.find(l=>l.id===leccionId);
+  if(!l) return;
+
+  document.getElementById('admPreviewLanding').style.display = 'none';
+  document.getElementById('admPreviewPlayer').style.display  = '';
+
+  document.getElementById('admPlayerLecTitle').textContent = l.title;
+
+  // Player
+  const wrap = document.getElementById('admPlayerWrap');
+  if(l.video_url) {
+    let eu = l.video_url;
+    const yt = l.video_url.match(/(?:v=|youtu\.be\/)([^&\s]+)/);
+    const vi = l.video_url.match(/vimeo\.com\/(\d+)/);
+    if(yt) eu = 'https://www.youtube.com/embed/'+yt[1]+'?rel=0';
+    else if(vi) eu = 'https://player.vimeo.com/video/'+vi[1];
+    wrap.innerHTML = `<iframe src="${eu}" style="width:100%;height:100%;border:none" allowfullscreen></iframe>`;
+  } else {
+    wrap.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:.9rem">Sin video cargado</div>';
+  }
+
+  // Descripción
+  const descEl = document.getElementById('admPlayerDesc');
+  descEl.innerHTML = (l.description||'').replace(/\n/g,'<br>');
+
+  // Archivos
+  const modFiles = admPreviewState.downloads.filter(d=>d.module_id===mod.id || !d.module_id);
+  const pf = document.getElementById('admPlayerFiles');
+  const pfl = document.getElementById('admPlayerFilesList');
+  if(modFiles.length) {
+    pf.style.display = '';
+    const icons = {pdf:'📄',doc:'📝',xls:'📊',zip:'📦',img:'🖼️',otro:'📎'};
+    pfl.innerHTML = modFiles.map(d=>`
+      <a href="${d.file_url}" target="_blank" class="download-item" style="text-decoration:none">
+        <div class="download-icon" style="background:rgba(58,125,140,.08)">${icons[d.file_type]||'📎'}</div>
+        <div><div class="download-name">${d.title}</div></div>
+        <div style="margin-left:auto;font-size:.8rem;color:var(--teal);font-weight:500">⬇ Descargar</div>
+      </a>`).join('');
+  } else { pf.style.display = 'none'; }
+}
+
+function admPreviewBack() {
+  document.getElementById('admPreviewLanding').style.display = 'none';
+  document.getElementById('admPreviewModulos').style.display = '';
+}
+
+function admPreviewBackToLanding() {
+  document.getElementById('admPreviewPlayer').style.display  = 'none';
+  document.getElementById('admPreviewLanding').style.display = '';
+  if(admPreviewState.moduloActual) admPreviewOpenModulo(admPreviewState.moduloActual.id);
+}
+
+function resetAdmPreview() { renderAdmPreviewGrid(); }
+
+window.loadAdmPreview         = loadAdmPreview;
+window.admPreviewOpenModulo   = admPreviewOpenModulo;
+window.admPreviewOpenLeccion  = admPreviewOpenLeccion;
+window.admPreviewBack         = admPreviewBack;
+window.admPreviewBackToLanding= admPreviewBackToLanding;
+window.resetAdmPreview        = resetAdmPreview;
 
 /* ── CONSULTAS ── */
 
@@ -2956,98 +3262,462 @@ function switchPortalTab(id, btn) {
   document.getElementById('portal-'+id)?.classList.add('active');
 }
 
+
+/* ══ CURSO: Estado global ══ */
+let cursoState = {
+  progId: null,
+  progName: '',
+  modulos: [],
+  leccionActual: null,
+  completadas: new Set(),
+  downloads: [],
+  userId: null,
+};
+
 async function abrirPrograma(progId, membId) {
-  currentProgId = progId;
+  cursoState.progId = progId;
   goTo('programa-detalle');
-  const sb = getSB();
+
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
+
   try {
-    const { data: prog } = await sb.from('programs').select('*').eq('id', progId).single();
+    // Traer datos del programa
+    const r1 = await fetch(`${SUPABASE_URL}/rest/v1/programs?id=eq.${progId}&limit=1`, {headers:h});
+    const progs = await r1.json();
+    const prog = Array.isArray(progs) ? progs[0] : null;
     if(prog) {
-      const titleEl = document.getElementById('progDetalleTitle');
-      const subEl   = document.getElementById('progDetalleSub');
-      const durEl   = document.getElementById('progDetalleDuracion');
-      const bgEl    = document.getElementById('progDetalleBg');
-      if(titleEl) titleEl.textContent = prog.name;
-      if(subEl)   subEl.textContent   = prog.subtitle || '';
-      if(durEl)   durEl.textContent   = prog.duration || '';
-      if(bgEl && prog.image_url) bgEl.src = prog.image_url;
+      cursoState.progName = prog.name;
+      document.getElementById('cursoTopTitle').textContent = prog.name;
     }
-    const { data: content } = await sb.from('program_content').select('*').eq('program_id', progId).order('week').order('sort_order');
-    currentContent = content || [];
-    const { data: progreso } = await sb.from('content_progress').select('content_id,completed').eq('user_id', portalUser.id);
-    const completedIds = new Set((progreso||[]).filter(p=>p.completed).map(p=>p.content_id));
-    renderProgWeeks(currentContent, completedIds);
+
+    // Traer módulos
+    const r2 = await fetch(`${SUPABASE_URL}/rest/v1/program_modules?program_id=eq.${progId}&order=sort_order`, {headers:h});
+    cursoState.modulos = await r2.json() || [];
+
+    // Para cada módulo, traer lecciones
+    for(let mod of cursoState.modulos) {
+      const r3 = await fetch(`${SUPABASE_URL}/rest/v1/program_lessons?module_id=eq.${mod.id}&order=sort_order`, {headers:h});
+      mod.lecciones = await r3.json() || [];
+    }
+
+    // Traer usuario actual
+    const { data: { user } } = await getSB().auth.getUser();
+    cursoState.userId = user?.id;
+
+    // Traer progreso
+    if(cursoState.userId) {
+      const r4 = await fetch(`${SUPABASE_URL}/rest/v1/lesson_progress?user_id=eq.${cursoState.userId}&completed=eq.true&select=lesson_id`, {headers:h});
+      const prog2 = await r4.json();
+      cursoState.completadas = new Set(Array.isArray(prog2) ? prog2.map(p=>p.lesson_id) : []);
+    }
+
+    // Traer descargables del programa
+    const r5 = await fetch(`${SUPABASE_URL}/rest/v1/program_files?program_id=eq.${progId}&order=sort_order`, {headers:h});
+    cursoState.downloads = await r5.json() || [];
+
+    renderModulosGrid();
+    renderSidebar();
+    updateCursoProgress();
+
   } catch(e) {
-    const wi = document.getElementById('progWeekItems');
-    if(wi) wi.innerHTML = '<div style="padding:1rem;color:var(--muted)">Error al cargar contenido.</div>';
+    document.getElementById('modulosGrid').innerHTML = `<div style="grid-column:1/-1;padding:2rem;color:var(--muted)">Error al cargar el programa: ${e.message}</div>`;
   }
 }
 
-function renderProgWeeks(content, completedIds) {
-  const container = document.getElementById('progWeekItems');
-  if(!container) return;
-  if(!content.length) {
-    container.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:.84rem">Este programa no tiene contenido aún.<br>Mariel lo está preparando 🌱</div>';
+function updateCursoProgress() {
+  const total = cursoState.modulos.reduce((s,m)=>s+(m.lecciones?.length||0), 0);
+  const done  = cursoState.completadas.size;
+  const pct   = total > 0 ? Math.round(done/total*100) : 0;
+  const el1 = document.getElementById('cursoProgPct');
+  const el2 = document.getElementById('sidebarPct');
+  const el3 = document.getElementById('cursoTopProg');
+  if(el1) el1.textContent = `${pct}% completado`;
+  if(el2) el2.textContent = `${pct}%`;
+  if(el3) el3.textContent = `${done}/${total} lecciones`;
+}
+
+function renderModulosGrid() {
+  const grid = document.getElementById('modulosGrid');
+  if(!grid) return;
+
+  if(!cursoState.modulos.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--muted)">Este programa no tiene contenido aún.</div>';
     return;
   }
-  const weeks = {};
-  content.forEach(c => { const w = c.week||1; if(!weeks[w]) weeks[w]=[]; weeks[w].push(c); });
-  const TI = {video:'▶️',pdf:'📄',audio:'🎧',text:'📝',link:'🔗'};
-  let html = '';
-  Object.entries(weeks).sort(([a],[b])=>+a-+b).forEach(([week, items]) => {
-    html += `<div style="padding:.6rem 1.1rem;background:var(--cream);font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--cream-dk)">Semana ${week}</div>`;
-    items.forEach(item => {
-      const done = completedIds.has(item.id);
-      html += `<div class="prog-item-row${done?' completed':''}" onclick="selContent('${item.id}')">
-        <div class="prog-item-icon ${done?'done':item.content_type}">${done?'✓':TI[item.content_type]||'📄'}</div>
-        <div class="prog-item-info">
-          <div class="prog-item-title">${item.title}</div>
-          <div class="prog-item-meta">${item.content_type||'video'}${item.duration_min?' · '+item.duration_min+' min':''}</div>
+
+  grid.innerHTML = cursoState.modulos.map((mod, idx) => {
+    const total = mod.lecciones?.length || 0;
+    const done  = (mod.lecciones||[]).filter(l=>cursoState.completadas.has(l.id)).length;
+    const pct   = total > 0 ? Math.round(done/total*100) : 0;
+    const coverStyle = mod.cover_url
+      ? `background-image:url(${mod.cover_url});background-size:cover;background-position:center`
+      : `background:#1C1A18`;
+
+    return `
+      <div class="modulo-card" onclick="abrirModulo('${mod.id}')">
+        <div class="modulo-card-img" style="${coverStyle}">
+          ${!mod.cover_url ? `<div style="font-family:var(--fd);color:rgba(240,232,216,.6);font-size:1rem;padding:.75rem;text-align:center">${mod.title}</div>` : ''}
+          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:.5rem .6rem;display:flex;justify-content:space-between;align-items:flex-end">
+            <span style="font-size:.65rem;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.08em">${idx+1}</span>
+            <span style="font-size:.65rem;color:rgba(255,255,255,.6)">${total} lecciones</span>
+          </div>
         </div>
-        ${done?'<span class="prog-item-check">✓</span>':''}
+        <div class="modulo-card-body">
+          <div class="modulo-card-pct">${pct}%</div>
+          <div class="modulo-card-bar"><div class="modulo-card-bar-fill" style="width:${pct}%"></div></div>
+          <div class="modulo-card-title">${mod.title}</div>
+        </div>
       </div>`;
-    });
-  });
-  container.innerHTML = html;
+  }).join('');
 }
 
-async function selContent(contentId) {
-  const item = currentContent.find(c => c.id === contentId);
-  if(!item) return;
-  document.querySelectorAll('.prog-item-row').forEach(r => r.classList.remove('active'));
-  event?.currentTarget?.classList.add('active');
-  const titleEl = document.getElementById('progItemTitle');
-  const descEl  = document.getElementById('progItemDesc');
-  if(titleEl) titleEl.textContent = item.title;
-  if(descEl)  descEl.textContent  = item.description || '';
-  const player = document.getElementById('progPlayer');
-  if(player) {
-    if(item.url && item.content_type === 'video') {
-      let eu = item.url;
-      const ytm = item.url.match(/(?:v=|youtu\.be\/)([^&\s]+)/);
-      const vim = item.url.match(/vimeo\.com\/(\d+)/);
-      if(ytm) eu = `https://www.youtube.com/embed/${ytm[1]}?rel=0`;
-      else if(vim) eu = `https://player.vimeo.com/video/${vim[1]}`;
-      player.innerHTML = `<iframe src="${eu}" allowfullscreen style="width:100%;height:100%;border:none"></iframe>`;
-    } else if(item.content_type==='pdf' && item.url) {
-      player.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,.7);gap:1rem"><div style="font-size:3rem">📄</div><div>${item.title}</div><a href="${item.url}" target="_blank" style="padding:.65rem 1.5rem;background:var(--teal);color:#fff;border-radius:100px;text-decoration:none;font-size:.8rem;font-weight:600">Abrir PDF →</a></div>`;
+function filterCursoModules() {
+  const q = document.getElementById('cursoSearch')?.value.toLowerCase() || '';
+  document.querySelectorAll('.modulo-card').forEach(card => {
+    card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function getYTThumb(url) {
+  if(!url) return null;
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([^&?\s]+)/);
+  return m ? 'https://img.youtube.com/vi/'+m[1]+'/mqdefault.jpg' : null;
+}
+function fmtDur(sec) {
+  if(!sec) return '';
+  const m = Math.floor(sec/60), s = sec%60;
+  return m+':'+(s<10?'0':'')+s;
+}
+function renderSidebar() {
+  const container = document.getElementById('sidebarModulos');
+  if(!container) return;
+  container.innerHTML = cursoState.modulos.map((mod, idx) => {
+    const total  = mod.lecciones?.length || 0;
+    const done   = (mod.lecciones||[]).filter(l=>cursoState.completadas.has(l.id)).length;
+    const pct    = total > 0 ? Math.round(done/total*100) : 0;
+    const isOpen = cursoState.leccionActual && mod.lecciones?.some(l=>l.id===cursoState.leccionActual?.id);
+    const leccionesHtml = (mod.lecciones||[]).map(l => {
+      const isDone   = cursoState.completadas.has(l.id);
+      const isActive = cursoState.leccionActual?.id === l.id;
+      const thumb    = l.thumbnail_url || getYTThumb(l.video_url);
+      const dur      = fmtDur(l.duration_sec);
+      const thumbHtml = thumb
+        ? '<img src="'+thumb+'" alt="" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25)"><div style="width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:.55rem;color:#1C1A18">▶</div></div>'+(dur?'<div style="position:absolute;bottom:2px;right:3px;background:rgba(0,0,0,.75);color:#fff;font-size:.6rem;padding:1px 3px;border-radius:3px">'+dur+'</div>':'')
+        : '<div class="sidebar-leccion-thumb-play">▶</div>';
+      return '<div class="sidebar-leccion'+(isActive?' active':'')+'" onclick="abrirLeccion(\''+mod.id+'\',\''+l.id+'\')">'
+        +'<div class="sidebar-leccion-thumb">'+thumbHtml+'</div>'
+        +'<div class="sidebar-leccion-info"><div class="sidebar-leccion-title">'+l.title+'</div></div>'
+        +'<div class="sidebar-leccion-check'+(isDone?' done':isActive?' active-icon':'')+'">'+( isDone?'✓':'')+'</div>'
+        +'</div>';
+    }).join('');
+    return '<div class="sidebar-modulo">'
+      +'<div class="sidebar-modulo-header" onclick="toggleSidebarModulo(\'mod-'+mod.id+'\')">'
+      +'<div class="sidebar-modulo-num">'+( idx+1)+'</div>'
+      +'<div style="flex:1"><div class="sidebar-modulo-name">'+mod.title+'</div>'+(pct>0?'<div style="font-size:.68rem;color:var(--muted);margin-top:.1rem">'+pct+'%</div>':'')+'</div>'
+      +'<div style="font-size:.7rem;color:var(--muted)" id="chevron-'+mod.id+'">'+(isOpen?'∧':'∨')+'</div>'
+      +'</div>'
+      +'<div class="sidebar-modulo-bar"><div class="sidebar-modulo-bar-fill" style="width:'+pct+'%"></div></div>'
+      +'<div class="sidebar-lecciones'+(isOpen?' open':'')+'" id="mod-'+mod.id+'">'+leccionesHtml+'</div>'
+      +'</div>';
+  }).join('');
+}
+function toggleSidebarModulo(id) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('open');
+  const modId = id.replace('mod-','');
+  const ch = document.getElementById('chevron-'+modId);
+  if(ch) ch.textContent = el.classList.contains('open') ? '∧' : '∨';
+}
+
+
+function filterSidebar() {
+  const q = document.getElementById('sidebarSearch')?.value.toLowerCase() || '';
+  document.querySelectorAll('.sidebar-leccion').forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+  // Abrir todos los módulos cuando busca
+  if(q) document.querySelectorAll('.sidebar-lecciones').forEach(el=>el.classList.add('open'));
+}
+
+function abrirModulo(modId) {
+  const mod = cursoState.modulos.find(m=>m.id===modId);
+  if(!mod) return;
+  // Mostrar landing del módulo
+  mostrarLandingModulo(mod);
+}
+
+function mostrarLandingModulo(mod) {
+  cursoState.moduloActual = mod;
+  document.getElementById('cursoModulosView').style.display  = 'none';
+  document.getElementById('cursoPlayerView').style.display   = 'none';
+  document.getElementById('cursoModuloLanding').style.display = '';
+
+  // Scroll top
+  document.getElementById('cursoMain')?.scrollTo({top:0, behavior:'smooth'});
+
+  const total = mod.lecciones?.length || 0;
+  const done  = (mod.lecciones||[]).filter(l=>cursoState.completadas.has(l.id)).length;
+  const pct   = total > 0 ? Math.round(done/total*100) : 0;
+
+  // Header
+  const landingTitle = document.getElementById('landingModuloTitle');
+  const landingDesc  = document.getElementById('landingModuloDesc');
+  const landingMeta  = document.getElementById('landingModuloMeta');
+  const landingPct   = document.getElementById('landingModuloPct');
+  const landingBar   = document.getElementById('landingModuloBar');
+  const landingCover = document.getElementById('landingModuloCover');
+
+  if(landingTitle) landingTitle.textContent = mod.title;
+  if(landingDesc)  { landingDesc.innerHTML = (mod.description||'').replace(/\n/g,'<br>'); landingDesc.style.display = mod.description ? '' : 'none'; }
+  if(landingMeta)  landingMeta.textContent = total + ' lección' + (total!==1?'es':'');
+  if(landingPct)   landingPct.textContent  = pct + '% completado';
+  if(landingBar)   landingBar.style.width  = pct + '%';
+  if(landingCover) {
+    if(mod.cover_url) { landingCover.src = mod.cover_url; landingCover.style.display = ''; }
+    else landingCover.style.display = 'none';
+  }
+
+  // Botón continuar
+  const btnEmpezar = document.getElementById('landingBtnEmpezar');
+  if(btnEmpezar) {
+    const primera = (mod.lecciones||[]).find(l=>!cursoState.completadas.has(l.id)) || mod.lecciones?.[0];
+    if(primera) {
+      btnEmpezar.textContent = done > 0 ? 'Continuar' : 'Empezar';
+      btnEmpezar.onclick = () => abrirLeccion(mod.id, primera.id);
+      btnEmpezar.style.display = '';
     } else {
-      player.innerHTML = `<div class="prog-player-placeholder"><div style="font-size:2rem;margin-bottom:.5rem">${{video:'▶️',pdf:'📄',audio:'🎧',text:'📝',link:'🔗'}[item.content_type]||'📄'}</div><div style="font-size:.88rem">${item.url?`<a href="${item.url}" target="_blank" style="color:var(--gold)">Abrir →</a>`:'Próximamente'}</div></div>`;
+      btnEmpezar.style.display = 'none';
     }
   }
-  const actEl = document.getElementById('progItemActions');
-  if(actEl) actEl.innerHTML = `<button onclick="marcarCompletado('${contentId}')" style="padding:.55rem 1.2rem;border-radius:100px;font-size:.76rem;font-weight:600;background:rgba(74,155,111,.1);color:#2E7A52;border:1.5px solid rgba(74,155,111,.3);cursor:pointer;font-family:var(--fb)">✓ Marcar como completado</button>`;
+
+  // Lista de lecciones
+  const lista = document.getElementById('landingLeccionesList');
+  if(lista) {
+    if(!mod.lecciones?.length) {
+      lista.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:.85rem">Este módulo no tiene lecciones aún.</div>';
+    } else {
+      lista.innerHTML = mod.lecciones.map((l, i) => {
+        const isDone   = cursoState.completadas.has(l.id);
+        const thumb    = l.thumbnail_url || getYTThumb(l.video_url);
+        const dur      = fmtDur(l.duration_sec);
+        return `<div style="display:flex;align-items:center;gap:1rem;padding:1rem;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:.12s" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background=''" onclick="abrirLeccion('${mod.id}','${l.id}')">
+          <!-- Número o check -->
+          <div style="width:32px;height:32px;border-radius:50%;border:2px solid ${isDone?'#4A9B6F':'#e0e0e0'};background:${isDone?'rgba(74,155,111,.1)':'#fff'};display:flex;align-items:center;justify-content:center;font-size:${isDone?'.75rem':'.8rem'};font-weight:700;color:${isDone?'#4A9B6F':'#666'};flex-shrink:0">
+            ${isDone ? '✓' : (i+1)}
+          </div>
+          <!-- Thumbnail -->
+          <div style="width:80px;height:52px;border-radius:8px;background:#1C1A18;flex-shrink:0;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">
+            ${thumb ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">
+              <div style="position:absolute;inset:0;background:rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center">
+                <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#1C1A18">▶</div>
+              </div>
+              ${dur ? `<div style="position:absolute;bottom:3px;right:4px;background:rgba(0,0,0,.75);color:#fff;font-size:.62rem;padding:1px 4px;border-radius:3px">${dur}</div>` : ''}` 
+            : `<div style="color:rgba(255,255,255,.4);font-size:1.2rem">▶</div>`}
+          </div>
+          <!-- Info -->
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.9rem;font-weight:500;color:#1C1A18;line-height:1.35">${l.title}</div>
+            ${l.description ? `<div style="font-size:.78rem;color:#888;margin-top:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.description.split('\n')[0]}</div>` : ''}
+          </div>
+          <!-- Duración -->
+          ${dur ? `<div style="font-size:.78rem;color:#888;flex-shrink:0">${dur}</div>` : ''}
+          <!-- Check -->
+          <div style="width:22px;height:22px;border-radius:50%;background:${isDone?'rgba(74,155,111,.15)':'transparent'};border:2px solid ${isDone?'#4A9B6F':'#e0e0e0'};display:flex;align-items:center;justify-content:center;font-size:.65rem;color:${isDone?'#4A9B6F':'transparent'};flex-shrink:0">
+            ${isDone ? '✓' : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Archivos descargables del módulo
+  const dlSection = document.getElementById('landingDownloadsSection');
+  const dlList    = document.getElementById('landingDownloadsList');
+  const modFiles  = (cursoState.downloads||[]).filter(d=>d.module_id===mod.id || !d.module_id);
+  if(dlSection && dlList) {
+    if(!modFiles.length) {
+      dlSection.style.display = 'none';
+    } else {
+      dlSection.style.display = '';
+      const icons = {pdf:'📄',doc:'📝',xls:'📊',zip:'📦',img:'🖼️',otro:'📎'};
+      dlList.innerHTML = modFiles.map(d => `
+        <a href="${d.file_url}" target="_blank" download class="download-item">
+          <div class="download-icon" style="background:rgba(58,125,140,.08)">${icons[d.file_type]||'📎'}</div>
+          <div style="flex:1">
+            <div class="download-name">${d.title}</div>
+            <div class="download-type">${d.file_type?.toUpperCase()||'Archivo'}</div>
+          </div>
+          <div style="font-size:.8rem;color:var(--teal);font-weight:500">⬇ Descargar</div>
+        </a>`).join('');
+    }
+  }
+
+  // Actualizar sidebar — abrir el módulo actual
+  renderSidebar();
+  const sidebarMod = document.getElementById('mod-'+mod.id);
+  if(sidebarMod) sidebarMod.classList.add('open');
 }
 
-async function marcarCompletado(contentId) {
-  const sb = getSB();
+function abrirLeccion(modId, leccionId) {
+  const mod = cursoState.modulos.find(m=>m.id===modId);
+  const leccion = mod?.lecciones?.find(l=>l.id===leccionId);
+  if(!leccion) return;
+
+  cursoState.leccionActual = leccion;
+
+  // Cambiar vista
+  document.getElementById('cursoModulosView').style.display   = 'none';
+  document.getElementById('cursoModuloLanding').style.display = 'none';
+  document.getElementById('cursoPlayerView').style.display    = '';
+
+  // Actualizar botón volver
+  const backBtn = document.getElementById('cursoBackBtn');
+  if(backBtn) backBtn.textContent = '← ' + mod.title;
+
+  // Nombre del módulo
+  const badgeEl = document.getElementById('leccionModuloBadge');
+  if(badgeEl) badgeEl.textContent = mod.title;
+
+  // Título de la lección
+  const titleEl = document.getElementById('leccionTitulo');
+  if(titleEl) titleEl.textContent = leccion.title;
+
+  // Player
+  const player = document.getElementById('cursoPlayer');
+  if(player && leccion.video_url) {
+    let embedUrl = leccion.video_url;
+    const ytm = leccion.video_url.match(/(?:v=|youtu\.be\/)([^&\s]+)/);
+    const vim = leccion.video_url.match(/vimeo\.com\/(\d+)/);
+    if(ytm) embedUrl = `https://www.youtube.com/embed/${ytm[1]}?rel=0&modestbranding=1`;
+    else if(vim) embedUrl = `https://player.vimeo.com/video/${vim[1]}`;
+    player.innerHTML = `<iframe src="${embedUrl}" allowfullscreen allow="autoplay; fullscreen"></iframe>`;
+  } else if(player) {
+    player.innerHTML = `<div class="curso-player-placeholder"><div style="font-size:2rem;margin-bottom:.5rem">📄</div><div>${leccion.title}</div></div>`;
+  }
+
+  // Descripción
+  const descWrap = document.getElementById('leccionDescWrap');
+  const descEl   = document.getElementById('leccionDesc');
+  if(leccion.description) {
+    if(descWrap) descWrap.style.display = '';
+    if(descEl) descEl.innerHTML = leccion.description.replace(/\n/g,'<br>');
+  } else {
+    if(descWrap) descWrap.style.display = 'none';
+  }
+
+  // Descargables
+  renderLeccionDownloads();
+
+  // Botón concluir
+  const isDone = cursoState.completadas.has(leccionId);
+  const btnC = document.getElementById('btnConcluir');
+  const btnCI = document.getElementById('btnConcluirIcon');
+  const btnCT = document.getElementById('btnConcluirTxt');
+  if(btnC) btnC.className = 'btn-concluir' + (isDone?' done':'');
+  if(btnCI) btnCI.textContent = isDone ? '✓' : '○';
+  if(btnCT) btnCT.textContent = isDone ? 'Completada' : 'Concluir';
+
+  // Actualizar sidebar
+  renderSidebar();
+
+  // Abrir el módulo en el sidebar
+  const sidebarMod = document.getElementById('mod-'+modId);
+  if(sidebarMod) sidebarMod.classList.add('open');
+
+  // Scroll al top
+  document.getElementById('cursoMain')?.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderLeccionDownloads() {
+  const wrap = document.getElementById('leccionDownloads');
+  const list = document.getElementById('leccionDownloadsList');
+  if(!wrap || !list) return;
+  if(!cursoState.downloads?.length) { wrap.style.display='none'; return; }
+  wrap.style.display = '';
+  const icons = {pdf:'📄',doc:'📝',xls:'📊',zip:'📦',mp3:'🎧',default:'📎'};
+  list.innerHTML = cursoState.downloads.map(d => {
+    const icon = icons[d.file_type?.toLowerCase()] || icons.default;
+    return `<a href="${d.file_url}" target="_blank" download class="download-item">
+      <div class="download-icon" style="background:rgba(58,125,140,.1)">${icon}</div>
+      <div>
+        <div class="download-name">${d.title}</div>
+        <div class="download-type">${d.description||d.file_type||'Archivo'}</div>
+      </div>
+      <div style="margin-left:auto;font-size:.75rem;color:var(--teal)">⬇ Descargar</div>
+    </a>`;
+  }).join('');
+}
+
+async function concluirLeccion() {
+  const leccionId = cursoState.leccionActual?.id;
+  if(!leccionId || !cursoState.userId) { toast('Necesitás estar logueada para guardar el progreso','err'); return; }
+
+  const yaCompletada = cursoState.completadas.has(leccionId);
+  const h = {
+    'apikey': SUPABASE_ANON,
+    'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON),
+    'Content-Type': 'application/json',
+    'Prefer': 'resolution=merge-duplicates,return=minimal'
+  };
+
   try {
-    await sb.from('content_progress').upsert({user_id:portalUser.id,content_id:contentId,completed:true,updated_at:new Date().toISOString()});
-    toast('¡Completado! ✓','ok');
-    const { data: progreso } = await sb.from('content_progress').select('content_id,completed').eq('user_id', portalUser.id);
-    const completedIds = new Set((progreso||[]).filter(p=>p.completed).map(p=>p.content_id));
-    renderProgWeeks(currentContent, completedIds);
-  } catch(e) { toast('Error al guardar','err'); }
+    await fetch(`${SUPABASE_URL}/rest/v1/lesson_progress`, {
+      method: 'POST', headers: h,
+      body: JSON.stringify({ user_id: cursoState.userId, lesson_id: leccionId, completed: !yaCompletada, updated_at: new Date().toISOString() })
+    });
+
+    if(yaCompletada) { cursoState.completadas.delete(leccionId); }
+    else             { cursoState.completadas.add(leccionId); }
+
+    const isDone = cursoState.completadas.has(leccionId);
+    const btnC  = document.getElementById('btnConcluir');
+    const btnCI = document.getElementById('btnConcluirIcon');
+    const btnCT = document.getElementById('btnConcluirTxt');
+    if(btnC) btnC.className = 'btn-concluir' + (isDone?' done':'');
+    if(btnCI) btnCI.textContent = isDone ? '✓' : '○';
+    if(btnCT) btnCT.textContent = isDone ? 'Completada' : 'Concluir';
+
+    renderSidebar();
+    updateCursoProgress();
+    if(isDone) toast('¡Lección completada! ✓','ok');
+
+    // Ir a la siguiente lección automáticamente
+    if(isDone) irSiguienteLeccion();
+
+  } catch(e) { toast('Error: '+e.message,'err'); }
+}
+
+function irSiguienteLeccion() {
+  const id = cursoState.leccionActual?.id;
+  for(let mod of cursoState.modulos) {
+    const idx = mod.lecciones?.findIndex(l=>l.id===id);
+    if(idx >= 0) {
+      const sig = mod.lecciones[idx+1];
+      if(sig) { setTimeout(()=>abrirLeccion(mod.id, sig.id), 600); return; }
+      // Buscar en el siguiente módulo
+      const modIdx = cursoState.modulos.indexOf(mod);
+      const nextMod = cursoState.modulos[modIdx+1];
+      if(nextMod?.lecciones?.length) { setTimeout(()=>abrirLeccion(nextMod.id, nextMod.lecciones[0].id), 600); }
+      return;
+    }
+  }
+}
+
+function volverAModulos() {
+  document.getElementById('cursoModulosView').style.display   = '';
+  document.getElementById('cursoPlayerView').style.display    = 'none';
+  document.getElementById('cursoModuloLanding').style.display = 'none';
+  renderModulosGrid();
+}
+
+function volverALanding() {
+  const mod = cursoState.moduloActual;
+  if(!mod) { volverAModulos(); return; }
+  document.getElementById('cursoModulosView').style.display   = 'none';
+  document.getElementById('cursoPlayerView').style.display    = 'none';
+  document.getElementById('cursoModuloLanding').style.display = '';
+  mostrarLandingModulo(mod);
 }
 
 function updateNavUI(role) {
@@ -3149,12 +3819,42 @@ window.calPrev            = calPrev;
 window.calNext            = calNext;
 window.selDate            = selDate;
 window.selSlot            = selSlot;
-window.inscribirsePrograma  = inscribirsePrograma;
+window.inscribirsePrograma     = inscribirsePrograma;
 window.confirmarCompraPrograma = confirmarCompraPrograma;
-window.openEditProgram      = openEditProgram;
-window.saveProgram        = saveProgram;
-window.toggleProgram      = toggleProgram;
-window.inscribirsePrograma= inscribirsePrograma;
+window.openEditProgram         = openEditProgram;
+window.saveProgram             = saveProgram;
+window.toggleProgram           = toggleProgram;
+window.addModule               = addModule;
+window.editModule              = editModule;
+window.openEditModuleModal     = openEditModuleModal;
+window.deleteModule            = deleteModule;
+window.toggleSidebarModulo     = toggleSidebarModulo;
+window.volverAModulos          = volverAModulos;
+window.irSiguienteLeccion      = irSiguienteLeccion;
+window.openAddLesson           = openAddLesson;
+window.editLesson              = editLesson;
+window.saveLesson              = saveLesson;
+window.deleteLesson            = deleteLesson;
+window.openAddDownload         = openAddDownload;
+window.saveDownload            = saveDownload;
+window.deleteDownload          = deleteDownload;
+window.filterCursoModules      = filterCursoModules;
+window.filterSidebar           = filterSidebar;
+function cursoGoBack() {
+  const playerVisible  = document.getElementById('cursoPlayerView')?.style.display !== 'none';
+  const landingVisible = document.getElementById('cursoModuloLanding')?.style.display !== 'none';
+  if(playerVisible)  { volverALanding(); return; }
+  if(landingVisible) { volverAModulos(); return; }
+  goTo('portal');
+}
+
+window.cursoGoBack          = cursoGoBack;
+window.volverAModulos       = volverAModulos;
+window.volverALanding       = volverALanding;
+window.mostrarLandingModulo = mostrarLandingModulo;
+window.abrirModulo          = abrirModulo;
+window.abrirLeccion            = abrirLeccion;
+window.concluirLeccion         = concluirLeccion;
 window.selPay             = selPay;
 window.selCuota           = selCuota;
 window.openATurno         = openATurno;
@@ -3175,7 +3875,13 @@ window.doForgot           = doForgot;
 window.doLogout           = doLogout;
 window.switchPortalTab    = switchPortalTab;
 window.abrirPrograma      = abrirPrograma;
-window.selContent         = selContent;
+window.selContent         = function(id) {
+  // Buscar la lección en todos los módulos
+  for(const mod of (cursoState?.modulos||[])) {
+    const l = mod.lecciones?.find(l=>l.id===id);
+    if(l) { abrirLeccion(mod.id, id); return; }
+  }
+};
 window.marcarCompletado   = marcarCompletado;
 window.showAP             = showAP;
 window.loadATurnos        = loadATurnos;
@@ -3246,7 +3952,7 @@ window._doForgot          = doForgot;
 window._doLogout          = doLogout;
 window._switchPortalTab   = switchPortalTab;
 window._abrirPrograma     = abrirPrograma;
-window._selContent        = selContent;
+window._selContent        = window.selContent;
 window._marcarCompletado  = marcarCompletado;
 window._showAP            = showAP;
 window._loadATurnos       = loadATurnos;
@@ -4820,73 +5526,219 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 ════════════════════════════════════════════ -->
 <div class="page" id="page-programa-detalle">
 <style>
-.prog-detalle-header{background:var(--dark);padding:5rem 0 2.5rem;position:relative;overflow:hidden}
-.prog-detalle-header-bg{position:absolute;inset:0;object-fit:cover;width:100%;height:100%;opacity:.15}
-.prog-detalle-content{position:relative;z-index:2}
-.prog-detalle-back{font-size:.78rem;color:rgba(240,232,216,.5);cursor:pointer;margin-bottom:1.25rem;display:inline-flex;align-items:center;gap:.4rem;background:none;border:none;font-family:var(--fb)}
-.prog-detalle-back:hover{color:var(--cream)}
-.prog-detalle-title{font-family:var(--fd);font-size:clamp(1.8rem,4vw,3rem);color:var(--cream);font-weight:400;margin-bottom:.4rem}
-.prog-detalle-sub{color:rgba(240,232,216,.55);font-size:.9rem}
-.prog-detalle-grid{display:grid;grid-template-columns:1fr 300px;gap:2rem;max-width:1100px;margin:2rem auto;padding:0 clamp(1rem,3vw,2rem) 4rem;align-items:flex-start}
+/* ── CURSO: Layout ── */
+.curso-wrap{display:grid;grid-template-columns:1fr 380px;min-height:calc(100vh - 70px);background:#f5f5f5}
+.curso-main{padding:0;overflow-y:auto}
+.curso-sidebar{background:#fff;border-left:1px solid #e8e8e8;overflow-y:auto;position:sticky;top:70px;height:calc(100vh - 70px)}
 
-/* Video player */
-.prog-player{background:#000;border-radius:16px;overflow:hidden;aspect-ratio:16/9;position:relative;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:center}
-.prog-player-placeholder{text-align:center;color:rgba(255,255,255,.4)}
-.prog-player iframe{width:100%;height:100%;border:none}
+/* ── Header del curso ── */
+.curso-topbar{background:#1C1A18;padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;position:sticky;top:70px;z-index:10}
+.curso-topbar-back{color:rgba(240,232,216,.5);font-size:.78rem;cursor:pointer;background:none;border:none;font-family:var(--fb);display:flex;align-items:center;gap:.35rem}
+.curso-topbar-back:hover{color:var(--cream)}
+.curso-topbar-title{font-family:var(--fd);color:var(--cream);font-size:.95rem;flex:1}
+.curso-topbar-prog{font-size:.72rem;color:rgba(240,232,216,.45)}
 
-/* Módulos/semanas */
-.prog-weeks{background:#fff;border-radius:16px;box-shadow:0 2px 16px rgba(28,26,24,.08);overflow:hidden;position:sticky;top:90px}
-.prog-week-header{padding:.85rem 1.1rem;background:var(--cream);font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--cream-dk)}
-.prog-week-items{max-height:520px;overflow-y:auto}
-.prog-item-row{display:flex;align-items:center;gap:.75rem;padding:.85rem 1.1rem;border-bottom:1px solid rgba(228,217,197,.4);cursor:pointer;transition:.14s}
-.prog-item-row:hover{background:rgba(58,125,140,.04)}
-.prog-item-row.active{background:rgba(58,125,140,.08);border-left:3px solid var(--teal)}
-.prog-item-row.completed{opacity:.65}
-.prog-item-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0}
-.prog-item-icon.video{background:rgba(58,125,140,.1);color:var(--teal)}
-.prog-item-icon.pdf{background:rgba(196,97,74,.1);color:#C4614A}
-.prog-item-icon.done{background:rgba(74,155,111,.1);color:#2E7A52}
-.prog-item-info{flex:1}
-.prog-item-title{font-size:.84rem;font-weight:500;line-height:1.3}
-.prog-item-meta{font-size:.7rem;color:var(--muted);margin-top:.1rem}
-.prog-item-check{font-size:.75rem;color:#2E7A52}
+/* ── Módulos grid (vista inicial) ── */
+.modulos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;padding:2rem}
+.modulo-card{background:#fff;border-radius:12px;overflow:hidden;cursor:pointer;transition:.2s;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.modulo-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.14)}
+.modulo-card-img{aspect-ratio:16/9;background:#1C1A18;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.modulo-card-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.modulo-card-body{padding:.85rem}
+.modulo-card-pct{font-size:.72rem;color:var(--muted);margin-bottom:.3rem}
+.modulo-card-bar{height:3px;background:#e8e8e8;border-radius:100px;overflow:hidden;margin-bottom:.5rem}
+.modulo-card-bar-fill{height:100%;background:var(--teal);border-radius:100px}
+.modulo-card-title{font-size:.9rem;font-weight:600;color:#1C1A18;line-height:1.3}
 
-/* Semana badge */
-.prog-week-badge{display:inline-flex;padding:.2rem .65rem;border-radius:100px;font-size:.68rem;font-weight:600;background:rgba(201,147,90,.12);color:var(--gold-dk);margin-bottom:.85rem}
+/* ── Player ── */
+.curso-player-wrap{background:#000;position:relative}
+.curso-player{aspect-ratio:16/9;width:100%;display:flex;align-items:center;justify-content:center;background:#000}
+.curso-player iframe{width:100%;height:100%;border:none;display:block}
+.curso-player-placeholder{text-align:center;color:rgba(255,255,255,.35);padding:3rem}
+
+/* ── Info de la lección ── */
+.leccion-info{background:#fff;padding:1.5rem 2rem}
+.leccion-info-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem}
+.leccion-modulo-badge{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.leccion-titulo{font-family:var(--fd);font-size:1.5rem;color:#1C1A18;margin-bottom:.25rem}
+.leccion-desc{font-size:.88rem;color:#6B6460;line-height:1.75;margin-top:.85rem}
+
+/* Botón concluir */
+.btn-concluir{display:flex;align-items:center;gap:.5rem;padding:.6rem 1.3rem;border-radius:100px;font-size:.78rem;font-weight:600;border:2px solid #e8e8e8;background:#fff;cursor:pointer;font-family:var(--fb);color:#666;transition:.18s}
+.btn-concluir.done{background:rgba(74,155,111,.1);border-color:rgba(74,155,111,.4);color:#2E7A52}
+.btn-concluir:hover{border-color:var(--teal);color:var(--teal)}
+
+/* ── Descargables ── */
+.downloads-section{padding:1.25rem 2rem;border-top:1px solid #f0f0f0;background:#fff;margin-top:.5rem}
+.downloads-title{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.85rem}
+.download-item{display:flex;align-items:center;gap:.85rem;padding:.75rem;border:1.5px solid #f0f0f0;border-radius:10px;margin-bottom:.5rem;cursor:pointer;transition:.15s;text-decoration:none}
+.download-item:hover{border-color:var(--teal);background:rgba(58,125,140,.03)}
+.download-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.download-name{font-size:.84rem;font-weight:500;color:#1C1A18}
+.download-type{font-size:.7rem;color:var(--muted);text-transform:uppercase}
+
+/* ── Sidebar ── */
+.sidebar-header{padding:1rem 1.25rem;border-bottom:1px solid #f0f0f0;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);display:flex;align-items:center;justify-content:space-between}
+.sidebar-search{padding:.6rem 1.1rem;border-bottom:1px solid #f0f0f0}
+.sidebar-search input{width:100%;border:1px solid #e8e8e8;border-radius:8px;padding:.5rem .8rem;font-size:.8rem;outline:none;font-family:var(--fb)}
+.sidebar-search input:focus{border-color:var(--teal)}
+.sidebar-modulo{border-bottom:1px solid #f0f0f0}
+.sidebar-modulo-header{padding:.85rem 1.25rem;display:flex;align-items:center;gap:.75rem;cursor:pointer;background:#fafafa;position:relative}
+.sidebar-modulo-header:hover{background:#f5f5f5}
+.sidebar-modulo-num{width:26px;height:26px;border-radius:50%;background:#1C1A18;color:#fff;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-modulo-name{flex:1;font-size:.84rem;font-weight:600;color:#1C1A18;line-height:1.3}
+.sidebar-modulo-pct{font-size:.7rem;color:var(--muted)}
+.sidebar-modulo-bar{height:2px;background:#f0f0f0;margin:0 1.25rem}
+.sidebar-modulo-bar-fill{height:100%;background:var(--teal);transition:.3s}
+.sidebar-lecciones{display:none}
+.sidebar-lecciones.open{display:block}
+.sidebar-leccion{display:flex;align-items:center;gap:.75rem;padding:.75rem 1.25rem .75rem 1.5rem;cursor:pointer;border-bottom:1px solid #f8f8f8;transition:.12s}
+.sidebar-leccion:hover{background:#f5f5f5}
+.sidebar-leccion.active{background:rgba(58,125,140,.06);border-right:3px solid var(--teal)}
+.sidebar-leccion-thumb{width:48px;height:36px;border-radius:6px;background:#1C1A18;overflow:hidden;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center}
+.sidebar-leccion-thumb img{width:100%;height:100%;object-fit:cover}
+.sidebar-leccion-thumb-play{font-size:.85rem;color:rgba(255,255,255,.7)}
+.sidebar-leccion-info{flex:1;min-width:0}
+.sidebar-leccion-title{font-size:.8rem;font-weight:500;color:#1C1A18;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-leccion-dur{font-size:.68rem;color:var(--muted)}
+.sidebar-leccion-check{width:20px;height:20px;border-radius:50%;border:2px solid #e8e8e8;display:flex;align-items:center;justify-content:center;font-size:.6rem;flex-shrink:0;color:transparent}
+.sidebar-leccion-check.done{background:rgba(74,155,111,.1);border-color:#4A9B6F;color:#4A9B6F}
+.sidebar-leccion-check.active-icon{background:var(--teal);border-color:var(--teal);color:#fff}
+
+@media(max-width:768px){
+  .curso-wrap{grid-template-columns:1fr}
+  .curso-sidebar{position:static;height:auto;border-left:none;border-top:1px solid #e8e8e8}
+}
 </style>
 
-<div class="prog-detalle-header" id="progDetalleHeader">
-  <img class="prog-detalle-header-bg" id="progDetalleBg" src="" alt="">
-  <div class="container prog-detalle-content">
-    <button class="prog-detalle-back" onclick="goTo('portal')">← Volver a mis programas</button>
-    <div class="prog-week-badge" id="progDetalleDuracion"></div>
-    <h1 class="prog-detalle-title" id="progDetalleTitle">Programa</h1>
-    <p class="prog-detalle-sub" id="progDetalleSub"></p>
-  </div>
+<!-- Topbar -->
+<div class="curso-topbar">
+  <button class="curso-topbar-back" id="cursoBackBtn" onclick="cursoGoBack()">← Portal</button>
+  <div class="curso-topbar-title" id="cursoTopTitle">Programa</div>
+  <div class="curso-topbar-prog" id="cursoTopProg"></div>
 </div>
 
-<div class="prog-detalle-grid" id="progDetalleGrid">
-  <!-- Se llena dinámicamente -->
-  <div>
-    <div class="prog-player" id="progPlayer">
-      <div class="prog-player-placeholder">
-        <div style="font-size:2.5rem;margin-bottom:.5rem">▶️</div>
-        <div style="font-size:.9rem">Seleccioná un contenido para empezar</div>
+<div class="curso-wrap">
+  <!-- Main content -->
+  <div class="curso-main" id="cursoMain">
+
+    <!-- Vista de módulos (inicial) -->
+    <div id="cursoModulosView">
+      <div style="padding:1.5rem 2rem .5rem;border-bottom:1px solid #e8e8e8;background:#fff">
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.25rem" id="cursoModViewLabel">Todos los contenidos</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:.82rem;color:var(--muted)" id="cursoProgPct">0% completado</div>
+          <div style="display:flex;gap:.5rem">
+            <input type="text" placeholder="Buscar contenido" id="cursoSearch" oninput="filterCursoModules()" style="padding:.45rem .85rem;border:1px solid #e8e8e8;border-radius:8px;font-size:.8rem;outline:none;font-family:var(--fb);width:200px">
+          </div>
+        </div>
+      </div>
+      <div class="modulos-grid" id="modulosGrid">
+        <div class="skeleton" style="height:180px;border-radius:12px"></div>
+        <div class="skeleton" style="height:180px;border-radius:12px"></div>
+        <div class="skeleton" style="height:180px;border-radius:12px"></div>
+        <div class="skeleton" style="height:180px;border-radius:12px"></div>
       </div>
     </div>
-    <div id="progItemInfo" style="background:#fff;border-radius:14px;padding:1.25rem;box-shadow:0 2px 12px rgba(28,26,24,.07)">
-      <div style="font-family:var(--fd);font-size:1.2rem;margin-bottom:.4rem" id="progItemTitle">—</div>
-      <div style="font-size:.84rem;color:var(--muted);line-height:1.65" id="progItemDesc">Seleccioná un contenido del menú lateral para empezar.</div>
-      <div style="margin-top:1rem;display:flex;gap:.75rem;flex-wrap:wrap" id="progItemActions"></div>
+
+    <!-- Vista landing del módulo -->
+    <div id="cursoModuloLanding" style="display:none">
+
+      <!-- Header del módulo -->
+      <div style="background:#fff;border-bottom:1px solid #e8e8e8">
+        <div id="landingModuloCoverWrap" style="position:relative;overflow:hidden;max-height:240px">
+          <img id="landingModuloCover" src="" alt="" style="width:100%;object-fit:cover;display:none">
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,#fff)"></div>
+        </div>
+        <div style="padding:1.75rem 2rem">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:.35rem" id="landingModuloMeta">0 lecciones</div>
+          <h1 style="font-family:var(--fd);font-size:1.75rem;color:#1C1A18;margin:0 0 .65rem;line-height:1.25" id="landingModuloTitle">Módulo</h1>
+          <div id="landingModuloDesc" style="font-size:.9rem;color:#6B6460;line-height:1.75;margin-bottom:1.1rem"></div>
+          <!-- Progreso -->
+          <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1.25rem">
+            <div style="flex:1;height:5px;background:#f0f0f0;border-radius:100px;overflow:hidden">
+              <div id="landingModuloBar" style="height:100%;background:var(--teal);border-radius:100px;width:0%;transition:.3s"></div>
+            </div>
+            <div style="font-size:.78rem;color:var(--muted);white-space:nowrap" id="landingModuloPct">0%</div>
+          </div>
+          <button id="landingBtnEmpezar" onclick="" style="padding:.8rem 2rem;border-radius:100px;font-family:var(--fb);font-size:.8rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:#1C1A18;color:#fff;border:none;cursor:pointer">
+            Empezar
+          </button>
+        </div>
+      </div>
+
+      <!-- Archivos descargables del módulo -->
+      <div id="landingDownloadsSection" style="display:none;background:#fff;margin-top:.5rem;padding:1.25rem 2rem">
+        <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.85rem">📎 Material descargable</div>
+        <div id="landingDownloadsList"></div>
+      </div>
+
+      <!-- Lista de lecciones -->
+      <div style="background:#fff;margin-top:.5rem">
+        <div style="padding:1.1rem 2rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">Lecciones</div>
+        </div>
+        <div id="landingLeccionesList"></div>
+      </div>
+
     </div>
+
+    <!-- Vista del player (al entrar a una lección) -->
+    <div id="cursoPlayerView" style="display:none">
+      <!-- Player -->
+      <div class="curso-player-wrap">
+        <div class="curso-player" id="cursoPlayer">
+          <div class="curso-player-placeholder">
+            <div style="font-size:2.5rem;margin-bottom:.75rem">▶</div>
+            <div>Seleccioná una lección para empezar</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info lección -->
+      <div class="leccion-info">
+        <div class="leccion-info-top">
+          <div style="flex:1">
+            <div class="leccion-modulo-badge" id="leccionModuloBadge">—</div>
+            <h2 class="leccion-titulo" id="leccionTitulo">—</h2>
+          </div>
+          <button class="btn-concluir" id="btnConcluir" onclick="concluirLeccion()">
+            <span id="btnConcluirIcon">○</span>
+            <span id="btnConcluirTxt">Concluir</span>
+          </button>
+        </div>
+
+        <!-- Archivos descargables -->
+        <div id="leccionDownloads" style="display:none;margin-top:1rem">
+          <div class="downloads-title">📎 Material descargable</div>
+          <div id="leccionDownloadsList"></div>
+        </div>
+
+        <!-- Descripción -->
+        <div id="leccionDescWrap" style="display:none;margin-top:1.25rem">
+          <div style="border-bottom:2px solid #f0f0f0;margin-bottom:1rem">
+            <span style="display:inline-block;font-size:.88rem;font-weight:600;color:#1C1A18;padding-bottom:.5rem;border-bottom:2px solid #1C1A18;margin-bottom:-2px">Descripción</span>
+          </div>
+          <div class="leccion-desc" id="leccionDesc"></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <div class="prog-weeks">
-    <div class="prog-week-header">Contenido del programa</div>
-    <div class="prog-week-items" id="progWeekItems">
-      <div class="skeleton" style="height:60px;margin:.5rem;border-radius:8px"></div>
-      <div class="skeleton" style="height:60px;margin:.5rem;border-radius:8px"></div>
-      <div class="skeleton" style="height:60px;margin:.5rem;border-radius:8px"></div>
+  <!-- Sidebar -->
+  <div class="curso-sidebar" id="cursoSidebar">
+    <div class="sidebar-header">
+      <span>Contenido</span>
+      <span id="sidebarPct" style="font-weight:400;color:var(--muted)">0%</span>
+    </div>
+    <div class="sidebar-search">
+      <input type="text" placeholder="Buscar contenido" id="sidebarSearch" oninput="filterSidebar()">
+    </div>
+    <div id="sidebarModulos">
+      <div class="skeleton" style="height:60px;margin:.75rem;border-radius:8px"></div>
+      <div class="skeleton" style="height:60px;margin:.75rem;border-radius:8px"></div>
+      <div class="skeleton" style="height:60px;margin:.75rem;border-radius:8px"></div>
     </div>
   </div>
 </div>
@@ -4904,43 +5756,30 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       <div style="display:flex;border-bottom:2px solid var(--cream-dk);background:var(--cream)">
         <button class="portal-tab active" id="ptab-contenido" onclick="switchProgAdmTab('contenido',this)" style="padding:.75rem 1.3rem">📋 Contenido</button>
         <button class="portal-tab" id="ptab-miembros" onclick="switchProgAdmTab('miembros',this)" style="padding:.75rem 1.3rem">👥 Miembros</button>
+        <button class="portal-tab" id="ptab-preview" onclick="switchProgAdmTab('preview',this)" style="padding:.75rem 1.3rem">👁️ Vista previa</button>
       </div>
 
       <!-- CONTENIDO -->
       <div id="progAdm-contenido" style="padding:1.5rem">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem">
-          <p style="font-size:.83rem;color:var(--muted)">Agregá videos, PDFs y material del programa. Los usuarios con acceso activo lo pueden ver.</p>
-          <button onclick="openAddContent()" style="padding:.5rem 1.1rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">+ Agregar contenido</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;flex-wrap:wrap;gap:.65rem">
+          <p style="font-size:.83rem;color:var(--muted);margin:0">Organizá el programa en módulos. Cada módulo tiene sus lecciones (videos) y podés agregar archivos descargables.</p>
+          <button onclick="document.getElementById('addModuleForm').style.display=''" style="padding:.5rem 1.1rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">+ Nuevo módulo</button>
         </div>
-        <div id="progAdmContentList"></div>
 
-        <!-- Form agregar contenido -->
-        <div id="addContentForm" style="display:none;background:var(--cream);border-radius:14px;padding:1.25rem;margin-top:1.1rem">
-          <div style="font-family:var(--fd);font-size:.95rem;margin-bottom:1rem">Nuevo contenido</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem">
-            <div class="form-group"><label class="form-label">Título *</label><input type="text" class="form-input" id="ctTitle" placeholder="Ej: Bienvenida al programa"></div>
-            <div class="form-group"><label class="form-label">Tipo</label>
-              <select class="form-select" id="ctType">
-                <option value="video">▶️ Video</option>
-                <option value="pdf">📄 PDF</option>
-                <option value="audio">🎧 Audio</option>
-                <option value="text">📝 Texto</option>
-                <option value="link">🔗 Link</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">Semana</label><input type="number" class="form-input" id="ctWeek" value="1" min="1"></div>
-            <div class="form-group"><label class="form-label">Duración (min)</label><input type="number" class="form-input" id="ctDur" placeholder="15"></div>
-            <div class="form-group" style="grid-column:1/-1"><label class="form-label">URL del contenido</label><input type="url" class="form-input" id="ctUrl" placeholder="https://youtube.com/... o link al PDF"></div>
-            <div class="form-group" style="grid-column:1/-1"><label class="form-label">Descripción</label><textarea class="form-textarea" id="ctDesc" rows="2" placeholder="Descripción breve"></textarea></div>
+        <!-- Form nuevo módulo -->
+        <div id="addModuleForm" style="display:none;background:var(--cream);border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+            <div class="form-group"><label class="form-label">Nombre del módulo *</label><input type="text" class="form-input" id="modTitle" placeholder="Ej: FASE 1: Comprende"></div>
+            <div class="form-group"><label class="form-label">URL imagen de portada</label><input type="url" class="form-input" id="modCover" placeholder="https://..."></div>
           </div>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer;margin-bottom:.85rem">
-            <input type="checkbox" id="ctPreview" style="accent-color:var(--teal)"> Vista previa gratuita (visible sin membresía)
-          </label>
-          <div style="display:flex;gap:.65rem">
-            <button onclick="saveContent()" style="padding:.55rem 1.2rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar</button>
-            <button onclick="document.getElementById('addContentForm').style.display='none'" style="padding:.55rem 1.2rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button>
+          <div class="form-group" style="margin-bottom:.75rem"><label class="form-label">Descripción del módulo</label><textarea class="form-textarea" id="modDesc" rows="3" placeholder="Descripción que verán los alumnos en este módulo..."></textarea></div>
+          <div style="display:flex;gap:.5rem">
+            <button onclick="addModule()" style="padding:.5rem 1.1rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Crear módulo</button>
+            <button onclick="document.getElementById('addModuleForm').style.display='none'" style="padding:.5rem 1.1rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button>
           </div>
         </div>
+
+        <div id="progAdmContentList"></div>
       </div>
 
       <!-- MIEMBROS -->
@@ -4973,9 +5812,132 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         </div>
       </div>
 
+      <!-- VISTA PREVIA -->
+      <div id="progAdm-preview" style="display:none;padding:0">
+        <div style="background:var(--cream);padding:.75rem 1.25rem;border-bottom:1px solid var(--cream-dk);display:flex;align-items:center;gap:.75rem">
+          <span style="font-size:.78rem;color:var(--muted)">👁️ Así ve el alumno el programa. Hacé clic en los módulos y lecciones para navegar.</span>
+          <button onclick="resetAdmPreview()" style="margin-left:auto;padding:.35rem .85rem;border-radius:100px;font-size:.72rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">↩ Volver al inicio</button>
+        </div>
+        <div style="height:72vh;overflow-y:auto;background:#f5f5f5">
+
+          <!-- Grilla de módulos (vista admin preview) -->
+          <div id="admPreviewModulos">
+            <div style="padding:1.25rem 1.5rem .5rem;background:#fff;border-bottom:1px solid #e8e8e8">
+              <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">Todos los contenidos</div>
+            </div>
+            <div id="admPreviewGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;padding:1.25rem"></div>
+          </div>
+
+          <!-- Landing del módulo (vista admin preview) -->
+          <div id="admPreviewLanding" style="display:none;background:#fff">
+            <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #e8e8e8;display:flex;align-items:center;gap:.75rem">
+              <button onclick="admPreviewBack()" style="font-size:.78rem;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--fb)">← Volver</button>
+              <div style="font-size:.85rem;font-weight:600;color:#1C1A18" id="admLandingModTitle"></div>
+            </div>
+            <div style="padding:1.25rem 1.5rem">
+              <div id="admLandingModDesc" style="font-size:.85rem;color:#6B6460;line-height:1.7;margin-bottom:1rem"></div>
+              <div style="height:4px;background:#f0f0f0;border-radius:100px;margin-bottom:.5rem"><div id="admLandingBar" style="height:100%;background:var(--teal);border-radius:100px;width:0%"></div></div>
+              <div style="font-size:.75rem;color:var(--muted);margin-bottom:1.25rem" id="admLandingPct"></div>
+
+              <!-- Archivos descargables del módulo -->
+              <div id="admLandingFiles" style="display:none;margin-bottom:1.25rem">
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.6rem">📎 Material descargable</div>
+                <div id="admLandingFilesList"></div>
+              </div>
+
+              <!-- Lista de lecciones -->
+              <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.5rem">Lecciones</div>
+              <div id="admLandingLecciones" style="border:1px solid #e8e8e8;border-radius:12px;overflow:hidden"></div>
+            </div>
+          </div>
+
+          <!-- Player (vista admin preview) -->
+          <div id="admPreviewPlayer" style="display:none">
+            <div style="padding:.75rem 1.5rem;background:#1C1A18;display:flex;align-items:center;gap:.75rem">
+              <button onclick="admPreviewBackToLanding()" style="font-size:.75rem;color:rgba(240,232,216,.5);background:none;border:none;cursor:pointer;font-family:var(--fb)">← Volver al módulo</button>
+              <div style="font-size:.82rem;color:var(--cream);flex:1" id="admPlayerLecTitle"></div>
+            </div>
+            <div style="background:#000;aspect-ratio:16/9" id="admPlayerWrap">
+              <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:.9rem">Sin video</div>
+            </div>
+            <div style="background:#fff;padding:1.25rem 1.5rem">
+              <div id="admPlayerDesc" style="font-size:.88rem;color:#6B6460;line-height:1.75"></div>
+              <!-- Descargables de la lección -->
+              <div id="admPlayerFiles" style="display:none;margin-top:1rem">
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.6rem">📎 Material descargable</div>
+                <div id="admPlayerFilesList"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
+<div class="amb" id="lessonMod">
+  <div class="am-modal" style="max-width:580px">
+    <div class="amh">
+      <div class="amh-title" id="lessonModTitle">Nueva lección</div>
+      <button class="amx" onclick="closeAMod('lessonMod')">✕</button>
+    </div>
+    <div class="amb-body">
+      <div style="display:flex;flex-direction:column;gap:.85rem">
+        <input type="hidden" id="lessonId">
+        <div class="form-group"><label class="form-label">Título de la lección *</label><input type="text" class="form-input" id="lessonTitle" placeholder="Ej: Bienvenida al programa"></div>
+        <div class="form-group"><label class="form-label">URL del video (YouTube o Vimeo)</label><input type="url" class="form-input" id="lessonVideo" placeholder="https://youtube.com/watch?v=..."></div>
+        <div class="form-group"><label class="form-label">Thumbnail personalizado (opcional — si no se pone, se toma del video)</label><input type="url" class="form-input" id="lessonThumb" placeholder="https://..."></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
+          <div class="form-group"><label class="form-label">Duración (minutos)</label><input type="number" class="form-input" id="lessonDur" placeholder="15" min="0"></div>
+          <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:.25rem">
+            <label style="display:flex;align-items:center;gap:.5rem;font-size:.84rem;cursor:pointer">
+              <input type="checkbox" id="lessonPreview" style="accent-color:var(--teal);width:15px;height:15px">
+              Vista previa gratuita
+            </label>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="lessonDesc" rows="3" placeholder="Descripción de la lección..."></textarea></div>
+      </div>
+    </div>
+    <div class="amf">
+      <button onclick="closeAMod('lessonMod')" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button>
+      <button onclick="saveLesson()" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar lección</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AGREGAR DESCARGABLE -->
+<div class="amb" id="downloadMod">
+  <div class="am-modal" style="max-width:520px">
+    <div class="amh">
+      <div class="amh-title">Nuevo archivo descargable</div>
+      <button class="amx" onclick="closeAMod('downloadMod')">✕</button>
+    </div>
+    <div class="amb-body">
+      <div style="display:flex;flex-direction:column;gap:.85rem">
+        <div class="form-group"><label class="form-label">Nombre del archivo *</label><input type="text" class="form-input" id="dlTitle" placeholder="Ej: Guía de alimentación semana 1"></div>
+        <div class="form-group"><label class="form-label">URL del archivo *</label><input type="url" class="form-input" id="dlUrl" placeholder="https://drive.google.com/..."></div>
+        <div class="form-group"><label class="form-label">Tipo</label>
+          <select class="form-select" id="dlType">
+            <option value="pdf">📄 PDF</option>
+            <option value="doc">📝 Word</option>
+            <option value="xls">📊 Excel</option>
+            <option value="zip">🗜️ ZIP</option>
+            <option value="img">🖼️ Imagen</option>
+            <option value="otro">📎 Otro</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="amf">
+      <button onclick="closeAMod('downloadMod')" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button>
+      <button onclick="saveDownload()" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar archivo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PÁGINA PROGRAMA DETALLE ════ -->
 
 <!-- ════════════════════════════════════════════
      CHECKOUT DE PROGRAMA
