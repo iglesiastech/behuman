@@ -2361,19 +2361,47 @@ async function confirmarCompraPrograma() {
   btn.disabled=true; btn.textContent='Registrando...';
 
   const { nombre, slug, precio } = progCheckoutData;
+  const token = _authToken || localStorage.getItem('bh_token') || SUPABASE_ANON;
+
+  const h = {
+    'apikey': SUPABASE_ANON,
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+
+  const orderData = {
+    customer_name:  nom + ' ' + ape,
+    customer_email: email,
+    total:          precio,
+    payment_method: 'transferencia',
+    status:         'awaiting_payment',
+    items:          JSON.stringify([{programa: nombre, slug, precio}]),
+    created_at:     new Date().toISOString(),
+  };
 
   try {
-    const sb = getSB();
-    await sb.from('orders').insert({
-      customer_name:  nom + ' ' + ape,
-      customer_email: email,
-      total:          precio,
-      payment_method: 'transferencia',
-      status:         'awaiting_payment',
-      items:          JSON.stringify([{programa: nombre, slug, precio}]),
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
+      method: 'POST',
+      headers: h,
+      body: JSON.stringify(orderData)
     });
+
+    if(!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      // Si falla por política RLS, intentar con anon key directo
+      console.warn('Error orders:', err);
+      // Guardar igual en localStorage como backup
+      const pending = JSON.parse(localStorage.getItem('bh_pending_orders')||'[]');
+      pending.push({...orderData, savedAt: new Date().toISOString()});
+      localStorage.setItem('bh_pending_orders', JSON.stringify(pending));
+    }
   } catch(e) {
-    console.warn('Error guardando orden:', e.message);
+    console.warn('Error al guardar orden:', e.message);
+    // Guardar en localStorage como backup
+    const pending = JSON.parse(localStorage.getItem('bh_pending_orders')||'[]');
+    pending.push({...orderData, savedAt: new Date().toISOString()});
+    localStorage.setItem('bh_pending_orders', JSON.stringify(pending));
   }
 
   const wa = document.getElementById('pcWhatsApp');
