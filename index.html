@@ -540,7 +540,7 @@ async function sbFetch(path, options = {}) {
 function sb() {
   return {
     from(table) {
-      let _table = table, _select = '*', _filters = [], _order = [], _limit = null, _single = false;
+      let _table = table, _select = '*', _filters = [], _order = [], _limit = null, _single = false, _updateBody = undefined, _deleteMode = false;
 
       const builder = {
         select(cols) { _select = cols || '*'; return builder; },
@@ -555,20 +555,6 @@ function sb() {
         order(col, opts={}) { _order.push(`${col}.${opts.ascending===false?'desc':'asc'}`); return builder; },
         limit(n) { _limit = n; return builder; },
         single() { _single = true; return builder; },
-
-        async then(resolve, reject) {
-          try {
-            let path = `/rest/v1/${_table}?select=${encodeURIComponent(_select)}`;
-            if(_filters.length) path += '&' + _filters.join('&');
-            if(_order.length)   path += '&order=' + _order.join(',');
-            if(_limit)          path += '&limit=' + _limit;
-
-            const prefer = _single ? 'return=representation' : '';
-            const { data } = await sbFetch(path, { prefer });
-            const result = _single ? (Array.isArray(data) ? data[0] : data) : data;
-            resolve({ data: result, error: null });
-          } catch(e) { resolve({ data: null, error: e }); }
-        },
 
         async insert(body) {
           const { data } = await sbFetch(`/rest/v1/${_table}`, {
@@ -586,22 +572,50 @@ function sb() {
           return { data, error: null };
         },
 
-        async update(body) {
-          let path = `/rest/v1/${_table}?`;
-          if(_filters.length) path += _filters.join('&');
-          const { data } = await sbFetch(path, { method: 'PATCH', body, returning: true });
-          return { data, error: null };
+        update(body) {
+          _updateBody = body;
+          // Retorna el builder para poder encadenar .eq() después
+          return builder;
         },
 
-        async delete() {
-          let path = `/rest/v1/${_table}?`;
-          if(_filters.length) path += _filters.join('&');
-          await sbFetch(path, { method: 'DELETE' });
-          return { data: null, error: null };
+        // Ejecutar update cuando se hace await
+        then(resolve, reject) {
+          let promise;
+          if(_updateBody !== undefined) {
+            // Es un UPDATE
+            let path = `/rest/v1/${_table}?`;
+            if(_filters.length) path += _filters.join('&');
+            promise = sbFetch(path, { method: 'PATCH', body: _updateBody, returning: true })
+              .then(({data}) => resolve({ data, error: null }))
+              .catch(e => resolve({ data: null, error: e }));
+          } else if(_deleteMode) {
+            // Es un DELETE
+            let path = `/rest/v1/${_table}?`;
+            if(_filters.length) path += _filters.join('&');
+            promise = sbFetch(path, { method: 'DELETE' })
+              .then(() => resolve({ data: null, error: null }))
+              .catch(e => resolve({ data: null, error: e }));
+          } else {
+            // Es un SELECT
+            let path = `/rest/v1/${_table}?select=${encodeURIComponent(_select)}`;
+            if(_filters.length) path += '&' + _filters.join('&');
+            if(_order.length)   path += '&order=' + _order.join(',');
+            if(_limit)          path += '&limit=' + _limit;
+            const prefer = _single ? 'return=representation' : '';
+            sbFetch(path, { prefer })
+              .then(({data}) => {
+                const result = _single ? (Array.isArray(data) ? data[0] : data) : data;
+                resolve({ data: result, error: null });
+              })
+              .catch(e => resolve({ data: null, error: e }));
+          }
         },
 
-        // Alias para .then() directo
-        async execute() { return await this; }
+        delete() {
+          _deleteMode = true;
+          return builder;
+        },
+
       };
       return builder;
     },
@@ -685,7 +699,7 @@ function getSB() { return sb(); }
 })();
 
 /* ══ NAVIGATION ══ */
-const PAGES = ['home','programas','tienda','turnos','checkout','login','admin','admin-fichas','portal','programa-detalle'];
+const PAGES = ['home','programas','tienda','turnos','checkout','login','admin','admin-fichas','portal','programa-detalle','prog-checkout'];
 function goTo(id){
   PAGES.forEach(p => {
     const el = document.getElementById('page-'+p);
@@ -703,7 +717,8 @@ function goTo(id){
   if(id==='admin')             initAdminPage();
   if(id==='turnos')            loadConsultasEnTurnos();
   if(id==='portal')            initPortal();
-  if(id==='programa-detalle')  {} // se inicializa desde abrirPrograma()
+  if(id==='programa-detalle')  {}
+  if(id==='prog-checkout')     initProgCheckout();
 }
 function closeMob(){ document.getElementById('mobMenu').classList.remove('open'); }
 
@@ -2188,23 +2203,91 @@ async function loadAPrograms() {
   }
 }
 
+let progCheckoutData = { nombre:'', slug:'', precio:0, progId:'' };
+
 function inscribirsePrograma(btn) {
+  // Buscar datos del programa desde el elemento padre
+  const progTitle = btn.closest('.prog-ctas')?.previousElementSibling?.previousElementSibling;
+  const titleEl = btn.closest('[data-tags]')?.querySelector('[data-prog-name]') ||
+                  btn.closest('.prog-item')?.querySelector('[data-prog-name]');
+
+  const nombre = titleEl?.dataset?.progName || 'el programa';
+  const slug   = titleEl?.dataset?.progSlug || '';
+  const precio = parseInt(titleEl?.dataset?.progPrice || '0');
+
+  progCheckoutData = { nombre, slug, precio, progId: slug };
+
   // Verificar si está logueado
   const token = localStorage.getItem('bh_token');
   if(!token) {
-    // No logueado — ir a login primero
-    toast('Necesitás una cuenta para acceder a los programas. Registrate o ingresá primero.','ok',4000);
+    toast('Necesitás registrarte para acceder al programa. Solo toma un minuto.','ok',4000);
     setTimeout(()=>goTo('login'), 800);
     return;
   }
-  // Logueado — ir al checkout de programas (por ahora WhatsApp para coordinar pago)
-  const nombre = btn?.closest('[data-prog-name]')?.dataset?.progName || 'el programa';
-  window.open(`https://wa.me/5491176179836?text=Hola!%20Quiero%20inscribirme%20en%20${encodeURIComponent(nombre)}.`, '_blank');
+
+  // Ir al checkout de programa
+  goTo('prog-checkout');
+  initProgCheckout();
+}
+
+function initProgCheckout() {
+  const { nombre, precio } = progCheckoutData;
+
+  ['pcNombre'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=nombre; });
+  ['pcPrecio','pcPrecio2','pcSena'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=fmt(precio); });
+
+  // Pre-llenar email si está logueado
+  const token = localStorage.getItem('bh_token');
+  if(token) {
+    getSB().auth.getUser().then(({data:{user}})=>{
+      if(user) { const em=document.getElementById('pcEmail'); if(em) em.value=user.email; }
+    }).catch(()=>{});
+  }
+
+  const fw = document.getElementById('pcFormWrap');
+  const sc = document.getElementById('pcSuccess');
+  if(fw) fw.style.display='';
+  if(sc) sc.style.display='none';
+}
+
+async function confirmarCompraPrograma() {
+  const nom   = document.getElementById('pcNom')?.value.trim();
+  const ape   = document.getElementById('pcApe')?.value.trim();
+  const email = document.getElementById('pcEmail')?.value.trim();
+  if(!nom||!ape||!email){ toast('Completá nombre, apellido y email','err'); return; }
+
+  const btn = document.getElementById('pcConfirmBtn');
+  btn.disabled=true; btn.textContent='Registrando...';
+
+  const { nombre, slug, precio } = progCheckoutData;
+
+  try {
+    const sb = getSB();
+    await sb.from('orders').insert({
+      customer_name:  nom + ' ' + ape,
+      customer_email: email,
+      total:          precio,
+      payment_method: 'transferencia',
+      status:         'awaiting_payment',
+      items:          JSON.stringify([{programa: nombre, slug, precio}]),
+    });
+  } catch(e) {
+    console.warn('Error guardando orden:', e.message);
+  }
+
+  const wa = document.getElementById('pcWhatsApp');
+  if(wa) wa.href = `https://wa.me/5491176179836?text=Hola!%20Soy%20${encodeURIComponent(nom+' '+ape)}%20e%20hice%20la%20transferencia%20para%20inscribirme%20en%20${encodeURIComponent(nombre)}.%20Adjunto%20el%20comprobante.`;
+
+  const fw = document.getElementById('pcFormWrap');
+  const sc = document.getElementById('pcSuccess');
+  if(fw) fw.style.display='none';
+  if(sc) sc.style.display='block';
+  btn.disabled=false;
 }
 
 async function toggleProgram(id, active) {
   try {
-    await getSB().from('programs').eq('id',id).update({active});
+    await getSB().from('programs').update({active}).eq('id',id);
     toast(active ? 'Programa activado ✓' : 'Programa desactivado','ok');
     loadAPrograms();
   } catch(e) { toast('Error: '+e.message,'err'); }
@@ -2255,7 +2338,7 @@ async function saveProgram() {
   try {
     const sb = getSB();
     if(id) {
-      await sb.from('programs').eq('id',id).update(data);
+      await sb.from('programs').update(data).eq('id',id);
       toast('Programa actualizado ✓','ok');
     } else {
       data.sort_order = Date.now();
@@ -2931,7 +3014,9 @@ window.calPrev            = calPrev;
 window.calNext            = calNext;
 window.selDate            = selDate;
 window.selSlot            = selSlot;
-window.openEditProgram    = openEditProgram;
+window.inscribirsePrograma  = inscribirsePrograma;
+window.confirmarCompraPrograma = confirmarCompraPrograma;
+window.openEditProgram      = openEditProgram;
 window.saveProgram        = saveProgram;
 window.toggleProgram      = toggleProgram;
 window.inscribirsePrograma= inscribirsePrograma;
@@ -3351,7 +3436,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         </div>
         <div>
           <span class="prog-lbl">Depuración · Inicio</span>
-          <h2 class="prog-list-title">Reset Integral 21 días</h2>
+          <h2 class="prog-list-title" data-prog-name="Reset Integral 21 días" data-prog-slug="reset-21" data-prog-price="89000">Reset Integral 21 días</h2>
           <div class="prog-sub">Empezá desde cero, de verdad</div>
           <p class="prog-desc">Un proceso intensivo de tres semanas diseñado para resetear tu metabolismo, eliminar inflamación y recuperar tu energía. Ideal si querés empezar bien o si sentís que tu cuerpo necesita un corte.</p>
           <div class="prog-includes">
@@ -3379,7 +3464,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         </div>
         <div style="direction:ltr">
           <span class="prog-lbl">Fuerza · Composición corporal</span>
-          <h2 class="prog-list-title">Be Human Performance</h2>
+          <h2 class="prog-list-title" data-prog-name="Be Human Performance" data-prog-slug="performance" data-prog-price="145000">Be Human Performance</h2>
           <div class="prog-sub">Tu cuerpo tiene más potencial del que creés</div>
           <p class="prog-desc">Ocho semanas para recomponer tu cuerpo con un enfoque funcional. No es solo ejercicio: es hormonas, nutrición y recuperación trabajando juntos.</p>
           <div class="prog-includes">
@@ -3406,7 +3491,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         </div>
         <div>
           <span class="prog-lbl">Transformación completa</span>
-          <h2 class="prog-list-title">Indomables by Be Human</h2>
+          <h2 class="prog-list-title" data-prog-name="Indomables by Be Human" data-prog-slug="indomables" data-prog-price="249000">Indomables by Be Human</h2>
           <div class="prog-sub">El programa que lo cambia todo</div>
           <p class="prog-desc">Tres meses de acompañamiento intensivo donde trabajamos todos los pilares: alimentación, movimiento, suplementación, descanso y mente.</p>
           <div class="prog-includes">
@@ -3434,7 +3519,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         </div>
         <div style="direction:ltr">
           <span class="prog-lbl">Salud femenina · Hormonas</span>
-          <h2 class="prog-list-title">Reset Mujer</h2>
+          <h2 class="prog-list-title" data-prog-name="Reset Mujer" data-prog-slug="reset-mujer" data-prog-price="119000">Reset Mujer</h2>
           <div class="prog-sub">Tu ciclo, tus hormonas, tu bienestar</div>
           <p class="prog-desc">Diseñado específicamente para el cuerpo femenino. Trabajamos el eje hormonal, el ciclo menstrual y el bienestar integral.</p>
           <div class="prog-includes">
@@ -4749,6 +4834,117 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
     </div>
   </div>
 </div>
+
+<!-- ════════════════════════════════════════════
+     CHECKOUT DE PROGRAMA
+════════════════════════════════════════════ -->
+<div class="page" id="page-prog-checkout">
+<div style="background:var(--cream-dk);min-height:100vh;padding-top:80px">
+  <div class="container" style="max-width:860px;padding:2rem clamp(1rem,3vw,2rem) 4rem">
+
+    <button onclick="goTo('programas')" style="font-size:.78rem;color:var(--muted);cursor:pointer;background:none;border:none;font-family:var(--fb);margin-bottom:1.25rem;display:flex;align-items:center;gap:.4rem">← Volver a programas</button>
+
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:1.75rem;align-items:flex-start">
+
+      <!-- Formulario -->
+      <div id="pcFormWrap">
+        <div style="background:#fff;border-radius:20px;box-shadow:0 4px 24px rgba(28,26,24,.1);overflow:hidden">
+
+          <!-- Datos personales -->
+          <div style="padding:1.5rem 1.75rem;border-bottom:1px solid var(--cream-dk)">
+            <div style="font-family:var(--fd);font-size:1.05rem;margin-bottom:1.1rem;display:flex;align-items:center;gap:.5rem"><span style="width:22px;height:22px;background:var(--teal);color:#fff;border-radius:50%;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center">1</span>Tus datos</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
+              <div class="form-group"><label class="form-label">Nombre *</label><input type="text" class="form-input" id="pcNom" placeholder="Tu nombre"></div>
+              <div class="form-group"><label class="form-label">Apellido *</label><input type="text" class="form-input" id="pcApe" placeholder="Tu apellido"></div>
+              <div class="form-group"><label class="form-label">Email *</label><input type="email" class="form-input" id="pcEmail" placeholder="tu@email.com"></div>
+              <div class="form-group"><label class="form-label">Teléfono</label><input type="tel" class="form-input" id="pcTel" placeholder="+54 9 11..."></div>
+            </div>
+          </div>
+
+          <!-- Método de pago -->
+          <div style="padding:1.5rem 1.75rem;border-bottom:1px solid var(--cream-dk)">
+            <div style="font-family:var(--fd);font-size:1.05rem;margin-bottom:1.1rem;display:flex;align-items:center;gap:.5rem"><span style="width:22px;height:22px;background:var(--teal);color:#fff;border-radius:50%;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center">2</span>Pago</div>
+
+            <div style="background:linear-gradient(135deg,rgba(201,147,90,.08),rgba(58,125,140,.05));border-radius:14px;padding:1.1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.2rem">Total a pagar</div>
+                <div style="font-family:var(--fd);font-size:1.9rem;color:var(--gold)" id="pcSena">—</div>
+              </div>
+              <div style="text-align:right;font-size:.8rem;color:var(--muted)">Pago único<br>Acceso inmediato</div>
+            </div>
+
+            <!-- Transferencia -->
+            <div style="border:2px solid var(--teal);border-radius:14px;padding:1.25rem;background:rgba(58,125,140,.03)">
+              <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1rem">
+                <div style="font-size:1.5rem">🏦</div>
+                <div><div style="font-weight:600;font-size:.92rem">Transferencia bancaria</div><div style="font-size:.76rem;color:var(--muted)">Confirmamos tu acceso en menos de 24hs hábiles</div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:.5rem;font-size:.85rem;margin-bottom:1rem">
+                <div style="display:flex;justify-content:space-between;padding:.45rem 0;border-bottom:1px solid var(--cream-dk)"><span style="color:var(--muted)">Banco</span><strong>Galicia</strong></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--cream-dk)">
+                  <span style="color:var(--muted)">CBU</span>
+                  <div style="display:flex;align-items:center;gap:.65rem"><strong>0070299-30-0042837510-9</strong><span onclick="copiarCBU('0070299-30-0042837510-9')" style="font-size:.7rem;color:var(--teal);cursor:pointer;font-weight:600">Copiar</span></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--cream-dk)">
+                  <span style="color:var(--muted)">Alias</span>
+                  <div style="display:flex;align-items:center;gap:.65rem"><strong>behuman.pagos</strong><span onclick="copiarCBU('behuman.pagos')" style="font-size:.7rem;color:var(--teal);cursor:pointer;font-weight:600">Copiar</span></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:.45rem 0"><span style="color:var(--muted)">Titular</span><strong>Mariel Dobenau</strong></div>
+              </div>
+              <div style="background:rgba(212,133,58,.08);border-radius:10px;padding:.8rem 1rem;font-size:.79rem;color:#8A5020;line-height:1.65">
+                ⚠️ Una vez transferida la seña, enviá el comprobante al <strong>+54 9 11 7617-9836</strong> con tu nombre y apellido. En menos de 24hs hábiles activamos tu acceso al programa.
+              </div>
+            </div>
+          </div>
+
+          <!-- Confirmar -->
+          <div style="padding:1.4rem 1.75rem">
+            <button id="pcConfirmBtn" onclick="confirmarCompraPrograma()" style="width:100%;padding:.9rem;border-radius:100px;font-family:var(--fb);font-size:.8rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:var(--gold);color:#fff;border:none;cursor:pointer">
+              Confirmar inscripción →
+            </button>
+            <div style="text-align:center;margin-top:.75rem;font-size:.73rem;color:var(--muted)">🔒 Tus datos están protegidos · Cancela con 24hs de anticipación</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumen -->
+      <div style="position:sticky;top:100px">
+        <div style="background:#fff;border-radius:18px;box-shadow:0 4px 24px rgba(28,26,24,.1);overflow:hidden">
+          <div style="background:var(--dark);padding:1.5rem;position:relative">
+            <div style="font-size:.65rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:rgba(201,147,90,.6);margin-bottom:.3rem">Tu programa</div>
+            <div style="font-family:var(--fd);font-size:1.2rem;color:var(--cream)" id="pcNombre">—</div>
+          </div>
+          <div style="padding:1.25rem;display:flex;flex-direction:column;gap:.6rem;font-size:.84rem">
+            <div style="display:flex;justify-content:space-between;padding-top:.4rem;border-top:1px solid var(--cream-dk)"><span style="font-weight:600">Total</span><span style="font-family:var(--fd);font-size:1.15rem;color:var(--gold)" id="pcPrecio2">—</span></div>
+          </div>
+          <div style="padding:.85rem 1.25rem;background:var(--cream);display:flex;flex-direction:column;gap:.4rem;font-size:.77rem;color:var(--muted)">
+            <span>✓ Acceso inmediato al material</span>
+            <span>✓ Comunidad privada incluida</span>
+            <span>✓ Soporte del equipo Be Human</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pantalla de éxito -->
+    <div id="pcSuccess" style="display:none;text-align:center;background:#fff;border-radius:20px;box-shadow:0 4px 24px rgba(28,26,24,.1);padding:4rem 2rem">
+      <div style="font-size:3.5rem;margin-bottom:1rem">🎉</div>
+      <h2 style="font-family:var(--fd);font-size:2rem;margin-bottom:.65rem">¡Inscripción registrada!</h2>
+      <p style="color:var(--muted);max-width:420px;margin:0 auto 1.75rem;font-size:.9rem;line-height:1.7">
+        Tu inscripción está pendiente de confirmación. Una vez que verifiquemos la transferencia activamos tu acceso al programa.
+      </p>
+      <div style="background:rgba(212,133,58,.08);border-radius:14px;padding:1.1rem 1.5rem;max-width:420px;margin:0 auto 2rem;font-size:.83rem;color:#8A5020;line-height:1.7">
+        📲 Enviá el comprobante al <strong>+54 9 11 7617-9836</strong> con tu nombre y apellido para acelerar la activación.
+      </div>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+        <button onclick="goTo('portal')" style="padding:.8rem 1.75rem;border-radius:100px;font-family:var(--fb);font-size:.78rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer">Ver mi portal →</button>
+        <a id="pcWhatsApp" href="#" target="_blank" style="padding:.8rem 1.75rem;border-radius:100px;font-family:var(--fb);font-size:.78rem;font-weight:600;background:#25D366;color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:.4rem">💬 Enviar comprobante</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /page-prog-checkout -->
 
 <!-- MODAL EDITAR PROGRAMA -->
 <div class="amb" id="editProgMod">
