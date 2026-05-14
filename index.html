@@ -2780,26 +2780,59 @@ async function loadProgMembers() {
 function openAddMember() { document.getElementById('addMemberForm').style.display=''; }
 
 async function saveMember() {
-  const email = document.getElementById('mbEmail').value.trim();
-  if(!email){ toast('Ingresá el email del usuario','err'); return; }
-  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON), 'Content-Type':'application/json', 'Prefer':'return=minimal' };
+  const email   = document.getElementById('mbEmail').value.trim();
+  const notes   = document.getElementById('mbNotes').value.trim();
+  const type    = document.getElementById('mbType').value;
   const expires = document.getElementById('mbExpires').value || null;
+  if(!email){ toast('Ingresá el email del usuario','err'); return; }
+
+  const token = _authToken || localStorage.getItem('bh_token');
+  const h = {
+    'apikey': SUPABASE_ANON,
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json'
+  };
+
   try {
-    // Buscar el user_id desde profiles por email (necesita función o vista)
-    // Por ahora insertamos con nota para asociar manualmente
-    await fetch(`${SUPABASE_URL}/rest/v1/memberships`, { method:'POST', headers:h,
+    // Buscar user_id por email usando RPC
+    const rpc = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_user_id_by_email`, {
+      method: 'POST', headers: h,
+      body: JSON.stringify({ p_email: email })
+    });
+    const userId = rpc.ok ? await rpc.json() : null;
+
+    if(!userId) {
+      toast('No se encontró ningún usuario registrado con ese email. El usuario debe registrarse primero en la web.','err', 6000);
+      return;
+    }
+
+    // Crear membresía real
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/memberships`, {
+      method: 'POST',
+      headers: {...h, 'Prefer': 'return=minimal'},
       body: JSON.stringify({
         program_id:  currentAdmProgId,
-        user_id:     '00000000-0000-0000-0000-000000000000', // placeholder
-        status:      'pending',
-        access_type: document.getElementById('mbType').value,
-        notes:       `Email: ${email} · ${document.getElementById('mbNotes').value.trim()||'Acceso manual'}`,
+        user_id:     userId,
+        status:      'active',
+        access_type: type,
+        notes:       notes || 'Acceso manual',
         expires_at:  expires ? new Date(expires).toISOString() : null,
-      }) });
-    toast('Acceso registrado. El usuario debe registrarse con ese email para activarlo.','ok',5000);
+      })
+    });
+
+    if(!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.message || err.hint || 'No se pudo crear la membresía');
+    }
+
+    toast('✓ Acceso otorgado — ' + email + ' ya puede ver el programa', 'ok', 5000);
     document.getElementById('addMemberForm').style.display = 'none';
+    document.getElementById('mbEmail').value = '';
+    document.getElementById('mbNotes').value = '';
     loadProgMembers();
-  } catch(e){ toast('Error: '+e.message,'err'); }
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+  }
 }
 
 async function toggleMembership(id, newStatus) {
@@ -3483,32 +3516,50 @@ async function initPortal() {
 }
 
 async function loadPortalPrograms() {
-  const sb = getSB();
-  const grid = document.getElementById('portalProgGrid');
+  const grid    = document.getElementById('portalProgGrid');
   const noProgs = document.getElementById('portalNoProgs');
   if(!grid) return;
-  try {
-    const { data: memberships } = await sb
-      .from('memberships')
-      .select('*, programs(*)')
-      .eq('user_id', portalUser.id)
-      .eq('status', 'active');
 
-    if(!memberships?.length) {
+  const token = _authToken || localStorage.getItem('bh_token');
+  const h = {
+    'apikey': SUPABASE_ANON,
+    'Authorization': 'Bearer ' + token
+  };
+
+  try {
+    // Traer membresías activas del usuario
+    const r1 = await fetch(
+      `${SUPABASE_URL}/rest/v1/memberships?user_id=eq.${portalUser.id}&status=eq.active&select=*`,
+      {headers: h}
+    );
+    const memberships = await r1.json();
+
+    if(!Array.isArray(memberships) || !memberships.length) {
       grid.style.display = 'none';
       if(noProgs) noProgs.style.display = '';
       return;
     }
+
+    // Traer datos de cada programa
+    const progIds = memberships.map(m => m.program_id).filter(Boolean);
+    const r2 = await fetch(
+      `${SUPABASE_URL}/rest/v1/programs?id=in.(${progIds.join(',')})&select=*`,
+      {headers: h}
+    );
+    const programs = await r2.json();
+    const progMap = {};
+    (Array.isArray(programs) ? programs : []).forEach(p => progMap[p.id] = p);
+
     grid.style.display = '';
     if(noProgs) noProgs.style.display = 'none';
 
     grid.innerHTML = memberships.map(m => {
-      const prog = m.programs;
+      const prog = progMap[m.program_id];
       if(!prog) return '';
       const pct = m.progress || 0;
       return `
         <div class="portal-prog-card" onclick="abrirPrograma('${prog.id}','${m.id}')">
-          <div class="portal-prog-img" style="background:var(--dark2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">
+          <div class="portal-prog-img" style="background:var(--dark2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:140px">
             ${prog.image_url ? `<img src="${prog.image_url}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:.65">` : ''}
             <div style="position:relative;z-index:2;color:var(--cream);font-family:var(--fd);font-size:1.1rem;padding:1.5rem;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.5)">${prog.name}</div>
           </div>
@@ -3521,8 +3572,10 @@ async function loadPortalPrograms() {
           </div>
         </div>`;
     }).join('');
+
   } catch(e) {
-    if(grid) grid.innerHTML = '<div style="color:var(--muted);font-size:.85rem">Error al cargar programas.</div>';
+    console.error('loadPortalPrograms:', e);
+    if(grid) grid.innerHTML = `<div style="color:var(--muted);padding:2rem;font-size:.85rem">Error al cargar tus programas: ${e.message}</div>`;
   }
 }
 
