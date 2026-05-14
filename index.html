@@ -3815,12 +3815,14 @@ function mostrarLandingModulo(mod) {
   cursoState.moduloActual = mod;
   document.getElementById('cursoModulosView').style.display   = 'none';
   document.getElementById('cursoPlayerView').style.display    = 'none';
-  document.getElementById('cursoModuloLanding').style.display = '';
-  // Ocultar sidebar global — la landing tiene su propio sidebar
+  document.getElementById('cursoModuloLanding').style.cssText = 'display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 115px);overflow:hidden';
+  // En landing: ocultar sidebar global (la landing tiene su propio layout)
   const gs = document.getElementById('cursoSidebar');
   if(gs) gs.style.display = 'none';
-  const tbL = document.getElementById("cursoTopbarEl");
-  if(tbL) { tbL.style.display = ""; document.getElementById("cursoBackBtn").textContent = "← Módulos"; }
+  const wrap = document.querySelector('.curso-wrap');
+  if(wrap) wrap.style.gridTemplateColumns = '1fr';
+  const tbL = document.getElementById('cursoTopbarEl');
+  if(tbL) { tbL.style.display = ''; document.getElementById('cursoBackBtn').textContent = '← Módulos'; }
   document.getElementById('cursoMain')?.scrollTo({top:0, behavior:'smooth'});
 
   const total = mod.lecciones?.length || 0;
@@ -3943,11 +3945,13 @@ function abrirLeccion(modId, leccionId) {
   document.getElementById('cursoModulosView').style.display   = 'none';
   document.getElementById('cursoModuloLanding').style.display = 'none';
   document.getElementById('cursoPlayerView').style.display    = '';
-  // Ocultar sidebar global — el player tiene su propio sidebar
+  // En player: mostrar sidebar con lecciones del módulo, 2 columnas
   const gs = document.getElementById('cursoSidebar');
-  if(gs) gs.style.display = 'none';
-  const tb = document.getElementById("cursoTopbarEl");
-  if(tb) tb.style.display = "";
+  if(gs) gs.style.display = '';
+  const wrap = document.querySelector('.curso-wrap');
+  if(wrap) wrap.style.gridTemplateColumns = '1fr 340px';
+  const tb = document.getElementById('cursoTopbarEl');
+  if(tb) tb.style.display = '';
 
   // Actualizar botón volver
   const backBtn = document.getElementById('cursoBackBtn');
@@ -4086,9 +4090,11 @@ function volverAModulos() {
   document.getElementById('cursoModulosView').style.display   = '';
   document.getElementById('cursoPlayerView').style.display    = 'none';
   document.getElementById('cursoModuloLanding').style.display = 'none';
-  // Mostrar sidebar global, ocultar topbar
+  // En módulos: ocultar sidebar, usar ancho completo
   const gs = document.getElementById('cursoSidebar');
-  if(gs) gs.style.display = '';
+  if(gs) gs.style.display = 'none';
+  const wrap = document.querySelector('.curso-wrap');
+  if(wrap) wrap.style.gridTemplateColumns = '1fr';
   const tb = document.getElementById('cursoTopbarEl');
   if(tb) tb.style.display = 'none';
   renderModulosGrid();
@@ -4099,7 +4105,7 @@ function volverALanding() {
   if(!mod) { volverAModulos(); return; }
   document.getElementById('cursoModulosView').style.display   = 'none';
   document.getElementById('cursoPlayerView').style.display    = 'none';
-  document.getElementById('cursoModuloLanding').style.display = '';
+  document.getElementById('cursoModuloLanding').style.cssText = 'display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 115px);overflow:hidden';
   mostrarLandingModulo(mod);
 }
 
@@ -6007,7 +6013,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 
 /* ── Player ── */
 .curso-player-wrap{background:#000;position:relative}
-.curso-player{aspect-ratio:16/9;width:100%;display:flex;align-items:center;justify-content:center;background:#000}
+.curso-player{aspect-ratio:16/9;width:100%;max-height:55vh;display:flex;align-items:center;justify-content:center;background:#000}
 .curso-player iframe{width:100%;height:100%;border:none;display:block}
 .curso-player-placeholder{text-align:center;color:rgba(255,255,255,.35);padding:3rem}
 
@@ -6097,7 +6103,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
     </div>
 
     <!-- Vista landing del módulo — mismo layout que el player -->
-    <div id="cursoModuloLanding" style="display:none;display:grid;grid-template-columns:1fr 340px;height:100%;overflow:hidden">
+    <div id="cursoModuloLanding" style="display:none">
 
       <!-- Main: player + info -->
       <div class="curso-main">
