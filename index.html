@@ -5976,16 +5976,16 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 <!-- ════════════════════════════════════════════
      DETALLE DEL PROGRAMA (contenido)
 ════════════════════════════════════════════ -->
-<div class="page" id="page-programa-detalle">
+<div class="page" id="page-programa-detalle" style="padding-top:70px">
 <style>
 /* ── CURSO: Layout ── */
-.curso-wrap{display:grid;grid-template-columns:1fr 380px;min-height:calc(100vh - 70px);background:#f5f5f5}
-.curso-main{padding:0;overflow-y:auto}
-.curso-sidebar{background:#fff;border-left:1px solid #e8e8e8;overflow-y:auto;position:sticky;top:70px;height:calc(100vh - 70px)}
+.curso-wrap{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 70px);background:#f5f5f5;overflow:hidden}
+.curso-main{overflow-y:auto;height:100%}
+.curso-sidebar{background:#fff;border-left:1px solid #e8e8e8;overflow-y:auto;height:100%}
 
 /* ── Header del curso ── */
 /* ── Topbar del curso ── */
-.curso-topbar{background:#fff;border-bottom:1px solid #e8e8e8;padding:.65rem 1.5rem;display:flex;align-items:center;gap:1rem;position:sticky;top:70px;z-index:10;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.curso-topbar{background:#fff;border-bottom:1px solid #e8e8e8;padding:.65rem 1.5rem;display:flex;align-items:center;gap:1rem;position:relative;z-index:10;box-shadow:0 1px 0 rgba(0,0,0,.06)}
 .curso-topbar-back{color:var(--muted);font-size:.8rem;cursor:pointer;background:none;border:none;font-family:var(--fb);display:flex;align-items:center;gap:.4rem;padding:.35rem .75rem;border-radius:100px;border:1.5px solid var(--cream-dk);transition:.15s}
 .curso-topbar-back:hover{background:var(--cream);color:var(--text)}
 .curso-topbar-title{font-family:var(--fd);color:#1C1A18;font-size:1rem;flex:1}
@@ -6097,7 +6097,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
     </div>
 
     <!-- Vista landing del módulo — mismo layout que el player -->
-    <div id="cursoModuloLanding" style="display:none" class="curso-wrap">
+    <div id="cursoModuloLanding" style="display:none;display:grid;grid-template-columns:1fr 340px;height:100%;overflow:hidden">
 
       <!-- Main: player + info -->
       <div class="curso-main">
