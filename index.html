@@ -3703,27 +3703,33 @@ function renderModulosGrid() {
     return;
   }
 
+  // Actualizar progreso total
+  const totalLecs = cursoState.modulos.reduce((s,m)=>s+(m.lecciones?.length||0),0);
+  const doneLecs  = cursoState.modulos.reduce((s,m)=>s+(m.lecciones||[]).filter(l=>cursoState.completadas.has(l.id)).length,0);
+  const pctTotal  = totalLecs > 0 ? Math.round(doneLecs/totalLecs*100) : 0;
+  const pctEl = document.getElementById('cursoProgPct');
+  if(pctEl) pctEl.textContent = pctTotal + '% completado · ' + doneLecs + ' de ' + totalLecs + ' lecciones';
+
   grid.innerHTML = cursoState.modulos.map((mod, idx) => {
     const total = mod.lecciones?.length || 0;
     const done  = (mod.lecciones||[]).filter(l=>cursoState.completadas.has(l.id)).length;
     const pct   = total > 0 ? Math.round(done/total*100) : 0;
-    const coverStyle = mod.cover_url
-      ? `background-image:url(${mod.cover_url});background-size:cover;background-position:center`
-      : `background:#1C1A18`;
+    const isCompleted = pct === 100;
 
     return `
       <div class="modulo-card" onclick="abrirModulo('${mod.id}')">
-        <div class="modulo-card-img" style="${coverStyle}">
-          ${!mod.cover_url ? `<div style="font-family:var(--fd);color:rgba(240,232,216,.6);font-size:1rem;padding:.75rem;text-align:center">${mod.title}</div>` : ''}
-          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:.5rem .6rem;display:flex;justify-content:space-between;align-items:flex-end">
-            <span style="font-size:.65rem;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.08em">${idx+1}</span>
-            <span style="font-size:.65rem;color:rgba(255,255,255,.6)">${total} lecciones</span>
-          </div>
+        <div class="modulo-card-img" style="${mod.cover_url ? 'background-image:url('+mod.cover_url+');background-size:cover;background-position:center' : 'background:linear-gradient(135deg,#1C1A18,#2D2A27)'}">
+          <div class="modulo-card-img-overlay"></div>
+          <div class="modulo-card-img-label">${mod.title}</div>
+          ${isCompleted ? '<div style="position:absolute;top:.65rem;right:.65rem;background:rgba(74,155,111,.9);color:#fff;font-size:.65rem;font-weight:700;padding:.2rem .55rem;border-radius:100px;letter-spacing:.05em">COMPLETADO</div>' : ''}
         </div>
         <div class="modulo-card-body">
-          <div class="modulo-card-pct">${pct}%</div>
-          <div class="modulo-card-bar"><div class="modulo-card-bar-fill" style="width:${pct}%"></div></div>
-          <div class="modulo-card-title">${mod.title}</div>
+          <div class="modulo-card-meta">
+            <span>${total} lección${total!==1?'es':''}</span>
+            <span style="font-weight:600;color:${isCompleted?'#4A9B6F':pct>0?'var(--teal)':'var(--muted)'}">${pct}%</span>
+          </div>
+          <div class="modulo-card-bar"><div class="modulo-card-bar-fill" style="width:${pct}%;background:${isCompleted?'#4A9B6F':'var(--teal)'}"></div></div>
+          ${mod.description ? '<div style="font-size:.74rem;color:var(--muted);margin-top:.4rem;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+mod.description+'</div>' : ''}
         </div>
       </div>`;
   }).join('');
@@ -3810,6 +3816,11 @@ function mostrarLandingModulo(mod) {
   document.getElementById('cursoModulosView').style.display   = 'none';
   document.getElementById('cursoPlayerView').style.display    = 'none';
   document.getElementById('cursoModuloLanding').style.display = '';
+  // Ocultar sidebar global — la landing tiene su propio sidebar
+  const gs = document.getElementById('cursoSidebar');
+  if(gs) gs.style.display = 'none';
+  const tbL = document.getElementById("cursoTopbarEl");
+  if(tbL) { tbL.style.display = ""; document.getElementById("cursoBackBtn").textContent = "← Módulos"; }
   document.getElementById('cursoMain')?.scrollTo({top:0, behavior:'smooth'});
 
   const total = mod.lecciones?.length || 0;
@@ -3932,6 +3943,11 @@ function abrirLeccion(modId, leccionId) {
   document.getElementById('cursoModulosView').style.display   = 'none';
   document.getElementById('cursoModuloLanding').style.display = 'none';
   document.getElementById('cursoPlayerView').style.display    = '';
+  // Ocultar sidebar global — el player tiene su propio sidebar
+  const gs = document.getElementById('cursoSidebar');
+  if(gs) gs.style.display = 'none';
+  const tb = document.getElementById("cursoTopbarEl");
+  if(tb) tb.style.display = "";
 
   // Actualizar botón volver
   const backBtn = document.getElementById('cursoBackBtn');
@@ -4070,6 +4086,11 @@ function volverAModulos() {
   document.getElementById('cursoModulosView').style.display   = '';
   document.getElementById('cursoPlayerView').style.display    = 'none';
   document.getElementById('cursoModuloLanding').style.display = 'none';
+  // Mostrar sidebar global, ocultar topbar
+  const gs = document.getElementById('cursoSidebar');
+  if(gs) gs.style.display = '';
+  const tb = document.getElementById('cursoTopbarEl');
+  if(tb) tb.style.display = 'none';
   renderModulosGrid();
 }
 
@@ -5963,23 +5984,26 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 .curso-sidebar{background:#fff;border-left:1px solid #e8e8e8;overflow-y:auto;position:sticky;top:70px;height:calc(100vh - 70px)}
 
 /* ── Header del curso ── */
-.curso-topbar{background:#1C1A18;padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;position:sticky;top:70px;z-index:10}
-.curso-topbar-back{color:rgba(240,232,216,.5);font-size:.78rem;cursor:pointer;background:none;border:none;font-family:var(--fb);display:flex;align-items:center;gap:.35rem}
-.curso-topbar-back:hover{color:var(--cream)}
-.curso-topbar-title{font-family:var(--fd);color:var(--cream);font-size:.95rem;flex:1}
-.curso-topbar-prog{font-size:.72rem;color:rgba(240,232,216,.45)}
+/* ── Topbar del curso ── */
+.curso-topbar{background:#fff;border-bottom:1px solid #e8e8e8;padding:.65rem 1.5rem;display:flex;align-items:center;gap:1rem;position:sticky;top:70px;z-index:10;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.curso-topbar-back{color:var(--muted);font-size:.8rem;cursor:pointer;background:none;border:none;font-family:var(--fb);display:flex;align-items:center;gap:.4rem;padding:.35rem .75rem;border-radius:100px;border:1.5px solid var(--cream-dk);transition:.15s}
+.curso-topbar-back:hover{background:var(--cream);color:var(--text)}
+.curso-topbar-title{font-family:var(--fd);color:#1C1A18;font-size:1rem;flex:1}
+.curso-topbar-prog{font-size:.75rem;color:var(--muted);background:var(--cream);padding:.25rem .75rem;border-radius:100px}
 
 /* ── Módulos grid (vista inicial) ── */
-.modulos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;padding:2rem}
-.modulo-card{background:#fff;border-radius:12px;overflow:hidden;cursor:pointer;transition:.2s;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.modulo-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.14)}
+.modulos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.5rem;padding:2rem}
+.modulo-card{background:#fff;border-radius:16px;overflow:hidden;cursor:pointer;transition:.22s;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1.5px solid #f0f0f0}
+.modulo-card:hover{transform:translateY(-5px);box-shadow:0 12px 32px rgba(0,0,0,.1);border-color:transparent}
 .modulo-card-img{aspect-ratio:16/9;background:#1C1A18;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .modulo-card-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
-.modulo-card-body{padding:.85rem}
-.modulo-card-pct{font-size:.72rem;color:var(--muted);margin-bottom:.3rem}
-.modulo-card-bar{height:3px;background:#e8e8e8;border-radius:100px;overflow:hidden;margin-bottom:.5rem}
-.modulo-card-bar-fill{height:100%;background:var(--teal);border-radius:100px}
-.modulo-card-title{font-size:.9rem;font-weight:600;color:#1C1A18;line-height:1.3}
+.modulo-card-img-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(28,26,24,.7) 0%,transparent 60%)}
+.modulo-card-img-label{position:absolute;bottom:.75rem;left:.85rem;right:.85rem;font-family:var(--fd);font-size:1rem;color:#fff;line-height:1.25;text-shadow:0 2px 8px rgba(0,0,0,.4)}
+.modulo-card-body{padding:1rem 1.1rem}
+.modulo-card-meta{font-size:.72rem;color:var(--muted);margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between}
+.modulo-card-bar{height:3px;background:#f0f0f0;border-radius:100px;overflow:hidden;margin-bottom:.35rem}
+.modulo-card-bar-fill{height:100%;background:var(--teal);border-radius:100px;transition:.3s}
+.modulo-card-pct{font-size:.7rem;color:var(--muted)}
 
 /* ── Player ── */
 .curso-player-wrap{background:#000;position:relative}
@@ -6043,8 +6067,8 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 </style>
 
 <!-- Topbar -->
-<div class="curso-topbar">
-  <button class="curso-topbar-back" id="cursoBackBtn" onclick="cursoGoBack()">← Portal</button>
+<div class="curso-topbar" id="cursoTopbarEl" style="display:none">
+  <button class="curso-topbar-back" id="cursoBackBtn" onclick="cursoGoBack()">← Volver</button>
   <div class="curso-topbar-title" id="cursoTopTitle">Programa</div>
   <div class="curso-topbar-prog" id="cursoTopProg"></div>
 </div>
@@ -6055,13 +6079,13 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 
     <!-- Vista de módulos (inicial) -->
     <div id="cursoModulosView">
-      <div style="padding:1.5rem 2rem .5rem;border-bottom:1px solid #e8e8e8;background:#fff">
-        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.25rem" id="cursoModViewLabel">Todos los contenidos</div>
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div style="font-size:.82rem;color:var(--muted)" id="cursoProgPct">0% completado</div>
-          <div style="display:flex;gap:.5rem">
-            <input type="text" placeholder="Buscar contenido" id="cursoSearch" oninput="filterCursoModules()" style="padding:.45rem .85rem;border:1px solid #e8e8e8;border-radius:8px;font-size:.8rem;outline:none;font-family:var(--fb);width:200px">
+      <div style="padding:1.75rem 2rem 1.25rem;border-bottom:1px solid #f0f0f0;background:#fff">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+          <div>
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:.3rem" id="cursoModViewLabel">Contenido del programa</div>
+            <div style="font-size:.82rem;color:var(--muted)" id="cursoProgPct">—</div>
           </div>
+          <input type="text" placeholder="Buscar módulo..." id="cursoSearch" oninput="filterCursoModules()" style="padding:.5rem 1rem;border:1.5px solid #e8e8e8;border-radius:100px;font-size:.8rem;outline:none;font-family:var(--fb);width:200px;transition:.15s" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='#e8e8e8'">
         </div>
       </div>
       <div class="modulos-grid" id="modulosGrid">
