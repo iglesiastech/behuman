@@ -2900,10 +2900,11 @@ async function loadOrdenesProgramas() {
 }
 
 async function aprobarOrdenPrograma(orderId, email, slug) {
-  if(!confirm(`¿Aprobar la orden y dar acceso al programa a ${email}?`)) return;
+  if(!confirm('¿Aprobar la orden y dar acceso al programa a '+email+'?')) return;
+  const token = _authToken || localStorage.getItem('bh_token');
   const h = {
     'apikey': SUPABASE_ANON,
-    'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON),
+    'Authorization': 'Bearer ' + token,
     'Content-Type': 'application/json'
   };
 
@@ -2919,35 +2920,66 @@ async function aprobarOrdenPrograma(orderId, email, slug) {
     const r2 = await fetch(`${SUPABASE_URL}/rest/v1/programs?slug=eq.${slug}&select=id`, {headers:h});
     const progs = await r2.json();
     const progId = progs?.[0]?.id;
-    if(!progId) { toast('Orden aprobada pero no se encontró el programa para dar acceso automático — agregalo manualmente desde Programas → Miembros','ok',6000); loadOrdenesProgramas(); return; }
+    if(!progId) {
+      toast('Orden aprobada pero no se encontró el programa. Buscalo por slug: '+slug,'ok',6000);
+      loadOrdenesProgramas(); return;
+    }
 
-    // 3. Buscar el user_id por email en profiles
-    const r3 = await fetch(`${SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}&select=id`, {headers:h});
-    const profiles = await r3.json();
-    const userId = profiles?.[0]?.id;
+    // 3. Buscar user_id por email — buscar en auth.users via admin API
+    // Primero intentar en profiles (si tiene email guardado)
+    let userId = null;
+
+    // Buscar en auth usando el service role no es posible desde cliente
+    // Solución: guardar el user_id en la orden cuando se hace el checkout
+    // Por ahora buscar en profiles por cualquier campo que tenga el email
+    const r3a = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=id`, {
+      headers: {...h, 'Accept': 'application/json'}
+    });
+    const allProfiles = await r3a.json();
+
+    // Como profiles no tiene email, buscar el usuario que hizo el checkout
+    // usando el email guardado en la orden
+    // La mejor alternativa: usar la función RPC que puede acceder a auth.users
+    const rRpc = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_user_id_by_email`, {
+      method: 'POST',
+      headers: h,
+      body: JSON.stringify({ p_email: email })
+    });
+
+    if(rRpc.ok) {
+      const rpcResult = await rRpc.json();
+      userId = rpcResult;
+    }
 
     if(!userId) {
-      toast('Orden aprobada. El usuario no tiene cuenta aún — cuando se registre con ese email verá el programa automáticamente.','ok',6000);
+      toast('Orden aprobada ✓ — El usuario aún no tiene cuenta registrada. Cuando se registre con '+email+' verá el programa.','ok',8000);
       loadOrdenesProgramas();
       return;
     }
 
     // 4. Crear membresía
-    await fetch(`${SUPABASE_URL}/rest/v1/memberships`, {
-      method: 'POST', headers: {...h, 'Prefer':'return=minimal'},
+    const r4 = await fetch(`${SUPABASE_URL}/rest/v1/memberships`, {
+      method: 'POST',
+      headers: {...h, 'Prefer':'return=minimal'},
       body: JSON.stringify({
         user_id:     userId,
         program_id:  progId,
         status:      'active',
         access_type: 'purchased',
-        notes:       `Aprobado por admin · Orden ${orderId}`
+        notes:       'Aprobado por admin · Orden '+orderId
       })
     });
 
-    toast(`✓ Orden aprobada — ${email} ahora tiene acceso al programa`, 'ok', 5000);
+    if(!r4.ok) {
+      const err = await r4.json().catch(()=>({}));
+      throw new Error('Membresía: '+(err.message||err.hint||r4.status));
+    }
+
+    toast('✓ Orden aprobada — '+email+' ya tiene acceso al programa', 'ok', 5000);
     loadOrdenesProgramas();
   } catch(e) {
     toast('Error: '+e.message, 'err');
+    console.error('aprobarOrden:', e);
   }
 }
 
