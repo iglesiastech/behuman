@@ -2914,7 +2914,7 @@ async function loadOrdenesProgramas() {
           <td style="padding:.75rem 1rem;font-size:.78rem;color:var(--muted)">${hace}</td>
           <td style="padding:.75rem 1rem">
             <div style="display:flex;flex-direction:column;gap:.4rem">
-              <button onclick="aprobarOrdenPrograma('${o.id}','${o.customer_email}','${slug}')" style="padding:.4rem .85rem;border-radius:100px;font-size:.72rem;font-weight:600;background:rgba(74,155,111,.1);color:#2E7A52;border:1.5px solid rgba(74,155,111,.3);cursor:pointer;font-family:var(--fb)">✓ Aprobar y dar acceso</button>
+              <button onclick="aprobarOrdenPrograma('${o.id}','${o.customer_email}','${slug}','${(o.customer_name||'').replace(/'/g,'').replace(/"/g,'')}','${progName.replace(/'/g,'').replace(/"/g,'')}')" style="padding:.4rem .85rem;border-radius:100px;font-size:.72rem;font-weight:600;background:rgba(74,155,111,.1);color:#2E7A52;border:1.5px solid rgba(74,155,111,.3);cursor:pointer;font-family:var(--fb)">✓ Aprobar y dar acceso</button>
               <button onclick="rechazarOrdenPrograma('${o.id}')" style="padding:.4rem .85rem;border-radius:100px;font-size:.72rem;font-weight:600;background:rgba(196,97,74,.08);color:#C4614A;border:1.5px solid rgba(196,97,74,.2);cursor:pointer;font-family:var(--fb)">✕ Rechazar</button>
               <a href="https://wa.me/${(o.customer_email||'').replace(/[^0-9]/g,'')}" target="_blank" style="padding:.4rem .85rem;border-radius:100px;font-size:.72rem;font-weight:600;background:rgba(37,211,102,.08);color:#25D366;border:1.5px solid rgba(37,211,102,.2);cursor:pointer;font-family:var(--fb);text-decoration:none;text-align:center">💬 WhatsApp</a>
             </div>
@@ -2950,7 +2950,7 @@ async function loadOrdenesProgramas() {
   }
 }
 
-async function aprobarOrdenPrograma(orderId, email, slug) {
+async function aprobarOrdenPrograma(orderId, email, slug, customerName, progName) {
   if(!confirm('¿Aprobar la orden y dar acceso al programa a '+email+'?')) return;
   const token = _authToken || localStorage.getItem('bh_token');
   const h = {
@@ -3027,7 +3027,7 @@ async function aprobarOrdenPrograma(orderId, email, slug) {
     }
 
     // Email al cliente — programa aprobado
-    emailProgramaConfirmado(email.split('@')[0], email, slug||'el programa');
+    emailProgramaConfirmado(customerName || email.split('@')[0], email, progName || slug || 'el programa');
 
     toast('✓ Orden aprobada — '+email+' ya tiene acceso al programa', 'ok', 5000);
     loadOrdenesProgramas();
@@ -3551,56 +3551,83 @@ function emailTurnoConfirmado(nombre, email, fecha, hora, consulta) {
 function emailProgramaPendiente(nombre, email, programa, total) {
   const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px">
-  <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden">
+  <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
     <tr><td style="background:#1C1A18;padding:32px 40px;text-align:center">
       <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(240,232,216,.5);margin-bottom:6px">Medicina Funcional</div>
-      <div style="font-family:Georgia,serif;font-size:26px;color:#F0E8D8">Be Human</div>
+      <div style="font-family:Georgia,serif;font-size:28px;color:#F0E8D8">Be Human</div>
     </td></tr>
-    <tr><td style="padding:36px 40px;text-align:center">
-      <div style="font-size:36px;margin-bottom:12px">⏳</div>
-      <h1 style="font-family:Georgia,serif;font-size:24px;font-weight:400;color:#1C1A18;margin:0 0 8px">Inscripción registrada</h1>
-      <p style="font-size:15px;color:#8A7F74;margin:0">Hola <strong style="color:#1C1A18">${nombre}</strong>, recibimos tu solicitud de inscripción.</p>
+    <tr><td style="padding:36px 40px 24px;text-align:center">
+      <div style="width:56px;height:56px;border-radius:50%;background:#FFF3E0;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px">⏳</div>
+      <h1 style="font-family:Georgia,serif;font-size:22px;font-weight:400;color:#1C1A18;margin:0 0 10px">Inscripción registrada</h1>
+      <p style="font-size:15px;color:#6B6460;margin:0">Hola <strong style="color:#1C1A18">${nombre}</strong>, recibimos tu solicitud de inscripción al programa.</p>
     </td></tr>
-    <tr><td style="padding:0 40px 28px">
-      <table width="100%" style="background:#F0E8D8;border-radius:12px;padding:20px;border-collapse:collapse">
-        <tr><td style="padding:8px 0;border-bottom:1px solid #E4D9C5;font-size:14px;color:#8A7F74">Programa</td><td style="padding:8px 0;border-bottom:1px solid #E4D9C5;text-align:right;font-weight:600;color:#1C1A18">${programa}</td></tr>
-        <tr><td style="padding:8px 0;font-size:14px;color:#8A7F74">Total</td><td style="padding:8px 0;text-align:right;font-weight:700;font-size:20px;color:#C9935A">${total}</td></tr>
+    <tr><td style="padding:0 40px 24px">
+      <table width="100%" style="background:#F8F4EE;border-radius:12px;border-collapse:collapse">
+        <tr><td style="padding:16px 20px;border-bottom:1px solid #EAE0D0">
+          <div style="font-size:12px;color:#8A7F74;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Programa</div>
+          <div style="font-size:16px;font-weight:600;color:#1C1A18">${programa}</div>
+        </td></tr>
+        <tr><td style="padding:16px 20px">
+          <div style="font-size:12px;color:#8A7F74;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Total</div>
+          <div style="font-size:24px;font-family:Georgia,serif;color:#C9935A">${total}</div>
+        </td></tr>
       </table>
     </td></tr>
     <tr><td style="padding:0 40px 28px">
-      <div style="background:rgba(212,133,58,.08);border:1.5px solid rgba(212,133,58,.2);border-radius:12px;padding:18px 20px;font-size:14px;color:#8A5020;line-height:1.7">
-        Enviá el comprobante de transferencia al WhatsApp <strong>+54 9 11 7617-9836</strong> con tu nombre y apellido. En menos de 24hs hábiles activamos tu acceso.
+      <div style="background:#FFF8F0;border-left:4px solid #C9935A;border-radius:0 8px 8px 0;padding:16px 20px">
+        <div style="font-size:13px;font-weight:600;color:#8A5020;margin-bottom:8px">Próximos pasos para activar tu acceso:</div>
+        <div style="font-size:13px;color:#8A5020;line-height:1.8">
+          1. Realizá la transferencia de <strong>${total}</strong> al alias <strong>behuman.pagos</strong><br>
+          2. Enviá el comprobante por WhatsApp al <strong>+54 9 11 7617-9836</strong><br>
+          3. En menos de 24hs hábiles activamos tu acceso y te avisamos por email
+        </div>
       </div>
     </td></tr>
-    <tr><td style="background:#F0E8D8;padding:20px 40px;text-align:center;font-size:12px;color:#8A7F74">
-      Be Human · Medicina Funcional · +54 9 11 7617-9836
+    <tr><td style="padding:0 40px 32px;text-align:center">
+      <a href="https://wa.me/5491176179836" style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:13px 28px;border-radius:100px;font-size:13px;font-weight:600">Enviar comprobante por WhatsApp</a>
+    </td></tr>
+    <tr><td style="background:#F0E8D8;padding:20px 40px;text-align:center;font-size:12px;color:#8A7F74;line-height:1.6">
+      Be Human · Medicina Funcional<br>+54 9 11 7617-9836 · behuman.com.ar
     </td></tr>
   </table></td></tr></table></body></html>`;
-  sendEmail(email, '⏳ Tu inscripción está pendiente · Be Human', html);
+  sendEmail(email, 'Tu inscripción a ' + programa + ' está pendiente · Be Human', html);
 }
 
 function emailProgramaConfirmado(nombre, email, programa) {
   const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px">
-  <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden">
+  <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
     <tr><td style="background:#1C1A18;padding:32px 40px;text-align:center">
       <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(240,232,216,.5);margin-bottom:6px">Medicina Funcional</div>
-      <div style="font-family:Georgia,serif;font-size:26px;color:#F0E8D8">Be Human</div>
+      <div style="font-family:Georgia,serif;font-size:28px;color:#F0E8D8">Be Human</div>
     </td></tr>
-    <tr><td style="padding:36px 40px;text-align:center">
-      <div style="font-size:36px;margin-bottom:12px">✅</div>
-      <h1 style="font-family:Georgia,serif;font-size:24px;font-weight:400;color:#1C1A18;margin:0 0 8px">¡Acceso activado!</h1>
-      <p style="font-size:15px;color:#8A7F74;margin:0">Hola <strong style="color:#1C1A18">${nombre}</strong>, tu acceso a <strong style="color:#1C1A18">${programa}</strong> está activo.</p>
+    <tr><td style="padding:36px 40px 24px;text-align:center">
+      <div style="width:56px;height:56px;border-radius:50%;background:#E8F5E9;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px">✅</div>
+      <h1 style="font-family:Georgia,serif;font-size:22px;font-weight:400;color:#1C1A18;margin:0 0 10px">¡Tu acceso está activo!</h1>
+      <p style="font-size:15px;color:#6B6460;margin:0">Hola <strong style="color:#1C1A18">${nombre}</strong>, confirmamos tu pago y ya tenés acceso completo al programa.</p>
     </td></tr>
-    <tr><td style="padding:0 40px 28px;text-align:center">
-      <p style="font-size:14px;color:#6B6460;line-height:1.7">Ya podés ingresar a la plataforma y comenzar el programa. Encontrás todo el material en tu portal de pacientes.</p>
-      <a href="https://iglesiastech-behuman.vercel.app" style="display:inline-block;background:#3A7D8C;color:#fff;text-decoration:none;padding:14px 32px;border-radius:100px;font-size:14px;font-weight:600;margin-top:8px">Ir al portal</a>
+    <tr><td style="padding:0 40px 24px">
+      <table width="100%" style="background:#F8F4EE;border-radius:12px;border-collapse:collapse">
+        <tr><td style="padding:16px 20px">
+          <div style="font-size:12px;color:#8A7F74;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Programa activo</div>
+          <div style="font-size:18px;font-weight:600;color:#1C1A18">${programa}</div>
+        </td></tr>
+      </table>
     </td></tr>
-    <tr><td style="background:#F0E8D8;padding:20px 40px;text-align:center;font-size:12px;color:#8A7F74">
-      Be Human · Medicina Funcional · +54 9 11 7617-9836
+    <tr><td style="padding:0 40px 28px">
+      <div style="background:#F0F7F0;border-left:4px solid #4A9B6F;border-radius:0 8px 8px 0;padding:16px 20px;font-size:13px;color:#2E6B4A;line-height:1.7">
+        Ingresá a la plataforma con tu email y contraseña. En <strong>Mi cuenta → Mis programas</strong> vas a encontrar todo el contenido disponible.
+      </div>
+    </td></tr>
+    <tr><td style="padding:0 40px 32px;text-align:center">
+      <a href="https://iglesiastech-behuman.vercel.app" style="display:inline-block;background:#3A7D8C;color:#fff;text-decoration:none;padding:13px 28px;border-radius:100px;font-size:13px;font-weight:600;margin-right:8px">Ir al portal</a>
+      <a href="https://wa.me/5491176179836" style="display:inline-block;background:#fff;color:#3A7D8C;text-decoration:none;padding:13px 28px;border-radius:100px;font-size:13px;font-weight:600;border:2px solid #3A7D8C">Contactar a Mariel</a>
+    </td></tr>
+    <tr><td style="background:#F0E8D8;padding:20px 40px;text-align:center;font-size:12px;color:#8A7F74;line-height:1.6">
+      Be Human · Medicina Funcional<br>+54 9 11 7617-9836 · behuman.com.ar
     </td></tr>
   </table></td></tr></table></body></html>`;
-  sendEmail(email, '✅ ¡Tu acceso a '+programa+' está activo! · Be Human', html);
+  sendEmail(email, '¡Tu acceso a ' + programa + ' está activo! · Be Human', html);
 }
 
 /* ── HORARIOS BLOQUEADOS ── */
