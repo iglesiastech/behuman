@@ -3459,18 +3459,27 @@ async function loadConsultasEnTurnos() {
     </div>`).join('');
 }
 
-/* ── EMAIL CON RESEND ── */
+/* ── EMAIL VIA SUPABASE EDGE FUNCTION ── */
 const RESEND_KEY = 're_4j1tvbvo_DC1LrrA9XGkDbkyd5Zj4v5ab';
 const FROM_MAIL  = 'Be Human <turnos@behuman.com.ar>';
 
 async function sendEmail(to, subject, html) {
   try {
-    await fetch('https://api.resend.com/emails', {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer '+RESEND_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_MAIL, to: [to], subject, html })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SUPABASE_ANON,
+      },
+      body: JSON.stringify({ to, subject, html })
     });
-  } catch(e) { console.warn('Email no enviado:', e.message); }
+    if(!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      console.warn('Email error:', err);
+    }
+  } catch(e) {
+    console.warn('Email no enviado:', e.message);
+  }
 }
 
 function emailTurnoPendiente(nombre, email, fecha, hora, consulta, sena, total, apellido) {
