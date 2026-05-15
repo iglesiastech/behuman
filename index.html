@@ -2321,7 +2321,7 @@ async function loadAPrograms() {
 
 let progCheckoutData = { nombre:'', slug:'', precio:0, progId:'' };
 
-function inscribirsePrograma(btn) {
+async function inscribirsePrograma(btn) {
   // Buscar datos del programa desde el elemento padre
   const progTitle = btn.closest('.prog-ctas')?.previousElementSibling?.previousElementSibling;
   const titleEl = btn.closest('[data-tags]')?.querySelector('[data-prog-name]') ||
@@ -2331,7 +2331,22 @@ function inscribirsePrograma(btn) {
   const slug   = titleEl?.dataset?.progSlug || '';
   const precio = parseInt(titleEl?.dataset?.progPrice || '0');
 
-  progCheckoutData = { nombre, slug, precio, progId: slug };
+  // Buscar el program_id real desde la BD por nombre
+  let progId = slug;
+  try {
+    const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+    const r = await fetch(SUPABASE_URL+'/rest/v1/programs?name=eq.'+encodeURIComponent(nombre)+'&select=id', {headers:h});
+    const progs = await r.json();
+    if(progs?.[0]?.id) progId = progs[0].id;
+    else {
+      // Intentar por slug
+      const r2 = await fetch(SUPABASE_URL+'/rest/v1/programs?slug=eq.'+slug+'&select=id', {headers:h});
+      const progs2 = await r2.json();
+      if(progs2?.[0]?.id) progId = progs2[0].id;
+    }
+  } catch(e) {}
+
+  progCheckoutData = { nombre, slug: progId, precio, progId };
 
   // Verificar si está logueado
   const token = localStorage.getItem('bh_token');
@@ -2967,13 +2982,45 @@ async function aprobarOrdenPrograma(orderId, email, slug, customerName, progName
     });
     if(!r1.ok) throw new Error('No se pudo actualizar la orden');
 
-    // 2. Buscar el programa por slug
-    const r2 = await fetch(`${SUPABASE_URL}/rest/v1/programs?slug=eq.${slug}&select=id`, {headers:h});
-    const progs = await r2.json();
-    const progId = progs?.[0]?.id;
+    // 2. Buscar el programa — intentar por ID (UUID), luego por slug, luego por nombre
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+    let progId = null;
+
+    if(isUUID) {
+      // Es un UUID directo
+      progId = slug;
+    } else {
+      // Buscar por slug
+      const r2a = await fetch(`${SUPABASE_URL}/rest/v1/programs?slug=eq.${encodeURIComponent(slug)}&select=id`, {headers:h});
+      const p2a = await r2a.json();
+      if(p2a?.[0]?.id) progId = p2a[0].id;
+    }
+
+    // Si todavía no lo encontró, buscar por nombre del programa en la orden
+    if(!progId && progName) {
+      const r2b = await fetch(`${SUPABASE_URL}/rest/v1/programs?name=eq.${encodeURIComponent(progName)}&select=id`, {headers:h});
+      const p2b = await r2b.json();
+      if(p2b?.[0]?.id) progId = p2b[0].id;
+    }
+
+    // Si aún no: listar todos y buscar por nombre parcial
     if(!progId) {
-      toast('Orden aprobada pero no se encontró el programa. Buscalo por slug: '+slug,'ok',6000);
-      loadOrdenesProgramas(); return;
+      const r2c = await fetch(`${SUPABASE_URL}/rest/v1/programs?select=id,name,slug`, {headers:h});
+      const allProgs = await r2c.json();
+      if(Array.isArray(allProgs)) {
+        const match = allProgs.find(p =>
+          p.slug === slug ||
+          p.name === progName ||
+          p.name?.toLowerCase().includes((progName||'').toLowerCase().slice(0,10))
+        );
+        if(match) progId = match.id;
+      }
+    }
+
+    if(!progId) {
+      toast('Orden aprobada pero no se encontró el programa "'+progName+'". Agregá el acceso manualmente desde Programas → Miembros.','ok', 8000);
+      loadOrdenesProgramas();
+      return;
     }
 
     // 3. Buscar user_id por email — buscar en auth.users via admin API
@@ -4887,7 +4934,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         </div>
         <div style="direction:ltr">
           <span class="prog-lbl">Fuerza · Composición corporal</span>
-          <h2 class="prog-list-title" data-prog-name="Be Human Performance" data-prog-slug="performance" data-prog-price="145000">Be Human Performance</h2>
+          <h2 class="prog-list-title" data-prog-name="Be Human Performance" data-prog-slug="activacion-muscular" data-prog-price="145000">Be Human Performance</h2>
           <div class="prog-sub">Tu cuerpo tiene más potencial del que creés</div>
           <p class="prog-desc">Ocho semanas para recomponer tu cuerpo con un enfoque funcional. No es solo ejercicio: es hormonas, nutrición y recuperación trabajando juntos.</p>
           <div class="prog-includes">
