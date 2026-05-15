@@ -1150,8 +1150,10 @@ async function submitBooking(){
       } catch(e2){}
     }, 500);
 
-    // Email — descomentar cuando configures Resend en Supabase Edge Functions
-    // sendEmailPendiente(email, nom, fechaStr, BS.hora, BS.tipo, sena, precio, apellido);
+    // Email al paciente — turno pendiente
+    const [,mm2,dd2] = BS.fecha.split('-');
+    const fStr = parseInt(dd2)+' de '+MONTHS[parseInt(mm2)-1]+' '+BS.fecha.split('-')[0];
+    emailTurnoPendiente(nom, email, fStr, BS.hora, TIPO_NAMES[BS.tipo]||BS.tipo, fmt(sena), fmt(precio), apellido);
 
     showConfirmacionSena(nom, email, sena, fechaStr, precio);
 
@@ -1597,6 +1599,19 @@ async function aprobarSena(id) {
       const err = await res.json().catch(()=>({}));
       throw new Error(err.message || res.statusText);
     }
+
+    // Email confirmación al paciente
+    try {
+      const rAppt = await fetch(`${SUPABASE_URL}/rest/v1/appointments?id=eq.${id}&select=patient_name,patient_email,date,time,type`, {headers});
+      const appts = await rAppt.json();
+      if(appts?.[0]) {
+        const a = appts[0];
+        const ML = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        const [y,mm,dd] = a.date.split('-');
+        const fStr = parseInt(dd)+' de '+ML[parseInt(mm)-1]+' '+y;
+        emailTurnoConfirmado(a.patient_name, a.patient_email, fStr, (a.time||'').slice(0,5), a.type||'Consulta');
+      }
+    } catch(e2) {}
 
     toast('✓ Turno confirmado y seña aprobada', 'ok', 4000);
     loadASenas();
@@ -2404,6 +2419,9 @@ async function confirmarCompraPrograma() {
     localStorage.setItem('bh_pending_orders', JSON.stringify(pending));
   }
 
+  // Email al cliente — programa pendiente
+  emailProgramaPendiente(nom+' '+ape, email, nombre, fmt(precio));
+
   const wa = document.getElementById('pcWhatsApp');
   if(wa) wa.href = `https://wa.me/5491176179836?text=Hola!%20Soy%20${encodeURIComponent(nom+' '+ape)}%20e%20hice%20la%20transferencia%20para%20inscribirme%20en%20${encodeURIComponent(nombre)}.%20Adjunto%20el%20comprobante.`;
 
@@ -3008,6 +3026,9 @@ async function aprobarOrdenPrograma(orderId, email, slug) {
       throw new Error('Membresía: '+(err.message||err.hint||r4.status));
     }
 
+    // Email al cliente — programa aprobado
+    emailProgramaConfirmado(email.split('@')[0], email, slug||'el programa');
+
     toast('✓ Orden aprobada — '+email+' ya tiene acceso al programa', 'ok', 5000);
     loadOrdenesProgramas();
   } catch(e) {
@@ -3436,6 +3457,141 @@ async function loadConsultasEnTurnos() {
       <div class="tipo-price">${c.precio > 0 ? fmt(c.precio) : 'A confirmar'}</div>
       <div class="tipo-check">✓</div>
     </div>`).join('');
+}
+
+/* ── EMAIL CON RESEND ── */
+const RESEND_KEY = 're_4j1tvbvo_DC1LrrA9XGkDbkyd5Zj4v5ab';
+const FROM_MAIL  = 'Be Human <turnos@behuman.com.ar>';
+
+async function sendEmail(to, subject, html) {
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer '+RESEND_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: FROM_MAIL, to: [to], subject, html })
+    });
+  } catch(e) { console.warn('Email no enviado:', e.message); }
+}
+
+function emailTurnoPendiente(nombre, email, fecha, hora, consulta, sena, total, apellido) {
+  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px">
+  <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden">
+    <tr><td style="background:#1C1A18;padding:32px 40px;text-align:center">
+      <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(240,232,216,.5);margin-bottom:6px">Medicina Funcional</div>
+      <div style="font-family:Georgia,serif;font-size:26px;color:#F0E8D8">Be Human</div>
+    </td></tr>
+    <tr><td style="padding:36px 40px;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">⏳</div>
+      <h1 style="font-family:Georgia,serif;font-size:24px;font-weight:400;color:#1C1A18;margin:0 0 8px">Turno registrado</h1>
+      <p style="font-size:15px;color:#8A7F74;margin:0">Hola <strong style="color:#1C1A18">${nombre}</strong>, recibimos tu solicitud.</p>
+    </td></tr>
+    <tr><td style="padding:0 40px 28px">
+      <table width="100%" style="background:#F0E8D8;border-radius:12px;padding:20px;border-collapse:collapse">
+        <tr><td style="padding:8px 0;border-bottom:1px solid #E4D9C5;font-size:14px;color:#8A7F74">Consulta</td><td style="padding:8px 0;border-bottom:1px solid #E4D9C5;text-align:right;font-weight:600;color:#1C1A18">${consulta}</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #E4D9C5;font-size:14px;color:#8A7F74">Fecha</td><td style="padding:8px 0;border-bottom:1px solid #E4D9C5;text-align:right;font-weight:600;color:#1C1A18">${fecha}</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #E4D9C5;font-size:14px;color:#8A7F74">Hora</td><td style="padding:8px 0;border-bottom:1px solid #E4D9C5;text-align:right;font-weight:600;color:#1C1A18">${hora} hs</td></tr>
+        <tr><td style="padding:8px 0;font-size:14px;color:#8A7F74">Seña a transferir</td><td style="padding:8px 0;text-align:right;font-weight:700;color:#C9935A;font-size:18px">${sena}</td></tr>
+      </table>
+    </td></tr>
+    <tr><td style="padding:0 40px 28px">
+      <div style="background:rgba(212,133,58,.08);border:1.5px solid rgba(212,133,58,.2);border-radius:12px;padding:18px 20px;font-size:14px;color:#8A5020;line-height:1.7">
+        <strong>Próximos pasos:</strong><br>
+        1. Transferí la seña de <strong>${sena}</strong> al alias <strong>behuman.pagos</strong><br>
+        2. Enviá el comprobante por WhatsApp al <strong>+54 9 11 7617-9836</strong><br>
+        3. Esperá el mail de confirmación
+      </div>
+    </td></tr>
+    <tr><td style="background:#F0E8D8;padding:20px 40px;text-align:center;font-size:12px;color:#8A7F74">
+      Be Human · Medicina Funcional · +54 9 11 7617-9836
+    </td></tr>
+  </table></td></tr></table></body></html>`;
+  sendEmail(email, '⏳ Tu turno está pendiente de confirmación · Be Human', html);
+}
+
+function emailTurnoConfirmado(nombre, email, fecha, hora, consulta) {
+  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px">
+  <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden">
+    <tr><td style="background:#1C1A18;padding:32px 40px;text-align:center">
+      <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(240,232,216,.5);margin-bottom:6px">Medicina Funcional</div>
+      <div style="font-family:Georgia,serif;font-size:26px;color:#F0E8D8">Be Human</div>
+    </td></tr>
+    <tr><td style="padding:36px 40px;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">✅</div>
+      <h1 style="font-family:Georgia,serif;font-size:24px;font-weight:400;color:#1C1A18;margin:0 0 8px">¡Turno confirmado!</h1>
+      <p style="font-size:15px;color:#8A7F74;margin:0">Hola <strong style="color:#1C1A18">${nombre}</strong>, tu turno está confirmado. ¡Te esperamos!</p>
+    </td></tr>
+    <tr><td style="padding:0 40px 28px">
+      <table width="100%" style="background:#F0E8D8;border-radius:12px;padding:20px;border-collapse:collapse">
+        <tr><td style="padding:8px 0;border-bottom:1px solid #E4D9C5;font-size:14px;color:#8A7F74">Consulta</td><td style="padding:8px 0;border-bottom:1px solid #E4D9C5;text-align:right;font-weight:600;color:#1C1A18">${consulta}</td></tr>
+        <tr><td style="padding:12px 0;border-bottom:1px solid #E4D9C5;font-size:14px;color:#8A7F74">Fecha</td><td style="padding:12px 0;border-bottom:1px solid #E4D9C5;text-align:right;font-family:Georgia,serif;font-size:22px;color:#C9935A">${fecha}</td></tr>
+        <tr><td style="padding:12px 0;font-size:14px;color:#8A7F74">Hora</td><td style="padding:12px 0;text-align:right;font-family:Georgia,serif;font-size:22px;color:#C9935A">${hora} hs</td></tr>
+      </table>
+    </td></tr>
+    <tr><td style="padding:0 40px 28px;text-align:center">
+      <a href="https://wa.me/5491176179836" style="display:inline-block;background:#3A7D8C;color:#fff;text-decoration:none;padding:14px 32px;border-radius:100px;font-size:14px;font-weight:600">Escribir a Mariel</a>
+    </td></tr>
+    <tr><td style="background:#F0E8D8;padding:20px 40px;text-align:center;font-size:12px;color:#8A7F74">
+      Be Human · Medicina Funcional · +54 9 11 7617-9836
+    </td></tr>
+  </table></td></tr></table></body></html>`;
+  sendEmail(email, '✅ ¡Tu turno está confirmado! · Be Human', html);
+}
+
+function emailProgramaPendiente(nombre, email, programa, total) {
+  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px">
+  <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden">
+    <tr><td style="background:#1C1A18;padding:32px 40px;text-align:center">
+      <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(240,232,216,.5);margin-bottom:6px">Medicina Funcional</div>
+      <div style="font-family:Georgia,serif;font-size:26px;color:#F0E8D8">Be Human</div>
+    </td></tr>
+    <tr><td style="padding:36px 40px;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">⏳</div>
+      <h1 style="font-family:Georgia,serif;font-size:24px;font-weight:400;color:#1C1A18;margin:0 0 8px">Inscripción registrada</h1>
+      <p style="font-size:15px;color:#8A7F74;margin:0">Hola <strong style="color:#1C1A18">${nombre}</strong>, recibimos tu solicitud de inscripción.</p>
+    </td></tr>
+    <tr><td style="padding:0 40px 28px">
+      <table width="100%" style="background:#F0E8D8;border-radius:12px;padding:20px;border-collapse:collapse">
+        <tr><td style="padding:8px 0;border-bottom:1px solid #E4D9C5;font-size:14px;color:#8A7F74">Programa</td><td style="padding:8px 0;border-bottom:1px solid #E4D9C5;text-align:right;font-weight:600;color:#1C1A18">${programa}</td></tr>
+        <tr><td style="padding:8px 0;font-size:14px;color:#8A7F74">Total</td><td style="padding:8px 0;text-align:right;font-weight:700;font-size:20px;color:#C9935A">${total}</td></tr>
+      </table>
+    </td></tr>
+    <tr><td style="padding:0 40px 28px">
+      <div style="background:rgba(212,133,58,.08);border:1.5px solid rgba(212,133,58,.2);border-radius:12px;padding:18px 20px;font-size:14px;color:#8A5020;line-height:1.7">
+        Enviá el comprobante de transferencia al WhatsApp <strong>+54 9 11 7617-9836</strong> con tu nombre y apellido. En menos de 24hs hábiles activamos tu acceso.
+      </div>
+    </td></tr>
+    <tr><td style="background:#F0E8D8;padding:20px 40px;text-align:center;font-size:12px;color:#8A7F74">
+      Be Human · Medicina Funcional · +54 9 11 7617-9836
+    </td></tr>
+  </table></td></tr></table></body></html>`;
+  sendEmail(email, '⏳ Tu inscripción está pendiente · Be Human', html);
+}
+
+function emailProgramaConfirmado(nombre, email, programa) {
+  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px">
+  <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden">
+    <tr><td style="background:#1C1A18;padding:32px 40px;text-align:center">
+      <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(240,232,216,.5);margin-bottom:6px">Medicina Funcional</div>
+      <div style="font-family:Georgia,serif;font-size:26px;color:#F0E8D8">Be Human</div>
+    </td></tr>
+    <tr><td style="padding:36px 40px;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">✅</div>
+      <h1 style="font-family:Georgia,serif;font-size:24px;font-weight:400;color:#1C1A18;margin:0 0 8px">¡Acceso activado!</h1>
+      <p style="font-size:15px;color:#8A7F74;margin:0">Hola <strong style="color:#1C1A18">${nombre}</strong>, tu acceso a <strong style="color:#1C1A18">${programa}</strong> está activo.</p>
+    </td></tr>
+    <tr><td style="padding:0 40px 28px;text-align:center">
+      <p style="font-size:14px;color:#6B6460;line-height:1.7">Ya podés ingresar a la plataforma y comenzar el programa. Encontrás todo el material en tu portal de pacientes.</p>
+      <a href="https://iglesiastech-behuman.vercel.app" style="display:inline-block;background:#3A7D8C;color:#fff;text-decoration:none;padding:14px 32px;border-radius:100px;font-size:14px;font-weight:600;margin-top:8px">Ir al portal</a>
+    </td></tr>
+    <tr><td style="background:#F0E8D8;padding:20px 40px;text-align:center;font-size:12px;color:#8A7F74">
+      Be Human · Medicina Funcional · +54 9 11 7617-9836
+    </td></tr>
+  </table></td></tr></table></body></html>`;
+  sendEmail(email, '✅ ¡Tu acceso a '+programa+' está activo! · Be Human', html);
 }
 
 /* ── HORARIOS BLOQUEADOS ── */
