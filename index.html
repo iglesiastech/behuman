@@ -3115,10 +3115,10 @@ let _allPrograms = [];
 async function loadProgramasPage() {
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/programs?order=sort_order,name`, {headers:h});
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/programs?order=name`, {headers:h});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const progs = await r.json();
-    _allPrograms = Array.isArray(progs) ? progs.filter(p=>p.is_active !== false) : [];
+    _allPrograms = Array.isArray(progs) ? progs : [];
     if(!_allPrograms.length) {
       document.getElementById('progListContainer').innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">No hay programas disponibles.</div>';
       return;
@@ -3127,7 +3127,7 @@ async function loadProgramasPage() {
     renderFilterTabs(_allPrograms);
   } catch(e) {
     console.error('loadProgramasPage:', e);
-    document.getElementById('progListContainer').innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Error al cargar: '+e.message+'</div>';
+    document.getElementById('progListContainer').innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Error: '+e.message+'</div>';
   }
 }
 
@@ -3139,6 +3139,14 @@ function renderFilterTabs(progs) {
     + cats.map(c=>`<button class="ftab" onclick="filterProgs('${c}',this)">${c}</button>`).join('');
 }
 
+// Imágenes por defecto por slug
+const PROG_DEFAULTS = {
+  'reset-21':          { img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80', tags: 'reset' },
+  'activacion-muscular':{ img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80', tags: 'performance' },
+  'indomables':        { img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80', tags: 'completo' },
+  'reset-mujer':       { img: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80', tags: 'mujer' },
+};
+
 function renderProgList(progs) {
   const container = document.getElementById('progListContainer');
   if(!container) return;
@@ -3147,17 +3155,21 @@ function renderProgList(progs) {
     return;
   }
   container.innerHTML = progs.map((prog, idx) => {
+    const def      = PROG_DEFAULTS[prog.slug] || {};
+    const img      = prog.image_url || def.img || 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80';
+    const tags     = prog.category || def.tags || 'all';
     const benefits = Array.isArray(prog.benefits) ? prog.benefits : (tryParseJSON(prog.benefits)||[]);
-    const price = prog.price ? fmt(prog.price) : '';
-    const alt = idx % 2 !== 0;
+    const price    = prog.price ? fmt(prog.price) : '';
+    const alt      = idx % 2 !== 0;
+
     return `
-      <div class="prog-item rv" data-tags="${prog.category||'all'}" ${alt?'style="direction:rtl"':''}>
-        <div class="prog-img-wrap" ${alt?'style="direction:ltr"':''}>
-          <img class="prog-list-img" src="${prog.image_url||'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80'}" alt="${prog.name}">
-          ${prog.duration?`<div class="prog-dur-badge">${prog.duration}</div>`:''}
+      <div class="prog-item rv" data-tags="${tags}" ${alt ? 'style="direction:rtl"' : ''}>
+        <div class="prog-img-wrap" ${alt ? 'style="direction:ltr"' : ''}>
+          <img class="prog-list-img" src="${img}" alt="${prog.name}">
+          ${prog.duration ? `<div class="prog-dur-badge">${prog.duration}</div>` : ''}
         </div>
-        <div ${alt?'style="direction:ltr"':''}>
-          ${prog.category?`<span class="prog-lbl">${prog.category}</span>`:''}
+        <div ${alt ? 'style="direction:ltr"' : ''}>
+          ${prog.category ? `<span class="prog-lbl">${prog.category}</span>` : ''}
           <h2 class="prog-list-title"
             data-prog-name="${prog.name}"
             data-prog-slug="${prog.slug||prog.id}"
@@ -3165,11 +3177,12 @@ function renderProgList(progs) {
             data-prog-id="${prog.id}">
             ${prog.name}
           </h2>
-          ${prog.subtitle?`<div class="prog-sub">${prog.subtitle}</div>`:''}
-          ${prog.description?`<p class="prog-desc">${prog.description}</p>`:''}
+          ${prog.subtitle ? `<div class="prog-sub">${prog.subtitle}</div>` : ''}
+          ${prog.description ? `<p class="prog-desc">${prog.description}</p>` : ''}
+          ${benefits.length ? `
           <div class="prog-includes">
             ${benefits.slice(0,5).map(b=>`<div class="prog-inc"><div class="prog-inc-ck">✓</div><span>${b}</span></div>`).join('')}
-          </div>
+          </div>` : ''}
           <div class="prog-price-box">
             <div>
               <div class="prog-price-main">${price}</div>
@@ -3178,7 +3191,7 @@ function renderProgList(progs) {
           </div>
           <div class="prog-ctas">
             <button class="btn-gold" onclick="inscribirsePrograma(this)">Inscribirme ahora</button>
-            <button class="btn-outline" onclick="abrirLandingPrograma('${prog.id}')">Ver más info</button>
+            <button class="btn-outline" onclick="abrirLandingPrograma('${prog.id}')">Más info</button>
           </div>
         </div>
       </div>`;
