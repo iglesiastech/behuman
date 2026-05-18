@@ -3113,6 +3113,12 @@ window.rechazarOrdenPrograma = rechazarOrdenPrograma;
 let _allPrograms = [];
 
 async function loadProgramasPage() {
+  // Si ya cargó, no recargar
+  if(_allPrograms.length) { renderProgList(_allPrograms); renderFilterTabs(_allPrograms); return; }
+
+  const container = document.getElementById('progListContainer');
+  if(container) container.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Cargando programas...</div>';
+
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/programs?order=name`, {headers:h});
@@ -3120,14 +3126,15 @@ async function loadProgramasPage() {
     const progs = await r.json();
     _allPrograms = Array.isArray(progs) ? progs : [];
     if(!_allPrograms.length) {
-      document.getElementById('progListContainer').innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">No hay programas disponibles.</div>';
+      if(container) container.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">No hay programas disponibles.</div>';
       return;
     }
     renderProgList(_allPrograms);
     renderFilterTabs(_allPrograms);
+    setTimeout(initReveal, 50);
   } catch(e) {
     console.error('loadProgramasPage:', e);
-    document.getElementById('progListContainer').innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Error: '+e.message+'</div>';
+    if(container) container.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Error: '+e.message+'</div>';
   }
 }
 
