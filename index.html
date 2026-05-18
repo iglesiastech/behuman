@@ -3115,13 +3115,19 @@ let _allPrograms = [];
 async function loadProgramasPage() {
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/programs?is_active=eq.true&order=sort_order`, {headers:h});
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/programs?order=sort_order,name`, {headers:h});
+    if(!r.ok) throw new Error('HTTP '+r.status);
     const progs = await r.json();
-    _allPrograms = Array.isArray(progs) ? progs : [];
+    _allPrograms = Array.isArray(progs) ? progs.filter(p=>p.is_active !== false) : [];
+    if(!_allPrograms.length) {
+      document.getElementById('progListContainer').innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">No hay programas disponibles.</div>';
+      return;
+    }
     renderProgList(_allPrograms);
     renderFilterTabs(_allPrograms);
   } catch(e) {
-    document.getElementById('progListContainer').innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Error al cargar programas.</div>';
+    console.error('loadProgramasPage:', e);
+    document.getElementById('progListContainer').innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Error al cargar: '+e.message+'</div>';
   }
 }
 
@@ -6436,6 +6442,45 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 <!-- ════════════════════════════════════════════
      DETALLE DEL PROGRAMA (contenido)
 ════════════════════════════════════════════ -->
+<!-- ════ PROGRAMAS ════ -->
+<div class="page" id="page-programas">
+  <div class="page-hero">
+    <img class="page-hero-bg" src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1400&q=50" alt="">
+    <div class="container page-hero-content">
+      <span style="font-size:.67rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:rgba(201,147,90,.7);display:block;margin-bottom:.65rem">Transformación real</span>
+      <h1>Nuestros <em>programas</em></h1>
+      <p>Diseñados para distintos momentos de tu proceso. Todos incluyen acompañamiento profesional y comunidad privada.</p>
+    </div>
+  </div>
+  <div class="filter-bar">
+    <div class="container"><div class="filter-tabs" id="progFilterTabs">
+      <button class="ftab active" onclick="filterProgs('all',this)">Todos</button>
+    </div></div>
+  </div>
+  <div class="prog-list">
+    <div class="container" id="progListContainer">
+      <div style="text-align:center;padding:4rem;color:var(--muted)">Cargando programas...</div>
+    </div>
+  </div>
+  <section class="cta-strip">
+    <div class="container"><div class="cta-inner">
+      <span class="cta-tag">¿No sabés cuál elegir?</span>
+      <h2 class="cta-title">Hablemos primero</h2>
+      <p class="cta-sub">Una breve charla puede ayudarte a elegir el programa que mejor se adapta a tu momento.</p>
+      <div class="cta-btns">
+        <button class="btn-white" onclick="goTo('turnos')">Reservar consulta</button>
+        <a href="https://wa.me/5491176179836" target="_blank" class="btn-ghost">WhatsApp →</a>
+      </div>
+    </div></div>
+  </section>
+</div><!-- /page-programas -->
+
+<!-- ════ LANDING INDIVIDUAL DE PROGRAMA ════ -->
+<div class="page" id="page-prog-landing">
+  <div id="plContent"><!-- renderizado dinámico --></div>
+</div><!-- /page-prog-landing -->
+
+<!-- ════ DETALLE DE PROGRAMA ════ -->
 <div class="page" id="page-programa-detalle" style="padding-top:70px">
 <style>
 /* ── CURSO: Layout ── */
