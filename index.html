@@ -1023,55 +1023,52 @@ async function validarYContinuar() {
   const tel   = document.getElementById('pTel').value.trim();
   if(!nom||!email||!tel){ toast('Completá nombre, email y teléfono','err'); return; }
 
-  // Verificar si esta consulta requiere paciente previo
-  // Primero intentar obtenerlo de Supabase, sino usar el array fallback
-  let requierePrevio = CONSULTAS_SOLO_PREVIOS.includes(BS.tipo);
+  const btn = document.getElementById('btnToStep4');
+  btn.disabled = true; btn.textContent = 'Verificando...';
+
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+
   try {
-    const sb = getSB();
-    if(sb) {
-      const { data: ct } = await sb
-        .from('consultation_types')
-        .select('solo_pacientes_previos')
-        .eq('id', BS.tipo)
-        .single();
-      if(ct) requierePrevio = !!ct.solo_pacientes_previos;
-    }
-  } catch(e) {}
+    // Verificar si esta consulta requiere paciente previo
+    let requierePrevio = CONSULTAS_SOLO_PREVIOS.includes(BS.tipo);
 
-  if(requierePrevio) {
-    const btn = document.getElementById('btnToStep4');
-    btn.disabled = true; btn.textContent = 'Verificando...';
     try {
-      const sb = getSB();
-      if(sb) {
-        const { data: fichas } = await sb
-          .from('fichas_medicas')
-          .select('id')
-          .eq('patient_email', email)
-          .limit(1);
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/consultation_types?id=eq.${BS.tipo}&select=solo_pacientes_previos`, {headers:h});
+      const cts = await r.json();
+      if(cts?.[0]) requierePrevio = !!cts[0].solo_pacientes_previos;
+    } catch(e) {}
 
-        const esPrevio = fichas && fichas.length > 0;
-        if(!esPrevio) {
-          btn.disabled = false; btn.textContent = 'Continuar → Seña';
-          let errBox = document.getElementById('previoError');
-          if(!errBox) {
-            errBox = document.createElement('div');
-            errBox.id = 'previoError';
-            errBox.style.cssText = 'background:rgba(196,97,74,.08);border:1.5px solid rgba(196,97,74,.25);border-radius:12px;padding:.9rem 1.1rem;font-size:.84rem;color:#C4614A;line-height:1.65;margin-top:1rem';
-            document.getElementById('bstep3').appendChild(errBox);
-          }
-          errBox.innerHTML = '⚠️ <strong>Consulta exclusiva para pacientes previos.</strong><br>Esta consulta está disponible solo para quienes ya se atendieron con Be Human. Si es tu primera vez, reservá una <strong>Consulta Integral</strong>.';
-          errBox.style.display = '';
-          return;
+    if(requierePrevio) {
+      // Verificar si tiene ficha médica con ese email
+      const r2 = await fetch(`${SUPABASE_URL}/rest/v1/fichas_medicas?patient_email=eq.${encodeURIComponent(email)}&select=id&limit=1`, {headers:h});
+      const fichas = await r2.json();
+      const esPrevio = Array.isArray(fichas) && fichas.length > 0;
+
+      if(!esPrevio) {
+        btn.disabled = false; btn.textContent = 'Continuar → Seña';
+        let errBox = document.getElementById('previoError');
+        if(!errBox) {
+          errBox = document.createElement('div');
+          errBox.id = 'previoError';
+          errBox.style.cssText = 'background:rgba(196,97,74,.08);border:1.5px solid rgba(196,97,74,.25);border-radius:12px;padding:.9rem 1.1rem;font-size:.84rem;color:#C4614A;line-height:1.65;margin-top:1rem';
+          document.getElementById('bstep3').appendChild(errBox);
         }
-        const errBox = document.getElementById('previoError');
-        if(errBox) errBox.style.display = 'none';
+        errBox.innerHTML = '⚠️ <strong>Consulta exclusiva para pacientes previos.</strong><br>Esta consulta está disponible solo para quienes ya se atendieron con Be Human. Si es tu primera vez, reservá una <strong>Consulta Integral</strong>.';
+        errBox.style.display = '';
+        return;
       }
-    } catch(e) { console.warn('No se pudo verificar:', e.message); }
-    const btn2 = document.getElementById('btnToStep4');
-    btn2.disabled = false; btn2.textContent = 'Continuar → Seña';
+
+      const errBox = document.getElementById('previoError');
+      if(errBox) errBox.style.display = 'none';
+    }
+
+    btn.disabled = false; btn.textContent = 'Continuar → Seña';
+    bGoTo(4);
+
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Continuar → Seña';
+    toast('Error al verificar: '+e.message, 'err');
   }
-  bGoTo(4);
 }
 
 /* ── SEÑA ── */
