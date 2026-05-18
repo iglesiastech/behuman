@@ -3113,10 +3113,15 @@ window.rechazarOrdenPrograma = rechazarOrdenPrograma;
 let _allPrograms = [];
 
 async function loadProgramasPage() {
-  // Si ya cargó, no recargar
-  if(_allPrograms.length) { renderProgList(_allPrograms); renderFilterTabs(_allPrograms); return; }
-
   const container = document.getElementById('progListContainer');
+
+  // Si ya tenemos datos, re-renderizar directo sin loader
+  if(_allPrograms.length) {
+    renderProgList(_allPrograms);
+    renderFilterTabs(_allPrograms);
+    return;
+  }
+
   if(container) container.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Cargando programas...</div>';
 
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
@@ -3170,7 +3175,7 @@ function renderProgList(progs) {
     const alt      = idx % 2 !== 0;
 
     return `
-      <div class="prog-item rv" data-tags="${tags}" ${alt ? 'style="direction:rtl"' : ''}>
+      <div class="prog-item" data-tags="${tags}" ${alt ? 'style="direction:rtl"' : ''}>
         <div class="prog-img-wrap" ${alt ? 'style="direction:ltr"' : ''}>
           <img class="prog-list-img" src="${img}" alt="${prog.name}">
           ${prog.duration ? `<div class="prog-dur-badge">${prog.duration}</div>` : ''}
