@@ -719,7 +719,12 @@ function goTo(id){
   initReveal();
   if(id==='tienda')            renderProducts();
   if(id==='checkout')          renderCkItems();
-  if(id==='admin')             initAdminPage();
+  if(id==='admin') {
+    // Verificar que sea admin antes de mostrar
+    const token = _authToken || localStorage.getItem('bh_token');
+    if(!token) { goTo('login'); return; }
+    initAdminPage();
+  }
   if(id==='turnos')            loadConsultasEnTurnos();
   if(id==='portal')            initPortal();
   if(id==='programa-detalle')  {}
@@ -1443,7 +1448,7 @@ async function doForgot(){
 
 /* ══ CHECK SESSION AL ABRIR LA PÁGINA DE LOGIN ══ */
 /* ══ ADMIN JS ══ */
-const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas','programas-adm':'Programas','ordenes-programas':'Órdenes de programas',testis:'Testimonios',calendario:'Calendario',horarios:'Horarios bloqueados',consultas:'Tipos de consulta'};
+const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas','programas-adm':'Programas','ordenes-programas':'Órdenes de programas',usuarios:'Usuarios',testis:'Testimonios',calendario:'Calendario',horarios:'Horarios bloqueados',consultas:'Tipos de consulta'};
 
 const AMONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const AMONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -1468,6 +1473,7 @@ function showAP(id, btn) {
   if (id==='consultas')     loadAConsultas();
   if (id==='programas-adm')    loadAPrograms();
   if (id==='ordenes-programas') loadOrdenesProgramas();
+  if (id==='usuarios')          loadUsuarios();
   if (id==='dash')     loadADash();
 }
 
@@ -4074,6 +4080,138 @@ function emailProgramaConfirmado(nombre, email, programa) {
   sendEmail(email, '¡Tu acceso a ' + programa + ' está activo! · Be Human', html);
 }
 
+/* ── USUARIOS ── */
+let _usuarios = [];
+
+async function loadUsuarios() {
+  const token = _authToken || localStorage.getItem('bh_token');
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token };
+  const tbody = document.getElementById('usuariosBody');
+
+  try {
+    // Traer perfiles
+    const r1 = await fetch(`${SUPABASE_URL}/rest/v1/profiles?order=created_at.desc`, {headers:h});
+    const profiles = await r1.json();
+    if(!Array.isArray(profiles)) throw new Error('No se pudieron cargar los usuarios');
+
+    // Traer membresías activas
+    const r2 = await fetch(`${SUPABASE_URL}/rest/v1/memberships?status=eq.active&select=user_id,program_id,programs(name)`, {headers:h});
+    const membs = await r2.json() || [];
+
+    // Traer turnos por email
+    const r3 = await fetch(`${SUPABASE_URL}/rest/v1/appointments?select=patient_email,date,type&order=date.desc`, {headers:h});
+    const appts = await r3.json() || [];
+
+    _usuarios = profiles.map(p => {
+      const userMembs = Array.isArray(membs) ? membs.filter(m=>m.user_id===p.id) : [];
+      const userAppts = Array.isArray(appts) ? appts.filter(a=>a.patient_email===p.email) : [];
+      return {...p, membs: userMembs, appts: userAppts};
+    });
+
+    renderUsuarios(_usuarios);
+  } catch(e) {
+    if(tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function renderUsuarios(users) {
+  const tbody = document.getElementById('usuariosBody');
+  if(!tbody) return;
+  if(!users.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">No hay usuarios registrados aún.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => {
+    const fecha = u.created_at ? new Date(u.created_at).toLocaleDateString('es-AR') : '—';
+    const progs = u.membs?.map(m=>m.programs?.name||'—').join(', ') || '—';
+    const nTurnos = u.appts?.length || 0;
+    return `<tr style="border-bottom:1px solid var(--cream-dk)">
+      <td style="padding:.75rem 1rem">
+        <div style="font-weight:500;color:#1C1A18">${u.full_name||'Sin nombre'}</div>
+        <div style="font-size:.74rem;color:var(--muted)">${u.email||'—'}</div>
+        ${u.role==='admin'?'<span style="font-size:.65rem;background:rgba(58,125,140,.1);color:var(--teal);padding:.1rem .45rem;border-radius:100px;font-weight:600">Admin</span>':''}
+      </td>
+      <td style="padding:.75rem 1rem;font-size:.8rem;color:var(--muted)">${fecha}</td>
+      <td style="padding:.75rem 1rem;font-size:.82rem">${progs}</td>
+      <td style="padding:.75rem 1rem;font-size:.82rem;color:var(--muted)">${nTurnos} turno${nTurnos!==1?'s':''}</td>
+      <td style="padding:.75rem 1rem">
+        <button onclick="openEditUser('${u.id}','${(u.full_name||'').replace(/'/g,'')}','${u.email||''}')" style="padding:.35rem .85rem;border-radius:100px;font-size:.72rem;font-weight:600;background:rgba(58,125,140,.08);color:var(--teal);border:1.5px solid rgba(58,125,140,.2);cursor:pointer;font-family:var(--fb)">✏️ Editar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterUsuarios() {
+  const q = document.getElementById('usuariosSearch')?.value.toLowerCase()||'';
+  const filtered = _usuarios.filter(u=>
+    (u.full_name||'').toLowerCase().includes(q) ||
+    (u.email||'').toLowerCase().includes(q)
+  );
+  renderUsuarios(filtered);
+}
+
+function openEditUser(id, name, email) {
+  document.getElementById('editUserId').value    = id;
+  document.getElementById('editUserName').value  = name;
+  document.getElementById('editUserEmail').value = email;
+  document.getElementById('editUserPass').value  = '';
+  document.getElementById('editUserModal').style.display = 'flex';
+}
+
+function closeEditUser() {
+  document.getElementById('editUserModal').style.display = 'none';
+}
+
+async function saveEditUser() {
+  const id    = document.getElementById('editUserId').value;
+  const name  = document.getElementById('editUserName').value.trim();
+  const email = document.getElementById('editUserEmail').value.trim();
+  const pass  = document.getElementById('editUserPass').value;
+
+  if(!email) { toast('El email es obligatorio','err'); return; }
+  if(pass && pass.length < 6) { toast('La contraseña debe tener al menos 6 caracteres','err'); return; }
+
+  const token = _authToken || localStorage.getItem('bh_token');
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token, 'Content-Type':'application/json' };
+
+  try {
+    // Actualizar perfil
+    await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${id}`, {
+      method: 'PATCH', headers: h,
+      body: JSON.stringify({ full_name: name, email })
+    });
+
+    // Cambiar email en auth via RPC si cambió
+    const user = _usuarios.find(u=>u.id===id);
+    if(user && user.email !== email) {
+      await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_update_user_email`, {
+        method: 'POST', headers: h,
+        body: JSON.stringify({ p_user_id: id, p_email: email })
+      });
+    }
+
+    // Cambiar contraseña si se ingresó
+    if(pass) {
+      await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_update_user_password`, {
+        method: 'POST', headers: h,
+        body: JSON.stringify({ p_user_id: id, p_password: pass })
+      });
+    }
+
+    toast('Usuario actualizado ✓', 'ok');
+    closeEditUser();
+    loadUsuarios();
+  } catch(e) {
+    toast('Error: '+e.message, 'err');
+  }
+}
+
+window.loadUsuarios   = loadUsuarios;
+window.filterUsuarios = filterUsuarios;
+window.openEditUser   = openEditUser;
+window.closeEditUser  = closeEditUser;
+window.saveEditUser   = saveEditUser;
+
 /* ── HORARIOS BLOQUEADOS ── */
 async function loadABlocked() {
   const tbody = document.getElementById('aBBody');
@@ -4761,7 +4899,14 @@ function updateNavUI(role) {
 
   // Botón flotante admin
   const qb = document.getElementById('adminQuickBtn');
-  if (qb) qb.style.display = isAdmin ? 'flex' : 'none';
+  if(qb) qb.style.display = isAdmin ? 'flex' : 'none';
+  const fab = document.getElementById('adminFab');
+  if(fab) fab.style.display = isAdmin ? 'flex' : 'none';
+
+  // Bloquear acceso al admin si no es admin
+  if(!isAdmin && document.getElementById('page-admin')?.classList.contains('active')) {
+    goTo('home');
+  }
 }
 
 async function checkSession() {
@@ -5850,6 +5995,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       <button class="asb-it" onclick="showAP('testis',this)"><span>⭐</span> Testimonios</button>
       <button class="asb-it" onclick="showAP('programas-adm',this)"><span>📚</span> Programas</button>
       <button class="asb-it" onclick="showAP('ordenes-programas',this)"><span>🛒</span> Órdenes programas</button>
+      <button class="asb-it" onclick="showAP('usuarios',this)"><span>👥</span> Usuarios</button>
       <button class="asb-it" onclick="showAP('calendario',this)"><span>📆</span> Calendario</button>
       <button class="asb-it" onclick="showAP('horarios',this)"><span>🕐</span> Horarios bloqueados</button>
       <button class="asb-it" onclick="showAP('consultas',this)"><span>💼</span> Tipos de consulta</button>
@@ -6005,6 +6151,62 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
             <thead><tr><th>Paciente</th><th>Email</th><th>Última consulta</th><th>Consultas</th><th></th></tr></thead>
             <tbody id="aFBody"><tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--muted)">Cargando...</td></tr></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- USUARIOS -->
+      <div id="ap-usuarios" class="ap">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
+          <p style="font-size:.83rem;color:var(--muted);margin:0">Todos los usuarios registrados con sus compras y membresías.</p>
+          <div style="display:flex;gap:.5rem">
+            <input type="text" id="usuariosSearch" placeholder="Buscar por nombre o email..." oninput="filterUsuarios()" style="padding:.45rem .9rem;border:1.5px solid var(--cream-dk);border-radius:100px;font-size:.8rem;outline:none;font-family:var(--fb);width:240px">
+            <button onclick="loadUsuarios()" style="padding:.45rem 1rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">↻ Actualizar</button>
+          </div>
+        </div>
+
+        <div class="atw" style="padding:0;overflow:hidden">
+          <table style="width:100%;border-collapse:collapse;font-size:.83rem" id="usuariosTable">
+            <thead><tr style="background:var(--cream)">
+              <th style="padding:.65rem 1rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Usuario</th>
+              <th style="padding:.65rem 1rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Registrado</th>
+              <th style="padding:.65rem 1rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Programas</th>
+              <th style="padding:.65rem 1rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Turnos</th>
+              <th style="padding:.65rem 1rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Acciones</th>
+            </tr></thead>
+            <tbody id="usuariosBody">
+              <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MODAL EDITAR USUARIO -->
+      <div id="editUserModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center">
+        <div style="background:#fff;border-radius:16px;padding:2rem;width:460px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+            <div style="font-family:var(--fd);font-size:1.1rem;color:#1C1A18">Editar usuario</div>
+            <button onclick="closeEditUser()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted)">✕</button>
+          </div>
+          <input type="hidden" id="editUserId">
+          <div style="display:flex;flex-direction:column;gap:1rem">
+            <div class="form-group">
+              <label class="form-label">Nombre completo</label>
+              <input type="text" class="form-input" id="editUserName">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-input" id="editUserEmail">
+            </div>
+            <div style="background:var(--cream);border-radius:10px;padding:.85rem 1rem">
+              <div style="font-size:.8rem;font-weight:600;color:#1C1A18;margin-bottom:.5rem">Cambiar contraseña</div>
+              <input type="password" class="form-input" id="editUserPass" placeholder="Nueva contraseña (dejar vacío para no cambiar)" style="font-size:.82rem">
+              <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">Mínimo 6 caracteres. Si lo dejás vacío no se cambia.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:.75rem;margin-top:1.5rem">
+            <button onclick="closeEditUser()" style="flex:1;padding:.65rem;border-radius:100px;font-size:.78rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button>
+            <button onclick="saveEditUser()" style="flex:2;padding:.65rem;border-radius:100px;font-size:.78rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar cambios</button>
+          </div>
         </div>
       </div>
 
@@ -7134,8 +7336,8 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
   </div>
 </div>
 
-<!-- BOTÓN ACCESO RÁPIDO ADMIN -->
-<div style="position:fixed;bottom:2rem;right:2rem;z-index:150;display:flex;flex-direction:column;align-items:flex-end;gap:.5rem">
+<!-- BOTÓN ACCESO RÁPIDO ADMIN — solo visible para admins -->
+<div id="adminFab" style="position:fixed;bottom:2rem;right:2rem;z-index:150;display:none;flex-direction:column;align-items:flex-end;gap:.5rem">
   <button onclick="goTo('admin')" style="
     width:52px;height:52px;border-radius:50%;
     background:var(--gold);color:#fff;
