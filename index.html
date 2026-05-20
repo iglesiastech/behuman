@@ -1155,6 +1155,20 @@ async function submitBooking(){
     const fStr = parseInt(dd2)+' de '+MONTHS[parseInt(mm2)-1]+' '+BS.fecha.split('-')[0];
     emailTurnoPendiente(nom, email, fStr, BS.hora, TIPO_NAMES[BS.tipo]||BS.tipo, fmt(sena), fmt(precio), apellido);
 
+    // Email a Mariel — nuevo turno pendiente de seña
+    sendEmail('behuman.medicinafuncional@gmail.com',
+      'Nuevo turno pendiente · ' + (TIPO_NAMES[BS.tipo]||BS.tipo),
+      `<div style="font-family:Arial,sans-serif;padding:24px;max-width:500px">
+        <h2 style="color:#1C1A18;font-family:Georgia,serif">Nuevo turno pendiente de seña</h2>
+        <p><strong>Consulta:</strong> ${TIPO_NAMES[BS.tipo]||BS.tipo}</p>
+        <p><strong>Paciente:</strong> ${nom} ${apellido}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Fecha:</strong> ${fStr} a las ${BS.hora} hs</p>
+        <p><strong>Seña:</strong> ${fmt(sena)}</p>
+        <p style="margin-top:1rem"><a href="https://iglesiastech-behuman.vercel.app" style="background:#3A7D8C;color:#fff;padding:10px 20px;border-radius:100px;text-decoration:none;font-weight:600">Ir al panel admin →</a></p>
+      </div>`
+    );
+
     showConfirmacionSena(nom, email, sena, fechaStr, precio);
 
   } catch(e){
@@ -2437,6 +2451,19 @@ async function confirmarCompraPrograma() {
 
   // Email al cliente — programa pendiente
   emailProgramaPendiente(nom+' '+ape, email, nombre, fmt(precio));
+
+  // Email a Mariel — nueva orden para aprobar
+  sendEmail('behuman.medicinafuncional@gmail.com',
+    'Nueva inscripción pendiente · ' + nombre,
+    `<div style="font-family:Arial,sans-serif;padding:24px;max-width:500px">
+      <h2 style="color:#1C1A18;font-family:Georgia,serif">Nueva inscripción pendiente</h2>
+      <p><strong>Programa:</strong> ${nombre}</p>
+      <p><strong>Cliente:</strong> ${nom} ${ape}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>Monto:</strong> ${fmt(precio)}</p>
+      <p style="margin-top:1rem"><a href="https://iglesiastech-behuman.vercel.app" style="background:#3A7D8C;color:#fff;padding:10px 20px;border-radius:100px;text-decoration:none;font-weight:600">Ir al panel admin →</a></p>
+    </div>`
+  );
 
   const wa = document.getElementById('pcWhatsApp');
   if(wa) wa.href = `https://wa.me/5491176179836?text=Hola!%20Soy%20${encodeURIComponent(nom+' '+ape)}%20e%20hice%20la%20transferencia%20para%20inscribirme%20en%20${encodeURIComponent(nombre)}.%20Adjunto%20el%20comprobante.`;
@@ -5430,29 +5457,14 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
     </div>
   </div>
 
-  <div class="container">
-    <div class="tienda-layout">
-      <aside class="tienda-sidebar">
-        <div class="filter-section">
-          <div class="filter-section-title">Categoría</div>
-          <label class="filter-opt"><input type="checkbox" checked onchange="filterTienda()"> Todos</label>
-          <label class="filter-opt"><input type="checkbox" value="Minerales" onchange="filterTienda()"> Minerales</label>
-          <label class="filter-opt"><input type="checkbox" value="Vitaminas" onchange="filterTienda()"> Vitaminas</label>
-          <label class="filter-opt"><input type="checkbox" value="Digestivo" onchange="filterTienda()"> Digestivo</label>
-          <label class="filter-opt"><input type="checkbox" value="Adaptógenos" onchange="filterTienda()"> Adaptógenos</label>
-        </div>
-      </aside>
-      <div>
-        <div class="tienda-topbar">
-          <div class="tienda-count" id="tiendaCount">9 productos</div>
-          <select class="tienda-sort" onchange="sortTienda(this.value)">
-            <option value="">Ordenar por...</option>
-            <option value="asc">Menor precio</option>
-            <option value="desc">Mayor precio</option>
-            <option value="name">Nombre</option>
-          </select>
-        </div>
-        <div class="products-grid" id="productsGrid"></div>
+  <div style="padding:5rem 1.5rem;text-align:center;background:#fff">
+    <div style="max-width:520px;margin:0 auto">
+      <div style="font-size:3rem;margin-bottom:1.5rem">🌿</div>
+      <h2 style="font-family:var(--fd);font-size:2rem;color:#1C1A18;margin:0 0 1rem;font-weight:400">Próximamente</h2>
+      <p style="font-size:.95rem;color:#6B6460;line-height:1.8;margin:0 0 2rem">Estamos preparando nuestra tienda con suplementos seleccionados por la Dra. Dobenau. Muy pronto vas a poder acceder a todo el material.</p>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+        <a href="https://wa.me/5491176179836" target="_blank" class="btn-gold" style="text-decoration:none;padding:.85rem 2rem;font-size:.8rem">Avisarme cuando esté disponible</a>
+        <button class="btn-outline" onclick="goTo('programas')">Ver programas</button>
       </div>
     </div>
   </div>
