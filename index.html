@@ -1903,74 +1903,262 @@ async function openATurno(email, nombre, apptId, tipo) {
 }
 
 /* ── FICHAS ── */
+let _fichas = [];
+let _fichaActual = null;
+
 async function loadAFichas() {
-  const tbody = document.getElementById('aFBody');
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')) };
   try {
-    const sb = getSB();
-    const { data } = await sb.from('fichas_medicas').select('*, evoluciones(id,fecha)').order('patient_name');
-    aAllFichas = data || [];
-    renderAFichas(aAllFichas);
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/fichas_medicas?order=patient_name&select=*`, {headers:h});
+    _fichas = await r.json() || [];
+    // Cargar evoluciones para cada ficha
+    for(let f of _fichas) {
+      const r2 = await fetch(`${SUPABASE_URL}/rest/v1/evoluciones?ficha_id=eq.${f.id}&order=fecha.desc&select=*`, {headers:h});
+      f.evoluciones = await r2.json() || [];
+    }
+    renderFichasList(_fichas);
   } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--muted)">Conectá Supabase para ver fichas</td></tr>';
+    document.getElementById('fichasList').innerHTML = '<div style="padding:1.5rem;color:var(--muted);font-size:.84rem">Error: '+e.message+'</div>';
   }
 }
 
-function renderAFichas(fichas) {
-  const tbody = document.getElementById('aFBody');
-  if (!fichas.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--muted)">No hay fichas aún</td></tr>'; return; }
-  tbody.innerHTML = fichas.map(f => {
-    const evs = f.evoluciones||[];
-    const last = evs.length ? evs.sort((a,b)=>b.fecha.localeCompare(a.fecha))[0].fecha : null;
-    return `<tr>
-      <td><div style="font-weight:600">${f.patient_name}</div>${f.dni?`<div style="font-size:.73rem;color:var(--muted)">DNI ${f.dni}</div>`:''}</td>
-      <td style="color:var(--muted)">${f.patient_email}</td>
-      <td>${last?formatADate(last):'—'}</td>
-      <td><span style="background:rgba(58,125,140,.12);color:var(--teal);padding:.2rem .65rem;border-radius:100px;font-size:.68rem;font-weight:600">${evs.length} consulta${evs.length!==1?'s':''}</span></td>
-      <td><button onclick="toast('Ficha de ${f.patient_name}: ${(f.antecedentes_personales||'Sin antecedentes').slice(0,80)}...','ok',5000)" style="padding:.38rem .85rem;border-radius:100px;font-size:.7rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Ver</button></td>
-    </tr>`;
+function renderFichasList(fichas) {
+  const el = document.getElementById('fichasList');
+  if(!el) return;
+  if(!fichas.length) { el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted);font-size:.84rem">No hay fichas aún.</div>'; return; }
+  el.innerHTML = fichas.map(f => {
+    const evs = f.evoluciones || [];
+    const lastEv = evs[0];
+    const lastDate = lastEv ? new Date(lastEv.fecha).toLocaleDateString('es-AR') : '—';
+    const isActive = _fichaActual?.id === f.id;
+    return '<div onclick="abrirFicha(\''+f.id+'\')" style="padding:.85rem 1rem;border-bottom:1px solid var(--cream-dk);cursor:pointer;transition:.12s;background:'+(isActive?'rgba(58,125,140,.08)':'#fff')+'" onmouseover="if(this.style.background===\'rgb(255,255,255)\')this.style.background=\'#fafaf8\'" onmouseout="if(!this.classList.contains(\'active-ficha\'))this.style.background=\''+(isActive?'rgba(58,125,140,.08)':'#fff')+'\'">'
+      +'<div style="font-weight:600;font-size:.88rem;color:#1C1A18">'+f.patient_name+'</div>'
+      +'<div style="font-size:.74rem;color:var(--muted);margin-top:.15rem">'+f.patient_email+'</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:.35rem">'
+        +'<span style="font-size:.68rem;background:rgba(58,125,140,.1);color:var(--teal);padding:.1rem .45rem;border-radius:100px;font-weight:600">'+evs.length+' consulta'+(evs.length!==1?'s':'')+'</span>'
+        +'<span style="font-size:.7rem;color:var(--muted)">Últ: '+lastDate+'</span>'
+      +'</div>'
+    +'</div>';
   }).join('');
 }
 
-function filterAFichas() {
-  const q = document.getElementById('fichaQ')?.value.toLowerCase()||'';
-  renderAFichas(q ? aAllFichas.filter(f => f.patient_name.toLowerCase().includes(q)||f.patient_email.toLowerCase().includes(q)) : aAllFichas);
+function filterFichas() {
+  const q = (document.getElementById('fichaSearch')?.value || '').toLowerCase();
+  renderFichasList(q ? _fichas.filter(f => f.patient_name.toLowerCase().includes(q) || (f.patient_email||'').toLowerCase().includes(q)) : _fichas);
 }
 
-function openANuevaFicha(email='', nombre='') {
+async function abrirFicha(fichaId) {
+  const f = _fichas.find(x=>x.id===fichaId);
+  if(!f) return;
+  _fichaActual = f;
+  renderFichasList(_fichas); // re-render to highlight active
+  renderFichaDetalle(f);
+}
+
+function renderFichaDetalle(f) {
+  const el = document.getElementById('fichaDetalle');
+  if(!el) return;
+  const evs = f.evoluciones || [];
+  const lastEv = evs[0];
+  const historial = evs.slice(1);
+
+  el.innerHTML =
+    // Header
+    '<div style="background:#fff;border-bottom:1px solid var(--cream-dk);padding:1.25rem 1.5rem;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem">'
+      +'<div>'
+        +'<div style="font-family:var(--fd);font-size:1.25rem;color:#1C1A18">'+f.patient_name+'</div>'
+        +'<div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">'+f.patient_email+(f.patient_phone?' · '+f.patient_phone:'')+(f.dni?' · DNI '+f.dni:'')+'</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:.5rem">'
+        +'<button onclick="openNuevaConsulta(\''+f.id+'\',\''+f.patient_name.replace(/'/g,'').replace(/"/g,'')+'\',\''+f.patient_email+'\')" style="padding:.5rem 1.1rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">+ Nueva consulta</button>'
+        +'<button onclick="editarFicha(\''+f.id+'\')" style="padding:.5rem 1rem;border-radius:100px;font-size:.76rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">✏️ Editar</button>'
+      +'</div>'
+    +'</div>'
+
+    // Datos básicos
+    +'<div style="padding:1.25rem 1.5rem;background:#fff;margin-bottom:.5rem;display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem">'
+      +renderDatoFicha('Fecha nac.', f.fecha_nacimiento ? new Date(f.fecha_nacimiento).toLocaleDateString('es-AR') : '—')
+      +renderDatoFicha('Sexo', f.sexo||'—')
+      +renderDatoFicha('Peso', f.peso_kg ? f.peso_kg+' kg' : '—')
+      +renderDatoFicha('Altura', f.altura_cm ? f.altura_cm+' cm' : '—')
+    +'</div>'
+
+    // Antecedentes
+    +(f.antecedentes_personales||f.medicacion_actual||f.alergias ? renderSeccionFicha('Antecedentes', [
+      {label:'Antecedentes personales', val:f.antecedentes_personales},
+      {label:'Medicación actual', val:f.medicacion_actual},
+      {label:'Alergias', val:f.alergias},
+    ]) : '')
+
+    // Última ficha (Historia clínica actual)
+    +(lastEv ? '<div style="padding:1.25rem 1.5rem">'
+      +'<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.75rem">Última consulta</div>'
+      +renderEvolucionCard(lastEv, true)
+    +'</div>' : '<div style="padding:1.25rem 1.5rem;color:var(--muted);font-size:.85rem">Sin consultas registradas aún.</div>')
+
+    // Historial de consultas anteriores
+    +(historial.length ? '<div style="padding:1.25rem 1.5rem;border-top:1px solid var(--cream-dk)">'
+      +'<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.75rem">Historial de consultas anteriores</div>'
+      +historial.map(ev=>renderEvolucionCard(ev, false)).join('')
+    +'</div>' : '');
+}
+
+function renderDatoFicha(label, val) {
+  return '<div style="background:var(--cream);border-radius:8px;padding:.65rem .85rem">'
+    +'<div style="font-size:.68rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.2rem">'+label+'</div>'
+    +'<div style="font-size:.86rem;font-weight:600;color:#1C1A18">'+val+'</div>'
+  +'</div>';
+}
+
+function renderSeccionFicha(titulo, items) {
+  const content = items.filter(i=>i.val).map(i=>'<div style="margin-bottom:.75rem"><div style="font-size:.78rem;font-weight:600;color:#1C1A18;margin-bottom:.2rem">'+i.label+'</div><div style="font-size:.83rem;color:#6B6460;line-height:1.65;white-space:pre-line">'+i.val+'</div></div>').join('');
+  if(!content) return '';
+  return '<div style="background:#fff;padding:1.25rem 1.5rem;margin-bottom:.5rem">'
+    +'<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.85rem">'+titulo+'</div>'
+    +content
+  +'</div>';
+}
+
+function renderEvolucionCard(ev, isLast) {
+  const fecha = new Date(ev.fecha).toLocaleDateString('es-AR', {day:'numeric',month:'2-digit',year:'numeric'});
+  const hora  = ev.hora || new Date(ev.fecha).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  const archivos = Array.isArray(ev.archivos) ? ev.archivos : (tryParseJSON(ev.archivos)||[]);
+
+  return '<div style="background:#fff;border:1.5px solid '+(isLast?'var(--teal)':'var(--cream-dk)')+';border-radius:14px;overflow:hidden;margin-bottom:.75rem">'
+    // Header de la consulta
+    +'<div style="background:'+(isLast?'#1C1A18':'var(--cream)')+';padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between">'
+      +'<div>'
+        +'<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:'+(isLast?'rgba(240,232,216,.5)':'var(--muted)')+'">Historia Clínica</div>'
+        +'<div style="font-size:.82rem;color:'+(isLast?'var(--cream)':'#1C1A18')+';margin-top:.1rem">📅 '+fecha+' - '+hora+'</div>'
+        +(ev.medico_nombre ? '<div style="font-size:.76rem;color:'+(isLast?'rgba(240,232,216,.5)':'var(--muted)')+'">👤 '+ev.medico_nombre+'</div>' : '')
+      +'</div>'
+      +'<div style="display:flex;gap:.4rem">'
+        +'<button onclick="editarEvolucion(\''+ev.id+'\')" style="padding:.3rem .7rem;border-radius:8px;font-size:.7rem;border:1.5px solid '+(isLast?'rgba(240,232,216,.2)':'var(--cream-dk)')+';background:transparent;color:'+(isLast?'rgba(240,232,216,.7)':'var(--muted)')+';cursor:pointer">✏️</button>'
+        +'<button onclick="verEvolucionDetalle(\''+ev.id+'\')" style="padding:.3rem .7rem;border-radius:8px;font-size:.7rem;border:1.5px solid '+(isLast?'rgba(240,232,216,.2)':'var(--cream-dk)')+';background:transparent;color:'+(isLast?'rgba(240,232,216,.7)':'var(--muted)')+';cursor:pointer">Ver más detalles ›</button>'
+      +'</div>'
+    +'</div>'
+    // Contenido
+    +'<div style="padding:1rem">'
+      +(ev.motivo ? '<div style="margin-bottom:.75rem"><div style="font-size:.75rem;font-weight:700;color:#1C1A18;margin-bottom:.2rem">Motivo de consulta</div><div style="font-size:.84rem;color:#6B6460">'+ev.motivo+'</div></div>' : '')
+      +(ev.observaciones ? '<div style="margin-bottom:.75rem"><div style="font-size:.75rem;font-weight:700;color:#1C1A18;margin-bottom:.2rem">Observaciones</div><div style="font-size:.84rem;color:#6B6460;line-height:1.7;white-space:pre-line">'+ev.observaciones+'</div></div>' : '')
+      // Estudios / archivos
+      +(archivos.length ? '<div><div style="font-size:.75rem;font-weight:700;color:#1C1A18;margin-bottom:.6rem;padding-top:.5rem;border-top:1px solid var(--cream-dk)">Estudios adjuntos</div>'
+        +archivos.map(a=>'<div style="display:flex;align-items:center;gap:.6rem;padding:.45rem .65rem;background:var(--cream);border-radius:8px;margin-bottom:.35rem">'
+          +'<span style="font-size:.9rem">📎</span>'
+          +'<span style="font-size:.78rem;color:#3A3530;flex:1">'+( a.name||'Archivo')+'</span>'
+          +'<a href="'+a.url+'" target="_blank" download style="font-size:.72rem;color:var(--teal);font-weight:600;text-decoration:none">⬇ Descargar</a>'
+        +'</div>').join('')
+      +'</div>' : '')
+    +'</div>'
+  +'</div>';
+}
+
+// Abrir modal nueva consulta
+function openNuevaConsulta(fichaId, pacienteName, pacienteEmail) {
+  document.getElementById('ncFichaId').value     = fichaId;
+  document.getElementById('ncPaciente').textContent = pacienteName;
+  document.getElementById('ncFecha').value       = new Date().toISOString().split('T')[0];
+  document.getElementById('ncHora').value        = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('ncMotivo').value      = '';
+  document.getElementById('ncObservaciones').value = '';
+  document.getElementById('ncMedico').value      = '';
+  document.getElementById('ncArchivosList').innerHTML = '';
+  openAMod('ncModal');
+}
+
+async function guardarNuevaConsulta() {
+  const fichaId = document.getElementById('ncFichaId').value;
+  const motivo  = document.getElementById('ncMotivo').value.trim();
+  const obs     = document.getElementById('ncObservaciones').value.trim();
+  const medico  = document.getElementById('ncMedico').value.trim();
+  const fecha   = document.getElementById('ncFecha').value;
+  const hora    = document.getElementById('ncHora').value;
+
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json', 'Prefer':'return=representation' };
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/evoluciones`, {
+      method: 'POST', headers: h,
+      body: JSON.stringify({ ficha_id:fichaId, motivo:motivo||null, observaciones:obs||null, medico_nombre:medico||null, fecha:fecha+'T'+hora+':00', hora, archivos:[] })
+    });
+    if(!res.ok) throw new Error((await res.json()).message || res.statusText);
+    toast('Consulta guardada ✓','ok');
+    closeAMod('ncModal');
+    await loadAFichas();
+    if(_fichaActual?.id === fichaId) renderFichaDetalle(_fichas.find(f=>f.id===fichaId)||_fichaActual);
+  } catch(e) { toast('Error: '+e.message,'err'); }
+}
+
+function openNuevaFicha(email='', nombre='') {
   document.getElementById('nfN').value = nombre;
   document.getElementById('nfE').value = email;
-  document.getElementById('nfModTitle').textContent = email ? `Nueva ficha: ${nombre}` : 'Nueva ficha médica';
+  document.getElementById('nfModTitle').textContent = email ? 'Nueva ficha: '+nombre : 'Nueva ficha médica';
   openAMod('nfMod');
 }
+// alias para compatibilidad
+const openANuevaFicha = openNuevaFicha;
 
 async function crearAFicha() {
   const nombre = document.getElementById('nfN').value.trim();
   const email  = document.getElementById('nfE').value.trim();
-  if (!nombre||!email) { toast('Nombre y email son obligatorios','err'); return; }
+  if(!nombre||!email) { toast('Nombre y email son obligatorios','err'); return; }
   const btn = document.getElementById('nfBtn');
   btn.disabled=true; btn.textContent='Creando...';
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json', 'Prefer':'return=representation' };
   try {
-    const sb = getSB();
-    await sb.from('fichas_medicas').insert({
-      patient_name:nombre, patient_email:email,
-      patient_phone:document.getElementById('nfT').value.trim()||null,
-      dni:document.getElementById('nfD').value.trim()||null,
-      fecha_nacimiento:document.getElementById('nfNc').value||null,
-      sexo:document.getElementById('nfSx').value||null,
-      peso_kg:parseFloat(document.getElementById('nfP').value)||null,
-      altura_cm:parseInt(document.getElementById('nfH').value)||null,
-      antecedentes_personales:document.getElementById('nfAP').value.trim()||null,
-      medicacion_actual:document.getElementById('nfMd').value.trim()||null,
-      alergias:document.getElementById('nfAl').value.trim()||null,
-      motivo_consulta_inicial:document.getElementById('nfMt').value.trim()||null,
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/fichas_medicas`, {
+      method:'POST', headers:h,
+      body: JSON.stringify({
+        patient_name:nombre, patient_email:email,
+        patient_phone:document.getElementById('nfT').value.trim()||null,
+        dni:document.getElementById('nfD').value.trim()||null,
+        fecha_nacimiento:document.getElementById('nfNc').value||null,
+        sexo:document.getElementById('nfSx').value||null,
+        peso_kg:parseFloat(document.getElementById('nfP').value)||null,
+        altura_cm:parseInt(document.getElementById('nfH').value)||null,
+        antecedentes_personales:document.getElementById('nfAP').value.trim()||null,
+        medicacion_actual:document.getElementById('nfMd').value.trim()||null,
+        alergias:document.getElementById('nfAl').value.trim()||null,
+        motivo_consulta_inicial:document.getElementById('nfMt').value.trim()||null,
+      })
     });
+    if(!res.ok) throw new Error((await res.json()).message||res.statusText);
     toast('Ficha creada ✓','ok');
     closeAMod('nfMod');
-    loadAFichas();
+    await loadAFichas();
   } catch(e) {
     toast(e.message.includes('duplicate')?'Ya existe una ficha para ese email':e.message,'err');
   } finally { btn.disabled=false; btn.textContent='Crear ficha'; }
 }
+
+function verEvolucionDetalle(evId) { /* TODO: modal detalle evolución */ }
+function editarEvolucion(evId) { /* TODO: editar evolución */ }
+function editarFicha(fichaId) { openANuevaFicha(); }
+
+function handleNcArchivos(input) {
+  const list = document.getElementById('ncArchivosList');
+  [...input.files].forEach(file => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:.6rem;padding:.45rem .75rem;background:var(--cream);border-radius:8px;font-size:.8rem';
+    div.innerHTML = '📎 <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+file.name+'</span>'
+      +'<button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.9rem">✕</button>';
+    div.dataset.fileName = file.name;
+    div.dataset.fileSize = file.size;
+    list.appendChild(div);
+  });
+}
+window.handleNcArchivos = handleNcArchivos;
+window.filterFichas            = filterFichas;
+window.abrirFicha              = abrirFicha;
+window.openNuevaFicha          = openNuevaFicha;
+window.openANuevaFicha         = openANuevaFicha;
+window.crearAFicha             = crearAFicha;
+window.openNuevaConsulta       = openNuevaConsulta;
+window.guardarNuevaConsulta    = guardarNuevaConsulta;
+window.abrirFichaDesdeCalendario = abrirFichaDesdeCalendario;
+window.verEvolucionDetalle     = verEvolucionDetalle;
+window.editarEvolucion         = editarEvolucion;
+window.editarFicha             = editarFicha;
 
 /* ── TESTIMONIOS ── */
 async function loadATestis() {
@@ -2202,29 +2390,70 @@ function renderCalSide(dateStr) {
   dayAppts.forEach(a => {
     const medico = calState.medicos.find(m => m.id === a.medico_id);
     const color  = medico?.color || '#3A7D8C';
-    const statusLabel = {pending:'Pendiente',confirmed:'Confirmado',pending_transfer:'Esperando transferencia',completed:'Completado'}[a.status] || a.status;
-    const statusColor = {pending:'#D4853A',confirmed:'#4A9B6F',pending_transfer:'#D4853A',completed:'#3A7D8C'}[a.status] || '#8A7F74';
-    const modalidadLabel = a.modalidad === 'presencial' ? '📍 Presencial' : '💻 Virtual';
+    const statusLabel = {pending:'Pendiente',confirmed:'Confirmado',pending_transfer:'Esperando seña',completed:'Completado',cancelled:'Cancelado'}[a.status] || a.status;
+    const statusColor = {pending:'#D4853A',confirmed:'#4A9B6F',pending_transfer:'#D4853A',completed:'#3A7D8C',cancelled:'#C4614A'}[a.status] || '#8A7F74';
+    const modalidad = a.modalidad === 'presencial' ? 'Presencial' : 'Virtual';
+    const modalColor = a.modalidad === 'presencial' ? '#D4853A' : '#3A7D8C';
+    const phone = (a.patient_phone||'').replace(/\D/g,'');
+    const waPhone = phone.startsWith('54') ? phone : '54'+phone;
+    const precio = a.precio ? fmt(a.precio) : null;
+    const durMin = a.duracion || 30;
+    const timeStart = (a.time||'').slice(0,5);
+    let timeEnd = '';
+    if(timeStart) {
+      const [hh,mm] = timeStart.split(':').map(Number);
+      const end = new Date(2000,0,1,hh,mm+durMin);
+      timeEnd = end.getHours().toString().padStart(2,'0')+':'+end.getMinutes().toString().padStart(2,'0');
+    }
 
-    html += `<div class="cal-appt-card" style="border-left:3px solid ${color}">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div class="cal-appt-time">${(a.time||'').slice(0,5)} hs</div>
-        <span style="font-size:.68rem;font-weight:600;padding:.18rem .55rem;border-radius:100px;background:${statusColor}18;color:${statusColor}">${statusLabel}</span>
-      </div>
-      <div class="cal-appt-name">${a.patient_name}</div>
-      <div class="cal-appt-tipo">${ATIPO[a.type]||a.type||'—'}</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.4rem">
-        <span class="cal-appt-mod" style="background:${color}15;color:${color}">${modalidadLabel}</span>
-        ${medico ? `<span style="font-size:.68rem;color:var(--muted)">${medico.nombre}</span>` : ''}
-      </div>
-      ${a.patient_phone ? `<div style="margin-top:.45rem">
-        <a href="https://wa.me/${(a.patient_phone||'').replace(/\D/g,'')}" target="_blank" style="font-size:.7rem;color:#25D366;font-weight:600;text-decoration:none">💬 WhatsApp</a>
-      </div>` : ''}
-      ${a.sena_status === 'pending' ? `<div style="margin-top:.4rem;font-size:.7rem;background:rgba(212,133,58,.1);color:#8A5020;padding:.25rem .5rem;border-radius:6px">⏳ Transferencia pendiente</div>` : ''}
-    </div>`;
+    const statusBtns = ['pending','pending_transfer','confirmed','completed','cancelled'].map(s => {
+      const sc = {pending:'#D4853A',pending_transfer:'#D4853A',confirmed:'#4A9B6F',completed:'#3A7D8C',cancelled:'#C4614A'}[s];
+      const sl = {pending:'Pendiente',pending_transfer:'Esperando seña',confirmed:'Confirmado',completed:'Completado',cancelled:'Cancelado'}[s];
+      const isActive = a.status === s;
+      return '<button onclick="cambiarEstadoAppt(\''+a.id+'\',\''+s+'\')" title="'+sl+'" style="width:18px;height:18px;border-radius:50%;background:'+sc+';border:3px solid '+(isActive?'#1C1A18':sc+'50')+';cursor:pointer;transition:.15s"'+(isActive?' disabled':'')+' data-appt="'+a.id+'" data-s="'+s+'"></button>';
+    }).join('');
+
+    html += '<div class="cal-appt-card" style="border-left:4px solid '+color+';padding:0;overflow:hidden">'
+      // Header
+      +'<div style="padding:.75rem .85rem;display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem">'
+        +'<div>'
+          +'<div style="font-size:1.1rem;font-weight:700;color:'+color+';font-family:var(--fd)">'+timeStart+' hs</div>'
+          +(timeEnd ? '<div style="font-size:.7rem;color:var(--muted)">hasta '+timeEnd+' hs · '+durMin+' min</div>' : '')
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;justify-content:flex-end">'
+          +'<span style="font-size:.65rem;font-weight:700;padding:.18rem .55rem;border-radius:100px;background:'+statusColor+'18;color:'+statusColor+';border:1px solid '+statusColor+'30">'+statusLabel+'</span>'
+          +'<button onclick="openEditApptModal(\''+a.id+'\')" title="Editar" style="width:26px;height:26px;border-radius:6px;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-size:.75rem">✏️</button>'
+          +'<button onclick="deleteAppt(\''+a.id+'\')" title="Eliminar" style="width:26px;height:26px;border-radius:6px;border:1.5px solid #f0d0d0;background:#fff;cursor:pointer;font-size:.75rem">🗑</button>'
+        +'</div>'
+      +'</div>'
+      // Paciente
+      +'<div style="padding:.1rem .85rem .65rem">'
+        +'<div style="font-size:.98rem;font-weight:700;color:#1C1A18;margin-bottom:.15rem">'+(a.patient_name||'—')+'</div>'
+        +'<div style="font-size:.78rem;color:var(--muted)">'+(ATIPO[a.type]||a.type||'—')+'</div>'
+        +(precio ? '<div style="font-size:.85rem;font-weight:600;color:#1C1A18;margin-top:.2rem">'+precio+'</div>' : '')
+      +'</div>'
+      // Detalles
+      +'<div style="border-top:1px solid var(--cream-dk);padding:.65rem .85rem;display:flex;flex-direction:column;gap:.45rem">'
+        +(medico ? '<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#3A3530"><span style="width:10px;height:10px;border-radius:50%;background:'+color+';flex-shrink:0;display:inline-block"></span><span>'+medico.nombre+'</span></div>' : '')
+        +(a.patient_phone ? '<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#3A3530"><span style="color:var(--muted)">📱</span><span>'+a.patient_phone+'</span><a href="https://wa.me/'+waPhone+'" target="_blank" style="margin-left:auto;font-size:.7rem;color:#25D366;font-weight:600;text-decoration:none;background:rgba(37,211,102,.08);padding:.15rem .45rem;border-radius:100px;border:1px solid rgba(37,211,102,.2)">WhatsApp</a></div>' : '')
+        +(a.patient_email ? '<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#3A3530;overflow:hidden"><span style="color:var(--muted)">✉️</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+a.patient_email+'</span></div>' : '')
+        +'<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#3A3530"><span style="color:var(--muted)">'+(a.modalidad==='presencial'?'📍':'💻')+'</span><span style="color:'+modalColor+';font-weight:500">'+modalidad+'</span></div>'
+        +(a.sena_status==='paid' ? '<div style="font-size:.75rem;color:#4A9B6F;font-weight:500">✓ Seña confirmada</div>' : a.sena_status==='pending' ? '<div style="font-size:.75rem;color:#D4853A;font-weight:500">⏳ Seña pendiente</div>' : '')
+      +'</div>'
+      // Botones acción
+      +'<div style="border-top:1px solid var(--cream-dk);padding:.55rem .85rem;display:flex;gap:.5rem">'
+        +'<button onclick="abrirFichaDesdeCalendario(\''+( a.patient_email||'')+'\',\''+( a.patient_name||'')+'\',\''+( a.patient_phone||'')+'\')" style="flex:1;padding:.45rem .5rem;border-radius:8px;font-size:.72rem;font-weight:600;border:1.5px solid var(--teal);background:rgba(58,125,140,.06);color:var(--teal);cursor:pointer;font-family:var(--fb)">📋 Ficha médica</button>'
+        +'<button onclick="verPagoTurno(\''+a.id+'\')" style="flex:1;padding:.45rem .5rem;border-radius:8px;font-size:.72rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">$ Ver pago</button>'
+      +'</div>'
+      // Cambiar estado
+      +'<div style="border-top:1px solid var(--cream-dk);padding:.5rem .85rem;display:flex;align-items:center;gap:.35rem;flex-wrap:wrap">'
+        +'<span style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-right:.25rem">Estado:</span>'
+        +statusBtns
+        +'<span style="font-size:.7rem;color:var(--muted);margin-left:.3rem" id="statusLabel-'+a.id+'">'+statusLabel+'</span>'
+      +'</div>'
+    +'</div>';
   });
 
-  body.innerHTML = html;
 }
 
 async function deleteCalBlock(id) {
@@ -3736,6 +3965,61 @@ window.admPreviewBack         = admPreviewBack;
 window.admPreviewBackToLanding= admPreviewBackToLanding;
 window.resetAdmPreview        = resetAdmPreview;
 
+async function cambiarEstadoAppt(id, newStatus) {
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json' };
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/appointments?id=eq.${id}`, { method:'PATCH', headers:h, body:JSON.stringify({status:newStatus}) });
+    // Si confirman el turno, mandar email
+    if(newStatus === 'confirmed') {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/appointments?id=eq.${id}&select=patient_name,patient_email,date,time,type`, {headers:h});
+      const appts = await r.json();
+      if(appts?.[0]) {
+        const a = appts[0];
+        const ML = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        const [y,mm,dd] = (a.date||'').split('-');
+        const fStr = parseInt(dd)+' de '+ML[parseInt(mm)-1]+' '+y;
+        emailTurnoConfirmado(a.patient_name, a.patient_email, fStr, (a.time||'').slice(0,5), a.type||'Consulta');
+      }
+    }
+    toast('Estado actualizado ✓','ok');
+    await loadCalData();
+    renderCalAdmin();
+  } catch(e) { toast('Error: '+e.message,'err'); }
+}
+
+async function deleteAppt(id) {
+  if(!confirm('¿Eliminar este turno?')) return;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')) };
+  await fetch(`${SUPABASE_URL}/rest/v1/appointments?id=eq.${id}`, { method:'DELETE', headers:h });
+  toast('Turno eliminado ✓','ok');
+  await loadCalData();
+  renderCalAdmin();
+}
+
+function openEditApptModal(id) {
+  const appt = calState.appts?.find(a=>a.id===id);
+  if(!appt) { toast('Turno no encontrado','err'); return; }
+  openATurno(appt);
+}
+
+function abrirFichaDesdeCalendario(email, nombre, tel) {
+  showAP('fichas', document.querySelector('[onclick*="fichas"]'));
+  setTimeout(() => {
+    const searchInput = document.getElementById('fichaSearch');
+    if(searchInput && email) { searchInput.value = email; filterFichas(); }
+  }, 300);
+}
+
+function verPagoTurno(id) {
+  showAP('senas', document.querySelector('[onclick*="senas"]'));
+}
+
+window.cambiarEstadoAppt      = cambiarEstadoAppt;
+window.deleteAppt              = deleteAppt;
+window.openEditApptModal       = openEditApptModal;
+window.abrirFichaDesdeCalendario = abrirFichaDesdeCalendario;
+window.verPagoTurno            = verPagoTurno;
+
 /* ── CONSULTAS ── */
 
 const CONSULTAS_DEFAULT = [
@@ -5087,7 +5371,7 @@ window.loadASenas         = loadASenas;
 window.aprobarSena        = aprobarSena;
 window.rechazarSena       = rechazarSena;
 window.loadAFichas        = loadAFichas;
-window.filterAFichas      = filterAFichas;
+window.filterAFichas      = filterFichas;
 window.openANuevaFicha    = openANuevaFicha;
 window.crearAFicha        = crearAFicha;
 window.loadATestis        = loadATestis;
@@ -5189,7 +5473,7 @@ window._deleteContent     = deleteContent;
 window._openAddMember     = openAddMember;
 window._saveMember        = saveMember;
 window._toggleMembership  = toggleMembership;
-window._filterAFichas     = filterAFichas;
+window._filterAFichas     = filterFichas;
 window._updateSenaAmount  = updateSenaAmount;
 
 // App lista — ejecutar navegación pendiente si la hubo
@@ -6153,16 +6437,27 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       </div>
 
       <!-- FICHAS -->
-      <div id="ap-fichas" class="ap">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;flex-wrap:wrap;gap:.65rem">
-          <input type="text" placeholder="🔍 Buscar paciente..." id="fichaQ" oninput="filterAFichas()" style="padding:.52rem .9rem;border:1.5px solid var(--cream-dk);border-radius:10px;font-size:.8rem;outline:none;background:#fff;font-family:var(--fb);width:220px">
-          <button onclick="openANuevaFicha()" style="padding:.52rem 1.1rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--gold);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">+ Nueva ficha</button>
-        </div>
-        <div class="atw">
-          <table>
-            <thead><tr><th>Paciente</th><th>Email</th><th>Última consulta</th><th>Consultas</th><th></th></tr></thead>
-            <tbody id="aFBody"><tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--muted)">Cargando...</td></tr></tbody>
-          </table>
+      <div id="ap-fichas" class="ap" style="padding:0">
+        <div style="display:grid;grid-template-columns:320px 1fr;height:calc(100vh - 120px)">
+
+          <!-- Lista de pacientes -->
+          <div style="border-right:1px solid var(--cream-dk);display:flex;flex-direction:column">
+            <div style="padding:1rem;border-bottom:1px solid var(--cream-dk);display:flex;gap:.5rem">
+              <input type="text" placeholder="Buscar paciente..." id="fichaSearch" oninput="filterFichas()" style="flex:1;padding:.5rem .85rem;border:1.5px solid var(--cream-dk);border-radius:100px;font-size:.8rem;outline:none;font-family:var(--fb)">
+              <button onclick="openNuevaFicha()" style="padding:.5rem 1rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb);white-space:nowrap">+ Nueva</button>
+            </div>
+            <div id="fichasList" style="overflow-y:auto;flex:1">
+              <div style="padding:2rem;text-align:center;color:var(--muted);font-size:.84rem">Cargando...</div>
+            </div>
+          </div>
+
+          <!-- Detalle de ficha -->
+          <div id="fichaDetalle" style="overflow-y:auto;background:#f7f5f2">
+            <div style="padding:4rem;text-align:center;color:var(--muted)">
+              <div style="font-size:2.5rem;margin-bottom:.75rem">📋</div>
+              <div style="font-size:.9rem">Seleccioná un paciente para ver su ficha</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -6486,6 +6781,45 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       </div>
     </div>
     <div class="amf"><button onclick="closeAMod('imgMod')" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button><button id="imgSB" onclick="saveAImg()" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--gold);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar</button></div>
+  </div>
+</div>
+
+<!-- MODAL NUEVA CONSULTA -->
+<div class="amb" id="ncModal">
+  <div class="am-modal" style="max-width:620px">
+    <div class="amh">
+      <div>
+        <div class="amh-title">Nueva consulta</div>
+        <div id="ncPaciente" style="font-size:.8rem;color:var(--muted)"></div>
+      </div>
+      <button class="amx" onclick="closeAMod('ncModal')">✕</button>
+    </div>
+    <div class="amb-body" style="max-height:75vh;overflow-y:auto">
+      <input type="hidden" id="ncFichaId">
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
+          <div class="form-group"><label class="form-label">Fecha *</label><input type="date" class="form-input" id="ncFecha"></div>
+          <div class="form-group"><label class="form-label">Hora</label><input type="time" class="form-input" id="ncHora"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Médica</label><input type="text" class="form-input" id="ncMedico" placeholder="Nombre de la médica que atendió"></div>
+        <div class="form-group"><label class="form-label">Motivo de consulta</label><input type="text" class="form-input" id="ncMotivo" placeholder="Ej: Seguimiento, Control, Primera vez..."></div>
+        <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-textarea" id="ncObservaciones" rows="6" placeholder="Observaciones clínicas, indicaciones, resultados..."></textarea></div>
+        <!-- Archivos -->
+        <div class="form-group">
+          <label class="form-label">Archivos adjuntos (estudios, laboratorios)</label>
+          <div id="ncArchivosList" style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.5rem"></div>
+          <div style="border:2px dashed var(--cream-dk);border-radius:10px;padding:1.25rem;text-align:center;cursor:pointer;transition:.15s" onclick="document.getElementById('ncArchivoInput').click()" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--cream-dk)'">
+            <div style="font-size:.82rem;color:var(--muted)">📎 Hacé clic para adjuntar archivos</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">PDF, imágenes, Word</div>
+          </div>
+          <input type="file" id="ncArchivoInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none" onchange="handleNcArchivos(this)">
+        </div>
+      </div>
+    </div>
+    <div class="amf">
+      <button onclick="closeAMod('ncModal')" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button>
+      <button onclick="guardarNuevaConsulta()" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar consulta</button>
+    </div>
   </div>
 </div>
 
