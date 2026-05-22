@@ -1462,7 +1462,7 @@ async function doForgot(){
 
 /* ══ CHECK SESSION AL ABRIR LA PÁGINA DE LOGIN ══ */
 /* ══ ADMIN JS ══ */
-const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas','programas-adm':'Programas','ordenes-programas':'Órdenes de programas',usuarios:'Usuarios',testis:'Testimonios',calendario:'Calendario',horarios:'Horarios bloqueados',consultas:'Tipos de consulta'};
+const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas','programas-adm':'Programas','ordenes-programas':'Órdenes de programas',usuarios:'Usuarios',suplementos:'Suplementos',testis:'Testimonios',calendario:'Calendario',horarios:'Horarios bloqueados',consultas:'Tipos de consulta'};
 
 const AMONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const AMONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -1488,6 +1488,7 @@ function showAP(id, btn) {
   if (id==='programas-adm')    loadAPrograms();
   if (id==='ordenes-programas') loadOrdenesProgramas();
   if (id==='usuarios')          loadUsuarios();
+  if (id==='suplementos')       loadAdmSuplementos();
   if (id==='dash')     loadADash();
 }
 
@@ -1971,6 +1972,7 @@ function renderFichaDetalle(f) {
       +'</div>'
       +'<div style="display:flex;gap:.5rem">'
         +'<button onclick="openNuevaConsulta(\''+f.id+'\',\''+f.patient_name.replace(/'/g,'').replace(/"/g,'')+'\',\''+f.patient_email+'\')" style="padding:.5rem 1.1rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">+ Nueva consulta</button>'
+        +'<button onclick="openSuplementos(\''+f.id+'\',\''+f.patient_name.replace(/'/g,'').replace(/"/g,'')+'\',\''+f.patient_email+'\')" style="padding:.5rem 1rem;border-radius:100px;font-size:.76rem;font-weight:600;border:1.5px solid var(--gold);background:rgba(201,147,90,.07);color:var(--gold);cursor:pointer;font-family:var(--fb)">💊 Suplementos</button>'
         +'<button onclick="editarFicha(\''+f.id+'\')" style="padding:.5rem 1rem;border-radius:100px;font-size:.76rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">✏️ Editar</button>'
       +'</div>'
     +'</div>'
@@ -2131,9 +2133,136 @@ async function crearAFicha() {
   } finally { btn.disabled=false; btn.textContent='Crear ficha'; }
 }
 
-function verEvolucionDetalle(evId) { /* TODO: modal detalle evolución */ }
-function editarEvolucion(evId) { /* TODO: editar evolución */ }
-function editarFicha(fichaId) { openANuevaFicha(); }
+function verEvolucionDetalle(evId) {
+  // Buscar la evolución en la ficha actual
+  const ev = _fichaActual?.evoluciones?.find(e=>e.id===evId);
+  if(!ev) { toast('No se encontró la consulta','err'); return; }
+  editarEvolucionModal(ev);
+}
+
+function editarEvolucion(evId) {
+  const ev = _fichaActual?.evoluciones?.find(e=>e.id===evId);
+  if(!ev) { toast('No se encontró la consulta','err'); return; }
+  editarEvolucionModal(ev);
+}
+
+function editarEvolucionModal(ev) {
+  const archivos = Array.isArray(ev.archivos) ? ev.archivos : (tryParseJSON(ev.archivos)||[]);
+  const fecha = ev.fecha ? ev.fecha.split('T')[0] : '';
+  const hora  = ev.hora || (ev.fecha ? ev.fecha.split('T')[1]?.slice(0,5) : '');
+
+  // Reusar el modal de nueva consulta, llenarlo con los datos
+  document.getElementById('ncFichaId').value        = ev.ficha_id||'';
+  document.getElementById('ncPaciente').textContent  = _fichaActual?.patient_name || '';
+  document.getElementById('ncFecha').value           = fecha;
+  document.getElementById('ncHora').value            = hora;
+  document.getElementById('ncMedico').value          = ev.medico_nombre||'';
+  document.getElementById('ncMotivo').value          = ev.motivo||'';
+  document.getElementById('ncObservaciones').value   = ev.observaciones||'';
+
+  // Archivos existentes
+  const list = document.getElementById('ncArchivosList');
+  list.innerHTML = archivos.map(a=>
+    '<div style="display:flex;align-items:center;gap:.6rem;padding:.45rem .75rem;background:var(--cream);border-radius:8px;font-size:.8rem">'
+    +'📎 <span style="flex:1">'+( a.name||'Archivo')+'</span>'
+    +'<a href="'+a.url+'" target="_blank" style="font-size:.72rem;color:var(--teal)">⬇</a>'
+    +'</div>'
+  ).join('');
+
+  // Cambiar el botón guardar para que actualice en vez de crear
+  const saveBtn = document.querySelector('#ncModal .amf button:last-child');
+  if(saveBtn) {
+    saveBtn.textContent = 'Guardar cambios';
+    saveBtn.onclick = () => actualizarEvolucion(ev.id);
+  }
+
+  openAMod('ncModal');
+}
+
+async function actualizarEvolucion(evId) {
+  const motivo  = document.getElementById('ncMotivo').value.trim();
+  const obs     = document.getElementById('ncObservaciones').value.trim();
+  const medico  = document.getElementById('ncMedico').value.trim();
+  const fecha   = document.getElementById('ncFecha').value;
+  const hora    = document.getElementById('ncHora').value;
+
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json' };
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/evoluciones?id=eq.${evId}`, {
+      method:'PATCH', headers:h,
+      body: JSON.stringify({ motivo:motivo||null, observaciones:obs||null, medico_nombre:medico||null, fecha:fecha+'T'+hora+':00', hora })
+    });
+    if(!res.ok) throw new Error((await res.json()).message||res.statusText);
+    toast('Consulta actualizada ✓','ok');
+    closeAMod('ncModal');
+
+    // Restaurar botón guardar para nueva consulta
+    const saveBtn = document.querySelector('#ncModal .amf button:last-child');
+    if(saveBtn) { saveBtn.textContent='Guardar consulta'; saveBtn.onclick=guardarNuevaConsulta; }
+
+    await loadAFichas();
+    if(_fichaActual) renderFichaDetalle(_fichas.find(f=>f.id===_fichaActual.id)||_fichaActual);
+  } catch(e) { toast('Error: '+e.message,'err'); }
+}
+
+function editarFicha(fichaId) {
+  const f = _fichas.find(x=>x.id===fichaId);
+  if(!f) return;
+  // Llenar el modal de nueva ficha con los datos existentes
+  document.getElementById('nfN').value  = f.patient_name||'';
+  document.getElementById('nfE').value  = f.patient_email||'';
+  document.getElementById('nfT').value  = f.patient_phone||'';
+  document.getElementById('nfD').value  = f.dni||'';
+  document.getElementById('nfNc').value = f.fecha_nacimiento||'';
+  document.getElementById('nfSx').value = f.sexo||'';
+  document.getElementById('nfP').value  = f.peso_kg||'';
+  document.getElementById('nfH').value  = f.altura_cm||'';
+  document.getElementById('nfAP').value = f.antecedentes_personales||'';
+  document.getElementById('nfMd').value = f.medicacion_actual||'';
+  document.getElementById('nfAl').value = f.alergias||'';
+  document.getElementById('nfMt').value = f.motivo_consulta_inicial||'';
+  document.getElementById('nfModTitle').textContent = 'Editar ficha: '+f.patient_name;
+
+  // Cambiar el botón para actualizar
+  const btn = document.getElementById('nfBtn');
+  btn.textContent = 'Guardar cambios';
+  btn.onclick = () => actualizarFicha(fichaId);
+
+  openAMod('nfMod');
+}
+
+async function actualizarFicha(fichaId) {
+  const btn = document.getElementById('nfBtn');
+  btn.disabled=true; btn.textContent='Guardando...';
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json' };
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/fichas_medicas?id=eq.${fichaId}`, {
+      method:'PATCH', headers:h,
+      body: JSON.stringify({
+        patient_name:  document.getElementById('nfN').value.trim(),
+        patient_email: document.getElementById('nfE').value.trim(),
+        patient_phone: document.getElementById('nfT').value.trim()||null,
+        dni:           document.getElementById('nfD').value.trim()||null,
+        fecha_nacimiento: document.getElementById('nfNc').value||null,
+        sexo:          document.getElementById('nfSx').value||null,
+        peso_kg:       parseFloat(document.getElementById('nfP').value)||null,
+        altura_cm:     parseInt(document.getElementById('nfH').value)||null,
+        antecedentes_personales: document.getElementById('nfAP').value.trim()||null,
+        medicacion_actual: document.getElementById('nfMd').value.trim()||null,
+        alergias:      document.getElementById('nfAl').value.trim()||null,
+        motivo_consulta_inicial: document.getElementById('nfMt').value.trim()||null,
+      })
+    });
+    toast('Ficha actualizada ✓','ok');
+    closeAMod('nfMod');
+    // Restaurar botón
+    btn.textContent='Crear ficha'; btn.onclick=crearAFicha;
+    await loadAFichas();
+    if(_fichaActual?.id===fichaId) renderFichaDetalle(_fichas.find(f=>f.id===fichaId)||_fichaActual);
+  } catch(e){ toast('Error: '+e.message,'err'); }
+  finally { btn.disabled=false; }
+}
 
 function handleNcArchivos(input) {
   const list = document.getElementById('ncArchivosList');
@@ -4531,7 +4660,249 @@ window.openEditUser   = openEditUser;
 window.closeEditUser  = closeEditUser;
 window.saveEditUser   = saveEditUser;
 
-/* ── HORARIOS BLOQUEADOS ── */
+/* ── SUPLEMENTOS ── */
+let _suplementos = [];
+let _suplFichaId = null;
+let _suplEmail   = null;
+let _suplNombre  = null;
+
+async function loadSuplementos() {
+  if(_suplementos.length) return _suplementos;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/suplementos?activo=eq.true&order=sort_order,nombre`, {headers:h});
+  _suplementos = await r.json() || [];
+  return _suplementos;
+}
+
+async function openSuplementos(fichaId, nombre, email) {
+  _suplFichaId = fichaId;
+  _suplEmail   = email;
+  _suplNombre  = nombre;
+  document.getElementById('suplPacienteNombre').textContent = nombre + ' · ' + email;
+  openAMod('suplModal');
+
+  const wrap = document.getElementById('suplListWrap');
+  wrap.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Cargando...</div>';
+
+  try {
+    const supls = await loadSuplementos();
+    const ficha = _fichas.find(f=>f.id===fichaId);
+    const selIds = Array.isArray(ficha?.suplementos_ids) ? ficha.suplementos_ids : (tryParseJSON(ficha?.suplementos_ids)||[]);
+    document.getElementById('suplNotas').value = ficha?.suplementos_notas || '';
+
+    if(!supls.length) {
+      wrap.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">No hay suplementos cargados. Agregálos desde Admin → Suplementos.</div>';
+      return;
+    }
+
+    // Agrupar por categoría
+    const cats = {};
+    supls.forEach(s => {
+      const cat = s.categoria || 'General';
+      if(!cats[cat]) cats[cat] = [];
+      cats[cat].push(s);
+    });
+
+    wrap.innerHTML = Object.entries(cats).map(([cat, items]) =>
+      '<div style="margin-bottom:1.25rem">'
+      +'<div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:.6rem;padding-bottom:.4rem;border-bottom:1px solid var(--cream-dk)">'+cat+'</div>'
+      +items.map(s => {
+        const checked = selIds.includes(s.id);
+        return '<label style="display:flex;align-items:flex-start;gap:.85rem;padding:.75rem;border-radius:10px;cursor:pointer;transition:.12s;border:1.5px solid '+(checked?'var(--teal)':'transparent')+';background:'+(checked?'rgba(58,125,140,.05)':'#fff')+'" id="suplLabel-'+s.id+'" onclick="toggleSupl(\''+s.id+'\')">'
+          +'<input type="checkbox" value="'+s.id+'" '+(checked?'checked':'')+' style="accent-color:var(--teal);width:16px;height:16px;margin-top:.1rem;flex-shrink:0" id="suplChk-'+s.id+'">'
+          +'<div style="flex:1">'
+            +'<div style="font-weight:600;font-size:.88rem;color:#1C1A18">'+s.nombre+'</div>'
+            +(s.dosis?'<div style="font-size:.76rem;color:var(--teal);margin-top:.1rem">Dosis: '+s.dosis+'</div>':'')
+            +(s.descripcion?'<div style="font-size:.76rem;color:var(--muted);margin-top:.15rem;line-height:1.5">'+s.descripcion+'</div>':'')
+            +(s.marca?'<div style="font-size:.72rem;color:var(--muted);margin-top:.1rem">Marca: '+s.marca+'</div>':'')
+          +'</div>'
+          +(s.link?'<a href="'+s.link+'" target="_blank" onclick="event.stopPropagation()" style="font-size:.72rem;color:var(--teal);text-decoration:none;white-space:nowrap;padding:.25rem .6rem;border:1px solid var(--teal);border-radius:100px;flex-shrink:0">Ver →</a>':'')
+        +'</label>';
+      }).join('')
+      +'</div>'
+    ).join('');
+  } catch(e) {
+    wrap.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Error: '+e.message+'</div>';
+  }
+}
+
+function toggleSupl(id) {
+  const chk = document.getElementById('suplChk-'+id);
+  const lbl = document.getElementById('suplLabel-'+id);
+  if(!chk) return;
+  chk.checked = !chk.checked;
+  if(lbl) {
+    lbl.style.border = chk.checked ? '1.5px solid var(--teal)' : '1.5px solid transparent';
+    lbl.style.background = chk.checked ? 'rgba(58,125,140,.05)' : '#fff';
+  }
+}
+
+function getSuplSeleccionados() {
+  return _suplementos.filter(s => document.getElementById('suplChk-'+s.id)?.checked);
+}
+
+async function guardarSuplementos() {
+  const selIds = getSuplSeleccionados().map(s=>s.id);
+  const notas  = document.getElementById('suplNotas').value.trim();
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json' };
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/fichas_medicas?id=eq.${_suplFichaId}`, {
+      method:'PATCH', headers:h,
+      body: JSON.stringify({ suplementos_ids: selIds, suplementos_notas: notas||null })
+    });
+    // Actualizar local
+    const f = _fichas.find(x=>x.id===_suplFichaId);
+    if(f) { f.suplementos_ids = selIds; f.suplementos_notas = notas; }
+    toast('Suplementos guardados ✓','ok');
+    closeAMod('suplModal');
+    if(_fichaActual?.id===_suplFichaId) renderFichaDetalle(_fichas.find(f=>f.id===_suplFichaId)||_fichaActual);
+  } catch(e) { toast('Error: '+e.message,'err'); }
+}
+
+async function enviarSuplementosPorMail() {
+  const sel = getSuplSeleccionados();
+  if(!sel.length) { toast('Seleccioná al menos un suplemento','err'); return; }
+  await guardarSuplementos();
+
+  const notas = document.getElementById('suplNotas').value.trim();
+  const fecha = new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
+
+  const itemsHtml = sel.map((s,i) =>
+    '<tr>'
+    +'<td style="padding:14px 16px;border-bottom:1px solid #f0ebe3;vertical-align:top">'
+      +'<div style="display:flex;align-items:center;gap:12px">'
+        +'<div style="width:32px;height:32px;border-radius:50%;background:#3A7D8C;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0">'+(i+1)+'</div>'
+        +'<div>'
+          +'<div style="font-weight:600;color:#1C1A18;font-size:15px">'+s.nombre+'</div>'
+          +(s.dosis?'<div style="color:#3A7D8C;font-size:13px;margin-top:2px">Dosis: '+s.dosis+'</div>':'')
+          +(s.descripcion?'<div style="color:#8A7F74;font-size:12px;margin-top:3px;line-height:1.5">'+s.descripcion+'</div>':'')
+          +(s.marca?'<div style="color:#8A7F74;font-size:12px;margin-top:2px">Marca: '+s.marca+'</div>':'')
+        +'</div>'
+      +'</div>'
+    +'</td>'
+    +(s.link?'<td style="padding:14px 16px;border-bottom:1px solid #f0ebe3;text-align:right;vertical-align:middle;white-space:nowrap"><a href="'+s.link+'" style="font-size:12px;color:#3A7D8C;text-decoration:none;border:1.5px solid #3A7D8C;padding:5px 12px;border-radius:100px">Ver →</a></td>':'<td style="border-bottom:1px solid #f0ebe3"></td>')
+    +'</tr>'
+  ).join('');
+
+  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 30px rgba(0,0,0,.1)">
+  <tr><td style="background:#1C1A18;padding:36px 44px">
+    <div style="font-size:10px;letter-spacing:4px;text-transform:uppercase;color:rgba(201,147,90,.6);margin-bottom:8px">Medicina Funcional</div>
+    <div style="font-family:Georgia,serif;font-size:30px;color:#F0E8D8;margin-bottom:4px">Be Human</div>
+    <div style="font-size:13px;color:rgba(240,232,216,.4)">Plan de suplementación personalizado</div>
+  </td></tr>
+
+  <tr><td style="padding:36px 44px 24px">
+    <div style="font-size:12px;color:#8A7F74;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Para</div>
+    <div style="font-family:Georgia,serif;font-size:24px;color:#1C1A18;margin-bottom:4px">${_suplNombre}</div>
+    <div style="font-size:13px;color:#8A7F74">Fecha: ${fecha}</div>
+  </td></tr>
+
+  <tr><td style="padding:0 44px 24px">
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8A7F74;margin-bottom:12px">Suplementos recomendados</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1.5px solid #f0ebe3;border-radius:12px;overflow:hidden">
+      ${itemsHtml}
+    </table>
+  </td></tr>
+
+  ${notas ? `<tr><td style="padding:0 44px 28px">
+    <div style="background:#F8F4EE;border-radius:12px;padding:18px 22px">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8A7F74;margin-bottom:8px">Indicaciones adicionales</div>
+      <div style="font-size:14px;color:#3A3530;line-height:1.8;white-space:pre-line">${notas}</div>
+    </div>
+  </td></tr>` : ''}
+
+  <tr><td style="padding:0 44px 36px;text-align:center">
+    <div style="border-top:1px solid #f0ebe3;padding-top:24px">
+      <div style="font-size:13px;color:#8A7F74;line-height:1.7">¿Tenés dudas sobre tu plan de suplementación?<br>Contactanos por WhatsApp o respondiendo este mail.</div>
+      <a href="https://wa.me/5491176179836" style="display:inline-block;margin-top:16px;background:#25D366;color:#fff;text-decoration:none;padding:12px 28px;border-radius:100px;font-size:13px;font-weight:600">Escribir a Mariel por WhatsApp</a>
+    </div>
+  </td></tr>
+
+  <tr><td style="background:#F0E8D8;padding:20px 44px;text-align:center;font-size:11px;color:#8A7F74;line-height:1.7">
+    Be Human · Medicina Funcional · +54 9 11 7617-9836<br>behuman.com.ar
+  </td></tr>
+</table></td></tr></table></body></html>`;
+
+  try {
+    await sendEmail(_suplEmail, 'Tu plan de suplementación · Be Human', html);
+    toast('Mail enviado a '+_suplEmail+' ✓','ok', 4000);
+    closeAMod('suplModal');
+  } catch(e) { toast('Error al enviar: '+e.message,'err'); }
+}
+
+window.openSuplementos          = openSuplementos;
+window.toggleSupl               = toggleSupl;
+window.guardarSuplementos       = guardarSuplementos;
+window.enviarSuplementosPorMail = enviarSuplementosPorMail;
+
+/* ── SUPLEMENTOS ADMIN CRUD ── */
+async function loadAdmSuplementos() {
+  _suplementos = [];
+  const supls = await loadSuplementos();
+  const grid = document.getElementById('admSuplGrid');
+  if(!grid) return;
+  if(!supls.length) { grid.innerHTML = '<div style="color:var(--muted);font-size:.84rem;padding:1rem">Sin suplementos. Agregá el primero.</div>'; return; }
+  grid.innerHTML = supls.map(s =>
+    '<div style="background:#fff;border-radius:14px;border:1.5px solid var(--cream-dk);padding:1.1rem;display:flex;flex-direction:column;gap:.5rem">'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem">'
+        +'<div><div style="font-weight:600;color:#1C1A18;font-size:.92rem">'+s.nombre+'</div>'
+        +(s.categoria?'<span style="font-size:.65rem;background:rgba(201,147,90,.12);color:var(--gold);padding:.1rem .45rem;border-radius:100px;font-weight:600">'+s.categoria+'</span>':'')+'</div>'
+        +'<div style="display:flex;gap:.3rem;flex-shrink:0">'
+          +'<button onclick="openAdmSupl(\''+s.id+'\')" style="width:28px;height:28px;border-radius:7px;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-size:.8rem">✏️</button>'
+          +'<button onclick="deleteAdmSupl(\''+s.id+'\')" style="width:28px;height:28px;border-radius:7px;border:1.5px solid #f0d0d0;background:#fff;cursor:pointer;font-size:.8rem">🗑</button>'
+        +'</div></div>'
+      +(s.dosis?'<div style="font-size:.78rem;color:var(--teal);font-weight:500">Dosis: '+s.dosis+'</div>':'')
+      +(s.descripcion?'<div style="font-size:.78rem;color:var(--muted);line-height:1.5">'+s.descripcion+'</div>':'')
+      +(s.marca?'<div style="font-size:.74rem;color:var(--muted)">Marca: '+s.marca+'</div>':'')
+      +(s.link?'<a href="'+s.link+'" target="_blank" style="font-size:.72rem;color:var(--teal);text-decoration:none">Ver producto →</a>':'')
+    +'</div>'
+  ).join('');
+}
+
+function openAdmSupl(id) {
+  const s = _suplementos.find(x=>x.id===id);
+  document.getElementById('admSuplId').value     = s?.id||'';
+  document.getElementById('admSuplNombre').value  = s?.nombre||'';
+  document.getElementById('admSuplDosis').value   = s?.dosis||'';
+  document.getElementById('admSuplMarca').value   = s?.marca||'';
+  document.getElementById('admSuplCat').value     = s?.categoria||'';
+  document.getElementById('admSuplDesc').value    = s?.descripcion||'';
+  document.getElementById('admSuplLink').value    = s?.link||'';
+  document.getElementById('admSuplModTitle').textContent = s ? 'Editar suplemento' : 'Nuevo suplemento';
+  openAMod('admSuplMod');
+}
+
+async function saveAdmSupl() {
+  const nombre = document.getElementById('admSuplNombre').value.trim();
+  if(!nombre) { toast('El nombre es obligatorio','err'); return; }
+  const id = document.getElementById('admSuplId').value;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json', 'Prefer':'return=minimal' };
+  const data = { nombre, dosis:document.getElementById('admSuplDosis').value.trim()||null, marca:document.getElementById('admSuplMarca').value.trim()||null, categoria:document.getElementById('admSuplCat').value.trim()||null, descripcion:document.getElementById('admSuplDesc').value.trim()||null, link:document.getElementById('admSuplLink').value.trim()||null, activo:true };
+  try {
+    if(id) await fetch(`${SUPABASE_URL}/rest/v1/suplementos?id=eq.${id}`,{method:'PATCH',headers:h,body:JSON.stringify(data)});
+    else   await fetch(`${SUPABASE_URL}/rest/v1/suplementos`,{method:'POST',headers:h,body:JSON.stringify(data)});
+    toast('Suplemento guardado ✓','ok');
+    closeAMod('admSuplMod');
+    _suplementos = [];
+    loadAdmSuplementos();
+  } catch(e){ toast('Error: '+e.message,'err'); }
+}
+
+async function deleteAdmSupl(id) {
+  if(!confirm('¿Eliminar este suplemento?')) return;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')) };
+  await fetch(`${SUPABASE_URL}/rest/v1/suplementos?id=eq.${id}`,{method:'DELETE',headers:h});
+  _suplementos = []; loadAdmSuplementos();
+  toast('Suplemento eliminado','ok');
+}
+
+window.loadAdmSuplementos = loadAdmSuplementos;
+window.openAdmSupl        = openAdmSupl;
+window.saveAdmSupl        = saveAdmSupl;
+window.deleteAdmSupl      = deleteAdmSupl;
+
 async function loadABlocked() {
   const tbody = document.getElementById('aBBody');
   try {
@@ -6300,6 +6671,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       <button class="asb-it" onclick="showAP('programas-adm',this)"><span>📚</span> Programas</button>
       <button class="asb-it" onclick="showAP('ordenes-programas',this)"><span>🛒</span> Órdenes programas</button>
       <button class="asb-it" onclick="showAP('usuarios',this)"><span>👥</span> Usuarios</button>
+      <button class="asb-it" onclick="showAP('suplementos',this)"><span>💊</span> Suplementos</button>
       <button class="asb-it" onclick="showAP('calendario',this)"><span>📆</span> Calendario</button>
       <button class="asb-it" onclick="showAP('horarios',this)"><span>🕐</span> Horarios bloqueados</button>
       <button class="asb-it" onclick="showAP('consultas',this)"><span>💼</span> Tipos de consulta</button>
@@ -6521,6 +6893,44 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
           <div style="display:flex;gap:.75rem;margin-top:1.5rem">
             <button onclick="closeEditUser()" style="flex:1;padding:.65rem;border-radius:100px;font-size:.78rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button>
             <button onclick="saveEditUser()" style="flex:2;padding:.65rem;border-radius:100px;font-size:.78rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar cambios</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUPLEMENTOS ADMIN -->
+      <div id="ap-suplementos" class="ap">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
+          <p style="font-size:.83rem;color:var(--muted);margin:0">Suplementos y remedios disponibles para recomendar a pacientes.</p>
+          <button onclick="openAdmSupl()" style="padding:.5rem 1.1rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--gold);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">+ Agregar suplemento</button>
+        </div>
+        <div id="admSuplGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem">
+          <div style="color:var(--muted);font-size:.84rem;padding:2rem">Cargando...</div>
+        </div>
+      </div>
+
+      <!-- MODAL SUPLEMENTO -->
+      <div class="amb" id="admSuplMod">
+        <div class="am-modal" style="max-width:520px">
+          <div class="amh">
+            <div class="amh-title" id="admSuplModTitle">Nuevo suplemento</div>
+            <button class="amx" onclick="closeAMod('admSuplMod')">✕</button>
+          </div>
+          <div class="amb-body">
+            <div style="display:flex;flex-direction:column;gap:.85rem">
+              <input type="hidden" id="admSuplId">
+              <div class="form-group"><label class="form-label">Nombre *</label><input type="text" class="form-input" id="admSuplNombre" placeholder="Ej: Omega 3, Vitamina D, Magnesio..."></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+                <div class="form-group"><label class="form-label">Dosis</label><input type="text" class="form-input" id="admSuplDosis" placeholder="Ej: 1000mg/día"></div>
+                <div class="form-group"><label class="form-label">Marca</label><input type="text" class="form-input" id="admSuplMarca" placeholder="Ej: Now Foods"></div>
+              </div>
+              <div class="form-group"><label class="form-label">Categoría</label><input type="text" class="form-input" id="admSuplCat" placeholder="Ej: Vitaminas, Minerales, Omega..."></div>
+              <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="admSuplDesc" rows="3" placeholder="Para qué sirve, indicaciones..."></textarea></div>
+              <div class="form-group"><label class="form-label">Link de compra (opcional)</label><input type="url" class="form-input" id="admSuplLink" placeholder="https://..."></div>
+            </div>
+          </div>
+          <div class="amf">
+            <button onclick="closeAMod('admSuplMod')" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button>
+            <button onclick="saveAdmSupl()" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--gold);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar</button>
           </div>
         </div>
       </div>
@@ -6789,6 +7199,40 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       </div>
     </div>
     <div class="amf"><button onclick="closeAMod('imgMod')" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button><button id="imgSB" onclick="saveAImg()" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--gold);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar</button></div>
+  </div>
+</div>
+
+<!-- MODAL SUPLEMENTOS -->
+<div class="amb" id="suplModal">
+  <div class="am-modal" style="max-width:680px">
+    <div class="amh">
+      <div>
+        <div class="amh-title">💊 Suplementos recomendados</div>
+        <div id="suplPacienteNombre" style="font-size:.8rem;color:var(--muted)"></div>
+      </div>
+      <button class="amx" onclick="closeAMod('suplModal')">✕</button>
+    </div>
+    <div class="amb-body" style="max-height:70vh;overflow-y:auto;padding:0">
+
+      <!-- Notas generales -->
+      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--cream-dk);background:var(--cream)">
+        <label style="font-size:.76rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.35rem">NOTAS GENERALES (opcional)</label>
+        <textarea id="suplNotas" rows="2" placeholder="Indicaciones adicionales, horarios, observaciones..." style="width:100%;border:1.5px solid var(--cream-dk);border-radius:8px;padding:.55rem .75rem;font-size:.83rem;font-family:var(--fb);resize:none;outline:none;background:#fff;box-sizing:border-box"></textarea>
+      </div>
+
+      <!-- Lista de suplementos con checkboxes -->
+      <div id="suplListWrap" style="padding:1rem 1.25rem">
+        <div style="text-align:center;padding:2rem;color:var(--muted)">Cargando suplementos...</div>
+      </div>
+
+    </div>
+    <div class="amf" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
+      <button onclick="closeAMod('suplModal')" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Cancelar</button>
+      <div style="display:flex;gap:.6rem">
+        <button onclick="guardarSuplementos()" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar</button>
+        <button onclick="enviarSuplementosPorMail()" style="padding:.6rem 1.3rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--gold);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">✉️ Guardar y enviar por mail</button>
+      </div>
+    </div>
   </div>
 </div>
 
