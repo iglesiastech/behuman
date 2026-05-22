@@ -905,119 +905,128 @@ function selModalidad(mod) {
   updateSum();
 }
 
-function bGoTo(n){
-  if(n===2){ mostrarSeleccionMedica(); return; }
+/* ── SELECCIÓN DE MÉDICA ── */
+function bGoTo(n) {
+  if (n === 2 && !BS.medicoId) { mostrarSeleccionMedica(); return; }
   _bGoTo(n);
 }
 
-function _bGoTo(n){
-  [1,2,3,4].forEach(i=>{
+function _bGoTo(n) {
+  ['1','15','2','3','4'].forEach(i => {
     const el = document.getElementById('bstep'+i);
-    if(el) el.style.display = i===n ? '' : 'none';
-    const si = document.getElementById('si'+i);
-    if(si){ si.classList.toggle('active',i===n); si.classList.toggle('done',i<n); }
+    if (el) el.style.display = 'none';
   });
-  const s15 = document.getElementById('bstep15');
-  if(s15) s15.style.display = 'none';
-  if(n===2) renderCal();
-  if(n===4) updateSenaAmount();
+  const target = document.getElementById('bstep'+n);
+  if (target) target.style.display = '';
+  [1,2,3,4].forEach(i => {
+    const si = document.getElementById('si'+i);
+    if (si) { si.classList.toggle('active', i===n); si.classList.toggle('done', i<n); }
+  });
+  if (n===2) renderCal();
+  if (n===4) updateSenaAmount();
 }
 
 async function mostrarSeleccionMedica() {
-  // Ocultar step1, mostrar panel de médicas
-  document.getElementById('bstep1').style.display = 'none';
-  [2,3,4].forEach(i=>{ const e=document.getElementById('bstep'+i); if(e) e.style.display='none'; });
-
-  let s15 = document.getElementById('bstep15');
-  if(!s15) {
-    // Crear el panel si no existe
-    s15 = document.createElement('div');
-    s15.id = 'bstep15';
-    document.getElementById('bstep1').parentNode.insertBefore(s15, document.getElementById('bstep1').nextSibling);
-  }
-  s15.style.display = '';
-  s15.innerHTML = '<h3 style="font-family:var(--fd);font-size:1.1rem;color:#1C1A18;margin:0 0 .35rem">¿Con quién querés atenderte?</h3>'
-    +'<p style="font-size:.8rem;color:var(--muted);margin:0 0 1.25rem">Consulta: '+(TIPO_NAMES[BS.tipo]||BS.tipo)+'</p>'
-    +'<div id="bstep15Grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.85rem">'
-      +'<div style="color:var(--muted);font-size:.84rem;padding:.5rem">Cargando...</div>'
-    +'</div>'
-    +'<button onclick="volverAlStep1()" style="margin-top:1.25rem;padding:.5rem 1.1rem;border-radius:100px;font-size:.76rem;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">← Volver</button>';
-
-  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+  // Mostrar paso 1.5, ocultar el resto
+  ['1','2','3','4'].forEach(i => {
+    const el = document.getElementById('bstep'+i);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('bstep15').style.display = '';
+  document.getElementById('bstep15sub').textContent = 'Consulta: ' + (TIPO_NAMES[BS.tipo] || BS.tipo);
   const grid = document.getElementById('bstep15Grid');
+  grid.innerHTML = '<div style="color:var(--muted);font-size:.84rem">Cargando...</div>';
+
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON };
 
   try {
-    // 1. Médicas asignadas a esta consulta
-    const r1 = await fetch(SUPABASE_URL+'/rest/v1/medico_consultas?consulta_id=eq.'+BS.tipo+'&select=medico_id,precio', {headers:h});
+    // Médicas asignadas a esta consulta
+    const url = SUPABASE_URL + '/rest/v1/medico_consultas?consulta_id=eq.' + encodeURIComponent(BS.tipo) + '&select=medico_id,precio';
+    const r1 = await fetch(url, { headers: h });
     const mc = await r1.json();
 
-    if(!Array.isArray(mc) || !mc.length) {
-      // Sin médicas → ir directo al calendario
-      s15.style.display = 'none';
-      document.getElementById('bstep1').style.display = '';
-      _bGoTo(2); return;
+    // Si no hay médicas asignadas, usar todas las activas
+    let medicoIds, precios = {};
+    if (Array.isArray(mc) && mc.length) {
+      medicoIds = mc.map(x => x.medico_id);
+      mc.forEach(x => { if (x.precio) precios[x.medico_id] = x.precio; });
+    } else {
+      const r0 = await fetch(SUPABASE_URL + '/rest/v1/medicos?activo=eq.true&select=id', { headers: h });
+      const all = await r0.json();
+      medicoIds = Array.isArray(all) ? all.map(m => m.id) : [];
     }
 
-    // 2. Datos de esas médicas
-    const ids = mc.map(x=>x.medico_id).join(',');
-    const r2 = await fetch(SUPABASE_URL+'/rest/v1/medicos?id=in.('+ids+')&activo=eq.true&select=id,nombre,color,especialidad', {headers:h});
+    if (!medicoIds.length) {
+      // No hay médicas en absoluto → saltar al calendario
+      volverAlStep1();
+      _bGoTo(2);
+      return;
+    }
+
+    // Datos de las médicas
+    const r2 = await fetch(SUPABASE_URL + '/rest/v1/medicos?id=in.(' + medicoIds.join(',') + ')&activo=eq.true&select=id,nombre,color,especialidad&order=nombre', { headers: h });
     const meds = await r2.json();
-    const medMap = {};
-    (Array.isArray(meds)?meds:[]).forEach(m=>{ medMap[m.id]=m; });
 
-    const cards = mc.map(x=>{
-      const m = medMap[x.medico_id];
-      if(!m) return '';
-      const precio = x.precio || BS.precio || 0;
+    if (!Array.isArray(meds) || !meds.length) {
+      volverAlStep1(); _bGoTo(2); return;
+    }
+
+    grid.innerHTML = meds.map(m => {
+      const precio = precios[m.id] || BS.precio || 0;
       const color  = m.color || '#3A7D8C';
-      return '<button onclick="elegirMedicaInline(this)"'
-        +' data-mid="'+m.id+'"'
-        +' data-nombre="'+m.nombre.replace(/"/g,'&quot;')+'"'
-        +' data-precio="'+precio+'"'
-        +' data-color="'+color+'"'
-        +' style="background:#fff;border:2px solid #e8e8e8;border-radius:14px;padding:1.25rem 1rem;text-align:center;cursor:pointer;font-family:var(--fb);width:100%;transition:.15s"'
-        +' onmouseover="this.style.borderColor=\''+color+'\'"'
-        +' onmouseout="this.style.borderColor=\'#e8e8e8\'">'
-        +'<div style="width:56px;height:56px;border-radius:50%;background:'+color+'20;border:2.5px solid '+color+';margin:0 auto .65rem;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;color:'+color+'">'+(m.nombre[0])+'</div>'
-        +'<div style="font-weight:700;font-size:.88rem;color:#1C1A18;margin-bottom:.15rem">'+m.nombre+'</div>'
-        +(m.especialidad?'<div style="font-size:.72rem;color:#888;margin-bottom:.4rem">'+m.especialidad+'</div>':'')
-        +(precio?'<div style="font-family:var(--fd);font-size:1.1rem;color:'+color+';font-weight:700">'+fmt(precio)+'</div>':'')
-        +'</button>';
-    }).filter(Boolean).join('');
+      const inicial = (m.nombre || '?')[0];
+      return '<button onclick="elegirMedicaInline(\'' + m.id + '\',\'' + m.nombre.replace(/'/g, '') + '\',' + precio + ',\'' + color + '\')"'
+        + ' style="background:#fff;border:2px solid #e8e8e8;border-radius:14px;padding:1.25rem 1rem;'
+        + 'text-align:center;cursor:pointer;font-family:var(--fb);width:100%;transition:.15s;display:block"'
+        + ' onmouseover="this.style.borderColor=\'' + color + '\'"'
+        + ' onmouseout="this.style.borderColor=\'#e8e8e8\'">'
+        + '<div style="width:56px;height:56px;border-radius:50%;background:' + color + '20;border:2.5px solid ' + color + ';'
+        + 'margin:0 auto .65rem;display:flex;align-items:center;justify-content:center;'
+        + 'font-size:1.3rem;font-weight:700;color:' + color + '">' + inicial + '</div>'
+        + '<div style="font-weight:700;font-size:.88rem;color:#1C1A18;margin-bottom:.15rem">' + m.nombre + '</div>'
+        + (m.especialidad ? '<div style="font-size:.72rem;color:#888;margin-bottom:.4rem">' + m.especialidad + '</div>' : '')
+        + (precio ? '<div style="font-family:var(--fd);font-size:1.05rem;color:' + color + ';font-weight:700">' + fmt(precio) + '</div>' : '')
+        + '</button>';
+    }).join('');
 
-    grid.innerHTML = cards || '<div style="color:var(--muted)">No hay profesionales disponibles.</div>';
-
-  } catch(e) {
-    console.error('mostrarSeleccionMedica:', e);
-    s15.style.display = 'none';
-    document.getElementById('bstep1').style.display = '';
-    _bGoTo(2);
+  } catch (e) {
+    console.error('mostrarSeleccionMedica error:', e);
+    volverAlStep1(); _bGoTo(2);
   }
 }
 
 function volverAlStep1() {
-  const s15 = document.getElementById('bstep15');
-  if(s15) s15.style.display = 'none';
+  document.getElementById('bstep15').style.display = 'none';
   document.getElementById('bstep1').style.display = '';
 }
 
-function elegirMedicaInline(btn) {
-  BS.medicoId     = btn.dataset.mid;
-  BS.medicoNombre = btn.dataset.nombre;
-  BS.precio       = parseInt(btn.dataset.precio) || BS.precio;
-  BS.medicoColor  = btn.dataset.color || '#3A7D8C';
-  const s15 = document.getElementById('bstep15');
-  if(s15) s15.style.display = 'none';
+function elegirMedicaInline(medicoId, medicoNombre, precio, color) {
+  BS.medicoId     = medicoId;
+  BS.medicoNombre = medicoNombre;
+  BS.precio       = precio || BS.precio;
+  BS.medicoColor  = color;
+  // Resetear fecha/hora y poner mes actual
+  BS.fecha = null;
+  BS.hora  = null;
+  BS.calY  = new Date().getFullYear();
+  BS.calM  = new Date().getMonth();
   updateSum();
-  _bGoTo(2);
+  // Mostrar step2 directamente sin pasar por _bGoTo para evitar re-ocultamiento
+  ['1','15','3','4'].forEach(i => {
+    const el = document.getElementById('bstep'+i);
+    if(el) el.style.display = 'none';
+  });
+  const s2 = document.getElementById('bstep2');
+  if(s2) s2.style.display = '';
+  const sw = document.getElementById('slotsWrap');
+  if(sw) sw.style.display = 'none';
+  renderCal();
 }
 
-window.bGoTo                  = bGoTo;
-window._bGoTo                 = _bGoTo;
-window.volverAlStep1          = volverAlStep1;
-window.elegirMedicaInline     = elegirMedicaInline;
-window.mostrarSeleccionMedica = mostrarSeleccionMedica;
-
+window.bGoTo             = bGoTo;
+window._bGoTo            = _bGoTo;
+window.volverAlStep1     = volverAlStep1;
+window.elegirMedicaInline = elegirMedicaInline;
 
 function renderCal(){
   const {calY:y,calM:m}=BS;
@@ -5935,7 +5944,7 @@ window._filterTienda      = filterTienda;
 window._sortTienda        = sortTienda;
 window._selTipo           = selTipo;
 window._selModalidad      = selModalidad;
-window._bGoTo             = bGoTo;
+window._bGoTo             = _bGoTo;
 window._calPrev           = calPrev;
 window._calNext           = calNext;
 window._selDate           = selDate;
@@ -6367,6 +6376,14 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
               <div style="margin-top:1.75rem;display:flex;justify-content:flex-end">
                 <button class="btn-teal" id="btnBs1" onclick="bGoTo(2)" disabled style="opacity:.5;padding:.82rem 1.8rem;border-radius:100px;font-family:var(--fb);font-size:.76rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--teal);color:#fff;border:none;cursor:not-allowed">Continuar →</button>
               </div>
+            </div>
+
+            <!-- STEP 1.5 — SELECCIÓN MÉDICA -->
+            <div id="bstep15" style="display:none">
+              <h3 style="font-family:var(--fd);font-size:1.15rem;color:#1C1A18;margin:0 0 .35rem">¿Con quién querés atenderte?</h3>
+              <p id="bstep15sub" style="font-size:.8rem;color:var(--muted);margin:0 0 1.5rem"></p>
+              <div id="bstep15Grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:.85rem"></div>
+              <button onclick="volverAlStep1()" style="margin-top:1.25rem;padding:.5rem 1.1rem;border-radius:100px;font-size:.76rem;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">← Volver</button>
             </div>
 
             <!-- STEP 2 -->
