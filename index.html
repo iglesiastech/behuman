@@ -2345,18 +2345,22 @@ function renderCalAdmin() {
   if(calState.selectedDate) renderCalSide(calState.selectedDate);
 }
 
-async function selectCalDay(dateStr) {
+function selectCalDay(dateStr) {
   calState.selectedDate = dateStr;
   const bqDate = document.getElementById('bqDate');
   if(bqDate) bqDate.value = dateStr;
 
-  // Si no hay datos cargados, cargarlos primero
-  if(!calState.appts || !calState.appts.length) {
-    await loadCalData();
-  }
-
+  // Renderizar inmediatamente con lo que hay
   renderCalAdmin();
   renderCalSide(dateStr);
+
+  // Si no hay datos, recargar y re-renderizar
+  if(!calState.appts || !calState.appts.length) {
+    loadCalData().then(() => {
+      renderCalAdmin();
+      renderCalSide(dateStr);
+    });
+  }
 }
 
 function renderCalSide(dateStr) {
@@ -2457,6 +2461,7 @@ function renderCalSide(dateStr) {
     +'</div>';
   });
 
+  body.innerHTML = html;
 }
 
 async function deleteCalBlock(id) {
@@ -6651,10 +6656,10 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         .cal-appt-pill{font-size:.65rem;font-weight:600;padding:.18rem .45rem;border-radius:4px;margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.3}
         .cal-blocked-pill{font-size:.62rem;padding:.15rem .4rem;border-radius:4px;margin-bottom:.2rem;background:rgba(196,97,74,.12);color:#C4614A;border-left:2px solid #C4614A}
         /* Panel lateral */
-        .cal-side{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(28,26,24,.07);overflow:hidden;position:sticky;top:90px}
-        .cal-side-head{padding:1rem 1.25rem;border-bottom:1px solid var(--cream-dk);background:var(--cream)}
+        .cal-side{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(28,26,24,.07);overflow:hidden;position:sticky;top:90px;max-height:calc(100vh - 120px);display:flex;flex-direction:column}
+        .cal-side-head{padding:1rem 1.25rem;border-bottom:1px solid var(--cream-dk);background:var(--cream);flex-shrink:0}
         .cal-side-title{font-family:var(--fd);font-size:1rem}
-        .cal-side-body{padding:1.1rem;max-height:500px;overflow-y:auto;display:flex;flex-direction:column;gap:.65rem}
+        .cal-side-body{padding:1.1rem;overflow-y:auto;display:flex;flex-direction:column;gap:.65rem;flex:1}
         .cal-appt-card{padding:.85rem;border-radius:10px;border:1.5px solid var(--cream-dk);cursor:pointer;transition:.15s}
         .cal-appt-card:hover{border-color:var(--teal);background:rgba(58,125,140,.03)}
         .cal-appt-time{font-family:var(--fd);font-size:1.1rem;color:var(--gold)}
