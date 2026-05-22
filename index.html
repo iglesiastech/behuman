@@ -2339,9 +2339,19 @@ async function loadMedicos() {
     calState.medicos = [{ id:'', nombre:'Dra. Mariel Dobenau', color:'#3A7D8C' }];
   }
 
-  // Llenar filtros
+  // Llenar filtros — limpiar primero para evitar duplicados
   const filters = document.getElementById('calMedicoFilters');
   const bqMedico = document.getElementById('bqMedico');
+  // Mantener solo el botón "Todos"
+  if(filters) {
+    const todos = filters.querySelector('[data-medico=""]');
+    filters.innerHTML = '';
+    if(todos) filters.appendChild(todos);
+  }
+  // Limpiar opciones del select salvo "Todos"
+  if(bqMedico) {
+    while(bqMedico.options.length > 1) bqMedico.remove(1);
+  }
   calState.medicos.forEach((m, i) => {
     const color = m.color || CAL_COLORS[i % CAL_COLORS.length];
     // Botón filtro
