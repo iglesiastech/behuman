@@ -867,7 +867,9 @@ function selTipo(el){
   el.classList.add('selected');
   BS.tipo       = el.dataset.tipo;
   BS.precio     = parseInt(el.dataset.precio);
-  BS.modalidad  = null; // reset modalidad
+  BS.modalidad  = null;
+  BS.medicoId   = null;
+  BS.medicoNombre = null;
 
   // Mostrar selector de modalidad si la consulta tiene "ambas"
   const modalidad = el.dataset.modalidad || 'ambas';
@@ -904,6 +906,15 @@ function selModalidad(mod) {
 }
 
 function bGoTo(n){
+  // Si va al paso 2 (calendario), primero elegir médica
+  if(n === 2) {
+    mostrarSeleccionMedica();
+    return;
+  }
+  _bGoTo(n);
+}
+
+function _bGoTo(n){
   [1,2,3,4].forEach(i=>{
     document.getElementById('bstep'+i).style.display=i===n?'':'none';
     const si=document.getElementById('si'+i);
@@ -913,6 +924,96 @@ function bGoTo(n){
   if(n===4) updateSenaAmount();
 }
 
+async function mostrarSeleccionMedica() {
+  const modal = document.getElementById('selMedicaModal');
+  const grid  = document.getElementById('selMedicaGrid');
+  const titulo = document.getElementById('selMedicaTitulo');
+  if(!modal || !grid) return;
+
+  if(titulo) titulo.textContent = 'Consulta: '+(TIPO_NAMES[BS.tipo]||BS.tipo);
+  grid.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Cargando profesionales...</div>';
+  modal.style.display = 'flex';
+
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+  try {
+    // Traer médicas que realizan esta consulta con sus precios
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/medico_consultas_con_precio?consulta_id=eq.${BS.tipo}`,
+      {headers:h}
+    );
+    let medicos = await r.json();
+
+    // Fallback: si la vista no existe, usar medico_consultas normal
+    if(!Array.isArray(medicos) || !medicos.length) {
+      const r2 = await fetch(
+        `${SUPABASE_URL}/rest/v1/medico_consultas?consulta_id=eq.${BS.tipo}&select=medico_id,precio,medicos(id,nombre,color,especialidad,foto_url)`,
+        {headers:h}
+      );
+      const mc = await r2.json();
+      medicos = Array.isArray(mc) ? mc.map(x=>({
+        medico_id: x.medico_id,
+        precio_final: x.precio || BS.precio,
+        medico_nombre: x.medicos?.nombre,
+        medico_color: x.medicos?.color||'#3A7D8C',
+        medico_especialidad: x.medicos?.especialidad,
+        medico_foto: x.medicos?.foto_url,
+      })) : [];
+    }
+
+    if(!medicos.length) {
+      // Sin médicas asignadas → ir directo al calendario sin filtro
+      cerrarSeleccionMedica();
+      _bGoTo(2);
+      return;
+    }
+
+    grid.innerHTML = medicos.map(m => {
+      const precio = m.precio_final || BS.precio;
+      const color  = m.medico_color || '#3A7D8C';
+      return `
+        <div onclick="elegirMedica('${m.medico_id}','${(m.medico_nombre||'').replace(/'/g,'')}',${precio},'${color}')"
+          style="background:#fff;border:2px solid var(--cream-dk);border-radius:16px;padding:1.5rem 1.25rem;text-align:center;cursor:pointer;transition:.18s"
+          onmouseover="this.style.borderColor='${color}';this.style.background='${color}08'"
+          onmouseout="this.style.borderColor='var(--cream-dk)';this.style.background='#fff'">
+          <!-- Avatar -->
+          <div style="width:72px;height:72px;border-radius:50%;background:${color}20;border:3px solid ${color};margin:0 auto .85rem;overflow:hidden;display:flex;align-items:center;justify-content:center">
+            ${m.medico_foto
+              ? `<img src="${m.medico_foto}" style="width:100%;height:100%;object-fit:cover">`
+              : `<span style="font-size:1.5rem;font-weight:700;color:${color}">${(m.medico_nombre||'?')[0]}</span>`}
+          </div>
+          <div style="font-weight:700;font-size:.95rem;color:#1C1A18;margin-bottom:.2rem">${m.medico_nombre||'—'}</div>
+          ${m.medico_especialidad ? `<div style="font-size:.75rem;color:var(--muted);margin-bottom:.75rem">${m.medico_especialidad}</div>` : '<div style="margin-bottom:.75rem"></div>'}
+          <div style="font-family:var(--fd);font-size:1.25rem;color:${color};font-weight:700">${fmt(precio)}</div>
+          <div style="font-size:.7rem;color:var(--muted);margin-top:.15rem">ARS · precio consulta</div>
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    grid.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Error al cargar: '+e.message+'</div>';
+  }
+}
+
+function elegirMedica(medicoId, medicoNombre, precio, color) {
+  BS.medicoId     = medicoId;
+  BS.medicoNombre = medicoNombre;
+  BS.precio       = precio;
+  BS.medicoColor  = color;
+  cerrarSeleccionMedica();
+  // Actualizar resumen
+  updateSum();
+  _bGoTo(2);
+}
+
+function cerrarSeleccionMedica() {
+  const modal = document.getElementById('selMedicaModal');
+  if(modal) modal.style.display = 'none';
+}
+
+window.mostrarSeleccionMedica = mostrarSeleccionMedica;
+window.elegirMedica           = elegirMedica;
+window.cerrarSeleccionMedica  = cerrarSeleccionMedica;
+window._bGoTo                 = _bGoTo;
+
 function renderCal(){
   const {calY:y,calM:m}=BS;
   document.getElementById('calMonth').textContent=MONTHS[m]+' '+y;
@@ -920,14 +1021,14 @@ function renderCal(){
   const today=new Date(); today.setHours(0,0,0,0);
   const firstDay=new Date(y,m,1).getDay();
   const dim=new Date(y,m+1,0).getDate();
-  let h=DAYS.map(d=>`<div class="cal-dayname">${d}</div>`).join('');
-  for(let i=0;i<firstDay;i++) h+=`<div class="cal-day empty"></div>`;
+  let h=DAYS.map(d=>'<div class="cal-dayname">'+d+'</div>').join('');
+  for(let i=0;i<firstDay;i++) h+='<div class="cal-day empty"></div>';
   for(let d=1;d<=dim;d++){
-    const dt=new Date(y,m,d); const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dt=new Date(y,m,d); const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const isT=dt.getTime()===today.getTime();
     const dis=dt<today||dt.getDay()===0;
     const sel=BS.fecha===ds;
-    h+=`<div class="cal-day${isT?' today':''}${dis?' disabled':''}${sel?' selected':''}" onclick="${dis?'':'selDate(\''+ds+'\')' }">${d}</div>`;
+    h+='<div class="cal-day'+(isT?' today':'')+(dis?' disabled':'')+(sel?' selected':'')+'" onclick="'+(dis?'':'selDate(\''+ds+'\')')+'">'+(d)+'</div>';
   }
   grid.innerHTML=h;
 }
@@ -938,7 +1039,7 @@ async function selDate(ds){
   BS.fecha=ds; BS.hora=null; renderCal(); updateSum();
   const sw=document.getElementById('slotsWrap'); sw.style.display='block';
   const [,mm,dd]=ds.split('-');
-  document.getElementById('slotsTitle').textContent=`Horarios para el ${parseInt(dd)} de ${MONTHS[parseInt(mm)-1]}`;
+  document.getElementById('slotsTitle').textContent='Horarios para el '+parseInt(dd)+' de '+MONTHS[parseInt(mm)-1];
 
   const ALL_SLOTS=['09:00','09:45','10:30','11:15','12:00','14:00','14:45','15:30','16:15','17:00'];
   const grid = document.getElementById('slotsGrid');
@@ -949,27 +1050,25 @@ async function selDate(ds){
   let todoBloqueado = false;
 
   try {
-    const sb = getSB();
-    if(sb){
-      // Turnos ya reservados ese día
-      const { data: appts } = await sb
-        .from('appointments')
-        .select('time')
-        .eq('date', ds)
-        .not('status','in','("cancelled")');
-      ocupados = (appts||[]).map(a=>(a.time||'').slice(0,5));
+    const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
 
-      // Horarios bloqueados ese día
-      const { data: blocks } = await sb
-        .from('blocked_slots')
-        .select('time, todo_el_dia')
-        .eq('date', ds);
+    // Turnos ya reservados ese día — filtrar por médica si se eligió
+    let apptUrl = `${SUPABASE_URL}/rest/v1/appointments?date=eq.${ds}&select=time&status=neq.cancelled`;
+    if(BS.medicoId) apptUrl += `&medico_id=eq.${BS.medicoId}`;
+    const r1 = await fetch(apptUrl, {headers:h});
+    const appts = await r1.json();
+    ocupados = Array.isArray(appts) ? appts.map(a=>(a.time||'').slice(0,5)) : [];
 
-      if(blocks?.some(b=>b.todo_el_dia)){
-        todoBloqueado = true;
-      } else {
-        bloqueados = (blocks||[]).map(b=>(b.time||'').slice(0,5)).filter(Boolean);
-      }
+    // Horarios bloqueados ese día — filtrar por médica si se eligió
+    let blockUrl = `${SUPABASE_URL}/rest/v1/blocked_slots?date=eq.${ds}&select=time,todo_el_dia`;
+    if(BS.medicoId) blockUrl += `&or=(medico_id.eq.${BS.medicoId},medico_id.is.null)`;
+    const r2 = await fetch(blockUrl, {headers:h});
+    const blocks = await r2.json();
+
+    if(Array.isArray(blocks) && blocks.some(b=>b.todo_el_dia)){
+      todoBloqueado = true;
+    } else {
+      bloqueados = Array.isArray(blocks) ? blocks.map(b=>(b.time||'').slice(0,5)).filter(Boolean) : [];
     }
   } catch(e){ console.warn('No se pudo verificar disponibilidad:', e.message); }
 
@@ -979,14 +1078,13 @@ async function selDate(ds){
   }
 
   grid.innerHTML=ALL_SLOTS.map(s=>{
-    const hora = s;
-    const isOcupado  = ocupados.includes(hora);
-    const isBloqueado = bloqueados.includes(hora);
+    const isOcupado   = ocupados.includes(s);
+    const isBloqueado = bloqueados.includes(s);
     const noDisp = isOcupado || isBloqueado;
-    const label = isOcupado ? `${hora} (ocupado)` : isBloqueado ? `${hora} (no disp.)` : hora;
-    return `<button class="slot${noDisp?' disabled':''}" 
-      ${noDisp?'disabled style="opacity:.35;cursor:not-allowed;text-decoration:line-through"':''} 
-      onclick="${noDisp?'':'selSlot(this,\''+hora+'\')'}">${label}</button>`;
+    const label = isOcupado ? s+' (ocupado)' : isBloqueado ? s+' (no disp.)' : s;
+    return '<button class="slot'+(noDisp?' disabled':'')+'" '
+      +(noDisp?'disabled style="opacity:.35;cursor:not-allowed;text-decoration:line-through"':'')
+      +' onclick="'+(noDisp?'':'selSlot(this,\''+s+'\')')+'">'+label+'</button>';
   }).join('');
 }
 function selSlot(btn,h){
@@ -1124,6 +1222,7 @@ async function submitBooking(){
     sena_amount:   sena,
     sena_method:   'transferencia',
     sena_status:   'pending',
+    medico_id:     BS.medicoId || null,
     transfer_name: apellido,
   };
 
@@ -8157,6 +8256,22 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
   " title="Panel admin"
   onmouseover="this.style.transform='scale(1.1)'"
   onmouseout="this.style.transform='scale(1)'">⚙️</button>
+</div>
+
+<!-- MODAL SELECCIÓN DE MÉDICA -->
+<div id="selMedicaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:#fff;border-radius:20px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <!-- Header -->
+    <div style="padding:1.5rem 1.75rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <h2 style="font-family:var(--fd);font-size:1.3rem;color:#1C1A18;margin:0 0 .2rem">¿Con quién querés atenderte?</h2>
+        <div style="font-size:.8rem;color:var(--muted)" id="selMedicaTitulo"></div>
+      </div>
+      <button onclick="cerrarSeleccionMedica()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <!-- Grid de médicas -->
+    <div id="selMedicaGrid" style="padding:1.75rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem"></div>
+  </div>
 </div>
 
 <!-- CART DRAWER -->
