@@ -970,12 +970,14 @@ async function mostrarSeleccionMedica() {
     grid.innerHTML = medicos.map(m => {
       const precio = m.precio_final || BS.precio;
       const color  = m.medico_color || '#3A7D8C';
-      return `
-        <div onclick="elegirMedica('${m.medico_id}','${(m.medico_nombre||'').replace(/'/g,'')}',${precio},'${color}')"
-          style="background:#fff;border:2px solid var(--cream-dk);border-radius:16px;padding:1.5rem 1.25rem;text-align:center;cursor:pointer;transition:.18s"
-          onmouseover="this.style.borderColor='${color}';this.style.background='${color}08'"
-          onmouseout="this.style.borderColor='var(--cream-dk)';this.style.background='#fff'">
-          <!-- Avatar -->
+    return `
+        <div class="supl-medica-card"
+          data-mid="${m.medico_id}"
+          data-nombre="${(m.medico_nombre||'').replace(/"/g,'')}"
+          data-precio="${precio}"
+          data-color="${color}"
+          onclick="elegirMedicaDesdeCard(this)"
+          style="background:#fff;border:2px solid var(--cream-dk);border-radius:16px;padding:1.5rem 1.25rem;text-align:center;cursor:pointer;transition:.18s">
           <div style="width:72px;height:72px;border-radius:50%;background:${color}20;border:3px solid ${color};margin:0 auto .85rem;overflow:hidden;display:flex;align-items:center;justify-content:center">
             ${m.medico_foto
               ? `<img src="${m.medico_foto}" style="width:100%;height:100%;object-fit:cover">`
@@ -992,6 +994,15 @@ async function mostrarSeleccionMedica() {
     grid.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Error al cargar: '+e.message+'</div>';
   }
 }
+
+function elegirMedicaDesdeCard(card) {
+  const medicoId    = card.dataset.mid;
+  const medicoNombre = card.dataset.nombre;
+  const precio      = parseInt(card.dataset.precio) || BS.precio;
+  const color       = card.dataset.color || '#3A7D8C';
+  elegirMedica(medicoId, medicoNombre, precio, color);
+}
+window.elegirMedicaDesdeCard = elegirMedicaDesdeCard;
 
 function elegirMedica(medicoId, medicoNombre, precio, color) {
   BS.medicoId     = medicoId;
@@ -4342,20 +4353,31 @@ async function openConsulta(c) {
       const r1 = await fetch(SUPABASE_URL+'/rest/v1/medicos?activo=eq.true&order=nombre', {headers:h});
       const medicos = await r1.json();
       let asignadas = [];
+      let preciosPorMedica = {};
       if(c?.id) {
-        const r2 = await fetch(SUPABASE_URL+'/rest/v1/medico_consultas?consulta_id=eq.'+c.id+'&select=medico_id', {headers:h});
+        const r2 = await fetch(SUPABASE_URL+'/rest/v1/medico_consultas?consulta_id=eq.'+c.id+'&select=medico_id,precio', {headers:h});
         const mc = await r2.json();
-        asignadas = (Array.isArray(mc)?mc:[]).map(x=>x.medico_id);
+        (Array.isArray(mc)?mc:[]).forEach(x => {
+          asignadas.push(x.medico_id);
+          if(x.precio) preciosPorMedica[x.medico_id] = x.precio;
+        });
       }
       if(!Array.isArray(medicos)||!medicos.length) {
         wrap.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">No hay médicas cargadas aún.</div>';
       } else {
-        wrap.innerHTML = medicos.map(m =>
-          '<label style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;cursor:pointer;padding:.3rem 0">'+
-          '<input type="checkbox" value="'+m.id+'" '+(asignadas.includes(m.id)?'checked':'')+' style="accent-color:var(--teal);width:15px;height:15px">'+
-          '<span style="width:10px;height:10px;border-radius:50%;background:'+(m.color||'#3A7D8C')+';flex-shrink:0;display:inline-block"></span>'+
-          ' '+m.nombre+' <span style="color:var(--muted);font-size:.75rem">· '+(m.especialidad||'')+'</span></label>'
-        ).join('');
+        wrap.innerHTML = '<div style="font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem;display:grid;grid-template-columns:1fr 140px;gap:.5rem"><span>Médica</span><span>Precio específico</span></div>'
+        + medicos.map(m => {
+          const checked = asignadas.includes(m.id);
+          const precioEsp = preciosPorMedica[m.id] || '';
+          return '<div style="display:grid;grid-template-columns:1fr 140px;gap:.5rem;align-items:center;padding:.35rem 0;border-bottom:1px solid var(--cream-dk)">'
+            +'<label style="display:flex;align-items:center;gap:.5rem;font-size:.84rem;cursor:pointer">'
+            +'<input type="checkbox" value="'+m.id+'" '+(checked?'checked':'')+' class="cMedicaChk" style="accent-color:var(--teal);width:15px;height:15px">'
+            +'<span style="width:10px;height:10px;border-radius:50%;background:'+(m.color||'#3A7D8C')+';flex-shrink:0;display:inline-block"></span>'
+            +' '+m.nombre
+            +'</label>'
+            +'<input type="number" placeholder="Precio (opcional)" value="'+precioEsp+'" data-medica-id="'+m.id+'" class="cMedicaPrecio" style="padding:.3rem .55rem;border:1.5px solid var(--cream-dk);border-radius:8px;font-size:.78rem;font-family:var(--fb);width:100%;outline:none" min="0">'
+            +'</div>';
+        }).join('');
       }
     } catch(e) {
       wrap.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">Error: '+e.message+'</div>';
@@ -4400,9 +4422,13 @@ async function saveConsulta() {
       // Borrar asignaciones anteriores
       await fetch(`${SUPABASE_URL}/rest/v1/medico_consultas?consulta_id=eq.${consultaId}`, { method:'DELETE', headers:h });
       // Insertar las nuevas
-      const checks = [...document.querySelectorAll('#cMedicasWrap input[type="checkbox"]:checked')];
+      const checks = [...document.querySelectorAll('#cMedicasWrap .cMedicaChk:checked')];
       if(checks.length) {
-        const rows = checks.map(cb => ({ medico_id: cb.value, consulta_id: consultaId }));
+        const rows = checks.map(cb => {
+          const precioInput = document.querySelector('#cMedicasWrap .cMedicaPrecio[data-medica-id="'+cb.value+'"]');
+          const precio = precioInput ? (parseInt(precioInput.value)||null) : null;
+          return { medico_id: cb.value, consulta_id: consultaId, precio };
+        });
         await fetch(`${SUPABASE_URL}/rest/v1/medico_consultas`, {
           method: 'POST', headers: {...h, 'Prefer':'return=minimal'},
           body: JSON.stringify(rows)
