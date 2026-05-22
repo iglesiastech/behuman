@@ -971,23 +971,23 @@ async function mostrarSeleccionMedica() {
       const precio = m.precio_final || BS.precio;
       const color  = m.medico_color || '#3A7D8C';
     return `
-        <div class="supl-medica-card"
+        <button class="supl-medica-card"
           data-mid="${m.medico_id}"
-          data-nombre="${(m.medico_nombre||'').replace(/"/g,'')}"
+          data-nombre="${(m.medico_nombre||'').replace(/"/g,'&quot;')}"
           data-precio="${precio}"
           data-color="${color}"
           onclick="elegirMedicaDesdeCard(this)"
-          style="background:#fff;border:2px solid var(--cream-dk);border-radius:16px;padding:1.5rem 1.25rem;text-align:center;cursor:pointer;transition:.18s">
-          <div style="width:72px;height:72px;border-radius:50%;background:${color}20;border:3px solid ${color};margin:0 auto .85rem;overflow:hidden;display:flex;align-items:center;justify-content:center">
-            ${m.medico_foto
-              ? `<img src="${m.medico_foto}" style="width:100%;height:100%;object-fit:cover">`
-              : `<span style="font-size:1.5rem;font-weight:700;color:${color}">${(m.medico_nombre||'?')[0]}</span>`}
+          style="background:#fff;border:2px solid var(--cream-dk);border-radius:16px;padding:1.5rem 1.25rem;text-align:center;cursor:pointer;transition:.18s;width:100%;font-family:var(--fb);display:flex;flex-direction:column;align-items:center;gap:.5rem"
+          onmouseover="this.style.borderColor=this.dataset.color;this.style.background=this.dataset.color+'15'"
+          onmouseout="this.style.borderColor='var(--cream-dk)';this.style.background='#fff'">
+          <div style="width:72px;height:72px;border-radius:50%;background:${color}20;border:3px solid ${color};display:flex;align-items:center;justify-content:center;pointer-events:none">
+            <span style="font-size:1.5rem;font-weight:700;color:${color}">${(m.medico_nombre||'?')[0]}</span>
           </div>
-          <div style="font-weight:700;font-size:.95rem;color:#1C1A18;margin-bottom:.2rem">${m.medico_nombre||'—'}</div>
-          ${m.medico_especialidad ? `<div style="font-size:.75rem;color:var(--muted);margin-bottom:.75rem">${m.medico_especialidad}</div>` : '<div style="margin-bottom:.75rem"></div>'}
-          <div style="font-family:var(--fd);font-size:1.25rem;color:${color};font-weight:700">${fmt(precio)}</div>
-          <div style="font-size:.7rem;color:var(--muted);margin-top:.15rem">ARS · precio consulta</div>
-        </div>`;
+          <div style="font-weight:700;font-size:.95rem;color:#1C1A18;pointer-events:none">${m.medico_nombre||'—'}</div>
+          ${m.medico_especialidad ? `<div style="font-size:.75rem;color:var(--muted);pointer-events:none">${m.medico_especialidad}</div>` : ''}
+          <div style="font-family:var(--fd);font-size:1.25rem;color:${color};font-weight:700;margin-top:.25rem;pointer-events:none">${fmt(precio)}</div>
+          <div style="font-size:.7rem;color:var(--muted);pointer-events:none">ARS · precio consulta</div>
+        </button>`;
     }).join('');
 
   } catch(e) {
@@ -995,11 +995,15 @@ async function mostrarSeleccionMedica() {
   }
 }
 
-function elegirMedicaDesdeCard(card) {
-  const medicoId    = card.dataset.mid;
+function elegirMedicaDesdeCard(el) {
+  // Subir hasta encontrar el elemento con data-mid (el button)
+  let card = el;
+  while(card && !card.dataset.mid) card = card.parentElement;
+  if(!card) return;
+  const medicoId     = card.dataset.mid;
   const medicoNombre = card.dataset.nombre;
-  const precio      = parseInt(card.dataset.precio) || BS.precio;
-  const color       = card.dataset.color || '#3A7D8C';
+  const precio       = parseInt(card.dataset.precio) || BS.precio;
+  const color        = card.dataset.color || '#3A7D8C';
   elegirMedica(medicoId, medicoNombre, precio, color);
 }
 window.elegirMedicaDesdeCard = elegirMedicaDesdeCard;
@@ -4462,35 +4466,46 @@ async function deleteConsulta(id, nombre) {
 
 async function loadConsultasEnTurnos() {
   let consultas = [];
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
   try {
-    // Esperar hasta que Supabase esté disponible (máx 5 segundos)
-    let intentos = 0;
-    while(!getSB() && intentos < 20) {
-      await new Promise(r => setTimeout(r, 250));
-      intentos++;
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/consultation_types?activo=eq.true&order=sort_order`, {headers:h});
+    if(r.ok) {
+      const data = await r.json();
+      consultas = Array.isArray(data) && data.length ? data : CONSULTAS_DEFAULT;
+    } else throw new Error('HTTP '+r.status);
+  } catch(e){ consultas = CONSULTAS_DEFAULT; }
+
+  // Precios mínimos por médica
+  let preciosMin = {};
+  try {
+    const r2 = await fetch(`${SUPABASE_URL}/rest/v1/medico_consultas?select=consulta_id,precio`, {headers:h});
+    if(r2.ok) {
+      const mc = await r2.json();
+      if(Array.isArray(mc)) mc.forEach(x => {
+        if(!x.precio) return;
+        if(!preciosMin[x.consulta_id] || x.precio < preciosMin[x.consulta_id])
+          preciosMin[x.consulta_id] = x.precio;
+      });
     }
-    const sb = getSB();
-    if(!sb) throw new Error('Supabase no disponible');
-    const { data, error } = await sb.from('consultation_types').select('*').eq('activo',true).order('sort_order');
-    if(error) throw error;
-    consultas = data?.length ? data : CONSULTAS_DEFAULT;
-  } catch(e){
-    console.warn('Usando consultas por defecto:', e.message);
-    consultas = CONSULTAS_DEFAULT;
-  }
+  } catch(e) {}
+
   const container = document.querySelector('#tipoOptions');
   if(!container) return;
-  container.innerHTML = consultas.map(c=>`
-    <div class="tipo-opt" data-tipo="${c.id}" data-precio="${c.precio}" data-dur="${c.duracion||'45 min'}" data-modalidad="${c.modalidad||'ambas'}" onclick="selTipo(this)">
-      <div class="tipo-icon">${c.icono||'📋'}</div>
-      <div class="tipo-info">
-        <div class="tipo-name">${c.nombre}</div>
-        <div class="tipo-desc">${c.descripcion||''} · ${c.duracion||''}</div>
-      </div>
-      <div class="tipo-price">${c.precio > 0 ? fmt(c.precio) : 'A confirmar'}</div>
-      <div class="tipo-check">✓</div>
-    </div>`).join('');
+  container.innerHTML = consultas.map(c => {
+    const minPrecio  = preciosMin[c.id];
+    const precioBase = c.precio || 0;
+    const precioMin  = minPrecio ? Math.min(minPrecio, precioBase||Infinity) : precioBase;
+    const variantes  = minPrecio && minPrecio !== precioBase;
+    const label      = precioMin > 0 ? (variantes?'Desde ':'')+fmt(precioMin) : 'A confirmar';
+    return '<div class="tipo-opt" data-tipo="'+c.id+'" data-precio="'+(precioMin||0)+'" data-dur="'+(c.duracion||'45 min')+'" data-modalidad="'+(c.modalidad||'ambas')+'" onclick="selTipo(this)">'
+      +'<div class="tipo-icon">'+(c.icono||'📋')+'</div>'
+      +'<div class="tipo-info"><div class="tipo-name">'+c.nombre+'</div><div class="tipo-desc">'+(c.descripcion||'')+' · '+(c.duracion||'')+'</div></div>'
+      +'<div class="tipo-price">'+label+'</div>'
+      +'<div class="tipo-check">✓</div>'
+    +'</div>';
+  }).join('');
 }
+
 
 /* ── EMAIL VIA SUPABASE EDGE FUNCTION ── */
 const RESEND_KEY = 're_4j1tvbvo_DC1LrrA9XGkDbkyd5Zj4v5ab';
