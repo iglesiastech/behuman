@@ -1005,13 +1005,24 @@ function elegirMedicaInline(medicoId, medicoNombre, precio, color) {
   BS.medicoNombre = medicoNombre;
   BS.precio       = precio || BS.precio;
   BS.medicoColor  = color;
-  // Resetear fecha/hora y poner mes actual
   BS.fecha = null;
   BS.hora  = null;
   BS.calY  = new Date().getFullYear();
   BS.calM  = new Date().getMonth();
+
+  // Cargar cache de días que no atiende esta médica
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+  fetch(`${SUPABASE_URL}/rest/v1/medico_horarios?medico_id=eq.${medicoId}`, {headers:h})
+    .then(r=>r.json()).then(hs => {
+      if(!window._medicoHorariosCache) window._medicoHorariosCache = {};
+      window._medicoHorariosCache[medicoId] = {};
+      if(Array.isArray(hs)) hs.forEach(cfg => {
+        window._medicoHorariosCache[medicoId][cfg.dia_semana] = cfg.activo;
+      });
+      renderCal();
+    }).catch(()=>renderCal());
+
   updateSum();
-  // Mostrar step2 directamente sin pasar por _bGoTo para evitar re-ocultamiento
   ['1','15','3','4'].forEach(i => {
     const el = document.getElementById('bstep'+i);
     if(el) el.style.display = 'none';
@@ -1020,7 +1031,6 @@ function elegirMedicaInline(medicoId, medicoNombre, precio, color) {
   if(s2) s2.style.display = '';
   const sw = document.getElementById('slotsWrap');
   if(sw) sw.style.display = 'none';
-  renderCal();
 }
 
 window.bGoTo             = bGoTo;
@@ -1040,14 +1050,21 @@ function renderCal(){
   for(let d=1;d<=dim;d++){
     const dt=new Date(y,m,d); const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const isT=dt.getTime()===today.getTime();
-    const dis=dt<today||dt.getDay()===0;
+    const noAtiende = BS.medicoId && window._medicoHorariosCache &&
+      window._medicoHorariosCache[BS.medicoId] &&
+      window._medicoHorariosCache[BS.medicoId][dt.getDay()] === false;
+    const dis=dt<today||dt.getDay()===0||noAtiende;
     const sel=BS.fecha===ds;
-    h+='<div class="cal-day'+(isT?' today':'')+(dis?' disabled':'')+(sel?' selected':'')+'" onclick="'+(dis?'':'selDate(\''+ds+'\')')+'">'+(d)+'</div>';
-  }
+    h+='<div class="cal-day'+(isT?' today':'')+(dis?' disabled':'')+(sel?' selected':'')+'\" onclick=\"'+(dis?'':'selDate(\''+ds+'\')')+'\">'+(d)+'</div>';
   grid.innerHTML=h;
 }
-function calPrev(){ BS.calM--; if(BS.calM<0){BS.calM=11;BS.calY--;} BS.fecha=null;BS.hora=null; renderCal(); document.getElementById('slotsWrap').style.display='none'; }
-function calNext(){ BS.calM++; if(BS.calM>11){BS.calM=0;BS.calY++;} BS.fecha=null;BS.hora=null; renderCal(); document.getElementById('slotsWrap').style.display='none'; }
+window.calPrev = function(){ BS.calM--; if(BS.calM<0){BS.calM=11;BS.calY--;} BS.fecha=null;BS.hora=null; renderCal(); document.getElementById('slotsWrap').style.display='none'; }
+window.calNext = function(){ BS.calM++; if(BS.calM>11){BS.calM=0;BS.calY++;} BS.fecha=null;BS.hora=null; renderCal(); document.getElementById('slotsWrap').style.display='none'; }
+window.selSlot = function(btn,h){ document.querySelectorAll('.slot').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); BS.hora=h; const b2=document.getElementById('btnBs2'); if(b2){b2.disabled=false;b2.style.opacity='1';b2.style.cursor='pointer';} updateSum(); }
+window.selDate = selDate;
+function calPrev(){ window.calPrev(); }
+function calNext(){ window.calNext(); }
+function selSlot(btn,h){ window.selSlot(btn,h); }
 
 async function selDate(ds){
   BS.fecha=ds; BS.hora=null; renderCal(); updateSum();
@@ -1086,12 +1103,31 @@ async function selDate(ds){
     }
   } catch(e){ console.warn('No se pudo verificar disponibilidad:', e.message); }
 
-  if(todoBloqueado){
+  // Slots permitidos según horario de la médica
+  let slotsPermitidos = [...ALL_SLOTS];
+  if(BS.medicoId) {
+    try {
+      const hh = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+      const diaSemana = new Date(ds+'T12:00:00').getDay();
+      const rh = await fetch(`${SUPABASE_URL}/rest/v1/medico_horarios?medico_id=eq.${BS.medicoId}&dia_semana=eq.${diaSemana}`, {headers:hh});
+      const hs = await rh.json();
+      if(Array.isArray(hs) && hs.length) {
+        const cfg = hs[0];
+        if(!cfg.activo) {
+          grid.innerHTML = '<div style="font-size:.82rem;color:#C4614A;grid-column:1/-1;background:rgba(196,97,74,.08);padding:.75rem 1rem;border-radius:10px;border:1.5px solid rgba(196,97,74,.2)">🚫 La profesional no atiende este día</div>';
+          return;
+        }
+        if(cfg.hora_inicio && cfg.hora_fin) {
+          slotsPermitidos = ALL_SLOTS.filter(s => s >= cfg.hora_inicio && s <= cfg.hora_fin);
+        }
+      }
+    } catch(e) {}
+  }
     grid.innerHTML='<div style="font-size:.82rem;color:#C4614A;grid-column:1/-1;background:rgba(196,97,74,.08);padding:.75rem 1rem;border-radius:10px;border:1.5px solid rgba(196,97,74,.2)">🚫 Este día no tiene turnos disponibles</div>';
     return;
   }
 
-  grid.innerHTML=ALL_SLOTS.map(s=>{
+  grid.innerHTML=slotsPermitidos.map(s=>{
     const isOcupado   = ocupados.includes(s);
     const isBloqueado = bloqueados.includes(s);
     const noDisp = isOcupado || isBloqueado;
@@ -1575,7 +1611,7 @@ async function doForgot(){
 
 /* ══ CHECK SESSION AL ABRIR LA PÁGINA DE LOGIN ══ */
 /* ══ ADMIN JS ══ */
-const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas','programas-adm':'Programas','ordenes-programas':'Órdenes de programas',usuarios:'Usuarios',suplementos:'Suplementos',testis:'Testimonios',calendario:'Calendario',horarios:'Horarios bloqueados',consultas:'Tipos de consulta'};
+const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas','programas-adm':'Programas','ordenes-programas':'Órdenes de programas',usuarios:'Usuarios',suplementos:'Suplementos',testis:'Testimonios',calendario:'Calendario','medico-horarios':'Horarios por médica',horarios:'Horarios bloqueados',consultas:'Tipos de consulta'};
 
 const AMONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const AMONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -1595,7 +1631,8 @@ function showAP(id, btn) {
   if (id==='senas')    loadASenas();
   if (id==='fichas')   loadAFichas();
   if (id==='testis')   loadATestis();
-  if (id==='horarios')      loadABlocked();
+  if (id==='horarios')          loadABlocked();
+  if (id==='medico-horarios')   loadMedicoHorarios();
   if (id==='calendario')    initCalendario();
   if (id==='consultas')     loadAConsultas();
   if (id==='programas-adm')    loadAPrograms();
@@ -4262,12 +4299,39 @@ function openEditApptModal(id) {
   openATurno(appt);
 }
 
-function abrirFichaDesdeCalendario(email, nombre, tel) {
+async function abrirFichaDesdeCalendario(email, nombre, tel) {
+  // Ir a fichas
   showAP('fichas', document.querySelector('[onclick*="fichas"]'));
-  setTimeout(() => {
-    const searchInput = document.getElementById('fichaSearch');
-    if(searchInput && email) { searchInput.value = email; filterFichas(); }
-  }, 300);
+
+  // Esperar que carguen las fichas
+  await new Promise(r => setTimeout(r, 500));
+  if(!_fichas.length) await loadAFichas();
+
+  // Buscar ficha por email
+  const ficha = _fichas.find(f => (f.patient_email||'').toLowerCase() === (email||'').toLowerCase());
+
+  if(ficha) {
+    // Ficha encontrada → abrirla directo
+    abrirFicha(ficha.id);
+  } else {
+    // No existe → crear una nueva y abrirla
+    const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json', 'Prefer':'return=representation' };
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/fichas_medicas`, {
+        method: 'POST', headers: h,
+        body: JSON.stringify({ patient_name: nombre||email, patient_email: email, patient_phone: tel||null })
+      });
+      const data = await res.json();
+      toast('Ficha creada automáticamente ✓', 'ok');
+      await loadAFichas();
+      const nueva = _fichas.find(f => (f.patient_email||'').toLowerCase() === (email||'').toLowerCase());
+      if(nueva) abrirFicha(nueva.id);
+    } catch(e) {
+      // Si falla, al menos mostrar la búsqueda
+      const s = document.getElementById('fichaSearch');
+      if(s) { s.value = email; filterFichas(); }
+    }
+  }
 }
 
 function verPagoTurno(id) {
@@ -5052,6 +5116,92 @@ window.openAdmSupl        = openAdmSupl;
 window.saveAdmSupl        = saveAdmSupl;
 window.deleteAdmSupl      = deleteAdmSupl;
 
+/* ── HORARIOS POR MÉDICA ── */
+const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const ALL_SLOTS_H = ['09:00','09:45','10:30','11:15','12:00','13:00','14:00','14:45','15:30','16:15','17:00','18:00'];
+
+async function loadMedicoHorarios() {
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')) };
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/medicos?activo=eq.true&select=id,nombre&order=nombre`, {headers:h});
+  const medicos = await r.json() || [];
+  const sel = document.getElementById('mhMedicoSel');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">Seleccioná una médica...</option>'
+    + medicos.map(m=>`<option value="${m.id}">${m.nombre}</option>`).join('');
+}
+
+async function loadMedicoHorariosDetalle() {
+  const medicoId = document.getElementById('mhMedicoSel').value;
+  const detalle  = document.getElementById('mhDetalle');
+  if(!medicoId) { detalle.style.display='none'; return; }
+  detalle.style.display = '';
+
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')) };
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/medico_horarios?medico_id=eq.${medicoId}`, {headers:h});
+  const horarios = await r.json() || [];
+  const horariosMap = {};
+  horarios.forEach(h2 => horariosMap[h2.dia_semana] = h2);
+
+  const wrap = document.getElementById('mhDiasWrap');
+  wrap.innerHTML = [1,2,3,4,5,6,0].map(dia => {
+    const cfg     = horariosMap[dia] || {};
+    const activo  = cfg.activo !== false;
+    const desde   = cfg.hora_inicio || '09:00';
+    const hasta   = cfg.hora_fin   || '17:00';
+    return `<div style="display:grid;grid-template-columns:140px 100px 1fr 1fr;gap:1rem;align-items:center;padding:.7rem 1.25rem;border-top:1px solid var(--cream-dk)">
+      <div style="font-size:.88rem;font-weight:500;color:#1C1A18">${DIAS_SEMANA[dia]}</div>
+      <label style="display:flex;align-items:center;gap:.45rem;cursor:pointer">
+        <input type="checkbox" data-dia="${dia}" class="mhActivo" ${activo?'checked':''} style="accent-color:var(--teal);width:16px;height:16px">
+        <span style="font-size:.78rem;color:var(--muted)">${activo?'Sí':'No'}</span>
+      </label>
+      <select class="mhDesde" data-dia="${dia}" style="padding:.4rem .65rem;border:1.5px solid var(--cream-dk);border-radius:8px;font-size:.8rem;font-family:var(--fb);outline:none">
+        ${ALL_SLOTS_H.map(s=>`<option value="${s}" ${s===desde?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <select class="mhHasta" data-dia="${dia}" style="padding:.4rem .65rem;border:1.5px solid var(--cream-dk);border-radius:8px;font-size:.8rem;font-family:var(--fb);outline:none">
+        ${ALL_SLOTS_H.map(s=>`<option value="${s}" ${s===hasta?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>`;
+  }).join('');
+
+  // Actualizar label cuando cambia checkbox
+  wrap.querySelectorAll('.mhActivo').forEach(chk => {
+    chk.onchange = () => {
+      const label = chk.nextElementSibling;
+      if(label) label.textContent = chk.checked ? 'Sí' : 'No';
+    };
+  });
+}
+
+async function guardarMedicoHorarios() {
+  const medicoId = document.getElementById('mhMedicoSel').value;
+  if(!medicoId) return;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json' };
+
+  const rows = [...document.querySelectorAll('.mhActivo')].map(chk => ({
+    medico_id:   medicoId,
+    dia_semana:  parseInt(chk.dataset.dia),
+    activo:      chk.checked,
+    hora_inicio: document.querySelector('.mhDesde[data-dia="'+chk.dataset.dia+'"]')?.value || '09:00',
+    hora_fin:    document.querySelector('.mhHasta[data-dia="'+chk.dataset.dia+'"]')?.value || '17:00',
+  }));
+
+  try {
+    // Upsert — insert o actualizar
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/medico_horarios`, {
+      method: 'POST',
+      headers: { ...h, 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify(rows)
+    });
+    if(!r.ok) throw new Error((await r.json()).message || r.statusText);
+    toast('Horarios guardados ✓', 'ok');
+  } catch(e) { toast('Error: '+e.message, 'err'); }
+}
+
+window.loadMedicoHorarios        = loadMedicoHorarios;
+window.loadMedicoHorariosDetalle = loadMedicoHorariosDetalle;
+window.guardarMedicoHorarios     = guardarMedicoHorarios;
+
+/* ── HORARIOS BLOQUEADOS ── */
 async function loadABlocked() {
   const tbody = document.getElementById('aBBody');
   try {
@@ -5798,21 +5948,22 @@ async function doLogout() {
 
 // Ejecutar al cargar el DOM
 document.addEventListener('DOMContentLoaded', () => {
-  // Hamburger menu
-  const hamburger = document.getElementById('hamburger');
-  const mobClose  = document.getElementById('mobClose');
-  const cartOv    = document.getElementById('cartOv');
-  const cartX     = document.getElementById('cartX');
-  if(hamburger) hamburger.onclick = ()=>document.getElementById('mobMenu').classList.add('open');
-  if(mobClose)  mobClose.onclick  = closeMob;
-  if(cartOv)    cartOv.onclick    = ()=>Cart.closeDrawer();
-  if(cartX)     cartX.onclick     = ()=>Cart.closeDrawer();
-
-  // Cart
-  Cart.ui();
-  initReveal();
-  checkSession();
-  loadConsultasEnTurnos();
+  try {
+    const hamburger = document.getElementById('hamburger');
+    const mobClose  = document.getElementById('mobClose');
+    const cartOv    = document.getElementById('cartOv');
+    const cartX     = document.getElementById('cartX');
+    if(hamburger) hamburger.onclick = ()=>document.getElementById('mobMenu').classList.add('open');
+    if(mobClose)  mobClose.onclick  = closeMob;
+    if(cartOv)    cartOv.onclick    = ()=>Cart.closeDrawer();
+    if(cartX)     cartX.onclick     = ()=>Cart.closeDrawer();
+    if(typeof Cart !== 'undefined') Cart.ui();
+    initReveal();
+    checkSession();
+    loadConsultasEnTurnos();
+  } catch(e) {
+    console.error('DOMContentLoaded error:', e);
+  }
 });
 
 // ── Exponer funciones globalmente para los onclick del HTML ──
@@ -6831,6 +6982,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       <button class="asb-it" onclick="showAP('suplementos',this)"><span>💊</span> Suplementos</button>
       <button class="asb-it" onclick="showAP('calendario',this)"><span>📆</span> Calendario</button>
       <button class="asb-it" onclick="showAP('horarios',this)"><span>🕐</span> Horarios bloqueados</button>
+      <button class="asb-it" onclick="showAP('medico-horarios',this)"><span>📅</span> Horarios por médica</button>
       <button class="asb-it" onclick="showAP('consultas',this)"><span>💼</span> Tipos de consulta</button>
       <div class="asb-sec">Cuenta</div>
       <button class="asb-it" onclick="goTo('home')"><span>🏠</span> Ver sitio</button>
@@ -7307,6 +7459,31 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
             <div class="cal-side-body" id="calSideBody">
               <div style="text-align:center;padding:2rem;color:var(--muted);font-size:.84rem">Hacé clic en un día del calendario para ver los turnos</div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HORARIOS POR MÉDICA -->
+      <div id="ap-medico-horarios" class="ap">
+        <p style="font-size:.83rem;color:var(--muted);margin:0 0 1.25rem">Configurá los días y horarios de atención de cada médica. Esto afecta la disponibilidad en el calendario de turnos.</p>
+        <div style="margin-bottom:1rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+          <label style="font-size:.82rem;font-weight:600;color:#1C1A18">Médica:</label>
+          <select id="mhMedicoSel" onchange="loadMedicoHorariosDetalle()" style="padding:.45rem .85rem;border:1.5px solid var(--cream-dk);border-radius:100px;font-size:.82rem;font-family:var(--fb);outline:none;background:#fff">
+            <option value="">Seleccioná una médica...</option>
+          </select>
+        </div>
+        <div id="mhDetalle" style="display:none">
+          <div style="background:#fff;border-radius:14px;border:1.5px solid var(--cream-dk);overflow:hidden">
+            <div style="background:var(--cream);padding:.75rem 1.25rem;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);display:grid;grid-template-columns:140px 100px 1fr 1fr;gap:1rem;align-items:center">
+              <span>Día</span><span>¿Atiende?</span><span>Desde</span><span>Hasta</span>
+            </div>
+            <div id="mhDiasWrap"></div>
+          </div>
+          <div style="margin-top:1rem;display:flex;gap:.75rem">
+            <button onclick="guardarMedicoHorarios()" style="padding:.6rem 1.5rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar horarios</button>
+          </div>
+          <div style="margin-top:.85rem;padding:.85rem 1rem;background:rgba(58,125,140,.07);border-radius:10px;font-size:.78rem;color:var(--teal)">
+            💡 Si una médica no atiende un día, ese día no aparecerá disponible en el calendario. Si configurás rango horario (ej: 10:00 a 13:00), solo esos horarios estarán habilitados.
           </div>
         </div>
       </div>
