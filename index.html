@@ -918,10 +918,19 @@ function _bGoTo(n) {
   });
   const target = document.getElementById('bstep'+n);
   if (target) target.style.display = '';
-  [1,2,3,4].forEach(i => {
-    const si = document.getElementById('si'+i);
-    if (si) { si.classList.toggle('active', i===n); si.classList.toggle('done', i<n); }
+
+  // Update stepper indicators
+  const stepMap = {1:'si1', 15:'si15', 2:'si2', 3:'si3', 4:'si4'};
+  const stepOrder = [1, 15, 2, 3, 4];
+  const currentIdx = stepOrder.indexOf(n);
+  stepOrder.forEach((s, idx) => {
+    const si = document.getElementById(stepMap[s]);
+    if(!si) return;
+    si.classList.remove('active','done');
+    if(idx === currentIdx) si.classList.add('active');
+    else if(idx < currentIdx) si.classList.add('done');
   });
+
   if (n===2) renderCal();
   if (n===4) updateSenaAmount();
 }
@@ -934,6 +943,18 @@ async function mostrarSeleccionMedica() {
   });
   document.getElementById('bstep15').style.display = '';
   document.getElementById('bstep15sub').textContent = 'Consulta: ' + (TIPO_NAMES[BS.tipo] || BS.tipo);
+  // Update stepper
+  ['si1','si15','si2','si3','si4'].forEach((id,idx) => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.classList.remove('active','done');
+    if(idx === 1) el.classList.add('active');
+    else if(idx < 1) el.classList.add('done');
+  });
+  document.getElementById('si1')?.classList.remove('active');
+  document.getElementById('si1')?.classList.add('done');
+  document.getElementById('si15')?.classList.add('active');
+
   const grid = document.getElementById('bstep15Grid');
   grid.innerHTML = '<div style="color:var(--muted);font-size:.84rem">Cargando...</div>';
 
@@ -6417,11 +6438,13 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         <div class="steps">
           <div class="step active" id="si1"><div class="step-num">1</div><div class="step-label">Consulta</div></div>
           <div class="step-line"></div>
-          <div class="step" id="si2"><div class="step-num">2</div><div class="step-label">Fecha</div></div>
+          <div class="step" id="si15"><div class="step-num">2</div><div class="step-label">Médica</div></div>
           <div class="step-line"></div>
-          <div class="step" id="si3"><div class="step-num">3</div><div class="step-label">Datos</div></div>
+          <div class="step" id="si2"><div class="step-num">3</div><div class="step-label">Fecha</div></div>
           <div class="step-line"></div>
-          <div class="step" id="si4"><div class="step-num">4</div><div class="step-label">Seña</div></div>
+          <div class="step" id="si3"><div class="step-num">4</div><div class="step-label">Datos</div></div>
+          <div class="step-line"></div>
+          <div class="step" id="si4"><div class="step-num">5</div><div class="step-label">Seña</div></div>
         </div>
       </div>
 
@@ -6516,7 +6539,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
                 <div class="slots-grid" id="slotsGrid"></div>
               </div>
               <div style="margin-top:1.75rem;display:flex;gap:1rem;justify-content:space-between">
-                <button class="btn-outline" onclick="bGoTo(1)">← Volver</button>
+                <button class="btn-outline" onclick="mostrarSeleccionMedica()">← Cambiar médica</button>
                 <button class="btn-teal" id="btnBs2" onclick="bGoTo(3)" disabled style="opacity:.5;padding:.82rem 1.8rem;border-radius:100px;font-family:var(--fb);font-size:.76rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--teal);color:#fff;border:none;cursor:not-allowed">Continuar →</button>
               </div>
             </div>
