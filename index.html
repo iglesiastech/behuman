@@ -1058,13 +1058,20 @@ function renderCal(){
     h+='<div class="cal-day'+(isT?' today':'')+(dis?' disabled':'')+(sel?' selected':'')+'\" onclick=\"'+(dis?'':'selDate(\''+ds+'\')')+'\">'+(d)+'</div>';
   grid.innerHTML=h;
 }
-window.calPrev = function(){ BS.calM--; if(BS.calM<0){BS.calM=11;BS.calY--;} BS.fecha=null;BS.hora=null; renderCal(); document.getElementById('slotsWrap').style.display='none'; }
-window.calNext = function(){ BS.calM++; if(BS.calM>11){BS.calM=0;BS.calY++;} BS.fecha=null;BS.hora=null; renderCal(); document.getElementById('slotsWrap').style.display='none'; }
-window.selSlot = function(btn,h){ document.querySelectorAll('.slot').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); BS.hora=h; const b2=document.getElementById('btnBs2'); if(b2){b2.disabled=false;b2.style.opacity='1';b2.style.cursor='pointer';} updateSum(); }
+function calPrev(){ BS.calM--; if(BS.calM<0){BS.calM=11;BS.calY--;} BS.fecha=null;BS.hora=null; renderCal(); document.getElementById('slotsWrap').style.display='none'; }
+function calNext(){ BS.calM++; if(BS.calM>11){BS.calM=0;BS.calY++;} BS.fecha=null;BS.hora=null; renderCal(); document.getElementById('slotsWrap').style.display='none'; }
+function selSlot(btn,h){
+  document.querySelectorAll('.slot').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  BS.hora=h;
+  const b2=document.getElementById('btnBs2');
+  if(b2){ b2.disabled=false; b2.style.opacity='1'; b2.style.cursor='pointer'; }
+  updateSum();
+}
+window.calPrev = calPrev;
+window.calNext = calNext;
+window.selSlot = selSlot;
 window.selDate = selDate;
-function calPrev(){ window.calPrev(); }
-function calNext(){ window.calNext(); }
-function selSlot(btn,h){ window.selSlot(btn,h); }
 
 async function selDate(ds){
   BS.fecha=ds; BS.hora=null; renderCal(); updateSum();
@@ -1137,13 +1144,6 @@ async function selDate(ds){
       +' onclick="'+(noDisp?'':'selSlot(this,\''+s+'\')')+'">'+label+'</button>';
   }).join('');
 }
-function selSlot(btn,h){
-  document.querySelectorAll('.slot').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected'); BS.hora=h;
-  const b2=document.getElementById('btnBs2'); b2.disabled=false; b2.style.opacity='1'; b2.style.cursor='pointer';
-  updateSum();
-}
-
 function updateSum(){
   const e=document.getElementById('sumEmpty'); const c=document.getElementById('sumContent');
   const any=BS.tipo||BS.fecha; e.style.display=any?'none':''; c.style.display=any?'flex':'none';
