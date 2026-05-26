@@ -36,11 +36,14 @@ h1,h2,h3,h4{font-family:var(--fd);font-weight:400;line-height:1.12}
 .nav{position:fixed;top:0;left:0;right:0;z-index:100;transition:var(--tr)}
 .nav-inner{
   display:flex;align-items:center;justify-content:space-between;
-  padding:1.2rem clamp(1.2rem,4vw,3rem);
+  padding:.85rem clamp(1.2rem,4vw,3rem);
+  background:rgba(240,232,216,.97);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:0 1px 0 rgba(201,147,90,.15);
   transition:var(--tr);
 }
 .nav.scrolled .nav-inner{
-  background:rgba(240,232,216,.96);
+  background:rgba(240,232,216,.98);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   box-shadow:0 1px 0 rgba(201,147,90,.15);
   padding:.85rem clamp(1.2rem,4vw,3rem);
@@ -857,7 +860,7 @@ renderProducts();
 /* ══ PROGRAMAS FILTER ══ */
 
 /* ══ TURNOS ══ */
-const BS={tipo:null,precio:null,modalidad:null,fecha:null,hora:null,calY:new Date().getFullYear(),calM:new Date().getMonth()};
+const BS={tipo:null,precio:null,modalidad:null,fecha:null,hora:null,calY:new Date().getFullYear(),calM:new Date().getMonth(),medicoId:null,medicoNombre:null,medicoColor:null,diasPermitidos:null};
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DAYS=['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
 const TIPO_NAMES={primera:'Primera consulta',seguimiento:'Seguimiento',resultados:'Interpretación de análisis'};
@@ -1030,29 +1033,42 @@ function elegirMedicaInline(medicoId, medicoNombre, precio, color) {
   BS.hora  = null;
   BS.calY  = new Date().getFullYear();
   BS.calM  = new Date().getMonth();
+  BS.diasPermitidos = null;
 
-  // Cargar cache de días que no atiende esta médica
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
-  fetch(`${SUPABASE_URL}/rest/v1/medico_horarios?medico_id=eq.${medicoId}`, {headers:h})
-    .then(r=>r.json()).then(hs => {
-      if(!window._medicoHorariosCache) window._medicoHorariosCache = {};
-      window._medicoHorariosCache[medicoId] = {};
-      if(Array.isArray(hs)) hs.forEach(cfg => {
-        window._medicoHorariosCache[medicoId][cfg.dia_semana] = cfg.activo;
-      });
-      renderCal();
-    }).catch(()=>renderCal());
+
+  Promise.all([
+    fetch(SUPABASE_URL+'/rest/v1/medico_consultas?medico_id=eq.'+medicoId+'&consulta_id=eq.'+BS.tipo+'&select=dias_presencial,dias_virtual', {headers:h}).then(r=>r.json()),
+    fetch(SUPABASE_URL+'/rest/v1/medico_horarios?medico_id=eq.'+medicoId, {headers:h}).then(r=>r.json())
+  ]).then(function(results) {
+    var mc = results[0], hs = results[1];
+    if(Array.isArray(mc) && mc.length) {
+      const row = mc[0];
+      // Elegir días según la modalidad seleccionada
+      const diasArr = BS.modalidad === 'virtual' ? row.dias_virtual : row.dias_presencial;
+      if(diasArr && diasArr.length > 0 && diasArr.length < 7)
+        BS.diasPermitidos = diasArr.map(Number);
+      else
+        BS.diasPermitidos = null;
+    }
+    if(!window._medicoHorariosCache) window._medicoHorariosCache = {};
+    window._medicoHorariosCache[medicoId] = {};
+    if(Array.isArray(hs)) hs.forEach(function(cfg){ window._medicoHorariosCache[medicoId][cfg.dia_semana] = cfg.activo; });
+    renderCal();
+  }).catch(function(){ renderCal(); });
 
   updateSum();
-  ['1','15','3','4'].forEach(i => {
-    const el = document.getElementById('bstep'+i);
+  ['1','15','3','4'].forEach(function(i){
+    var el = document.getElementById('bstep'+i);
     if(el) el.style.display = 'none';
   });
-  const s2 = document.getElementById('bstep2');
+  var s2 = document.getElementById('bstep2');
   if(s2) s2.style.display = '';
-  const sw = document.getElementById('slotsWrap');
+  var sw = document.getElementById('slotsWrap');
   if(sw) sw.style.display = 'none';
+  _bGoTo(2);
 }
+
 
 window.bGoTo             = bGoTo;
 window._bGoTo            = _bGoTo;
@@ -1074,7 +1090,9 @@ function renderCal(){
     const noAtiende = BS.medicoId && window._medicoHorariosCache &&
       window._medicoHorariosCache[BS.medicoId] &&
       window._medicoHorariosCache[BS.medicoId][dt.getDay()] === false;
-    const dis=dt<today||dt.getDay()===0||noAtiende;
+    const diaNoPermitido = BS.diasPermitidos && BS.diasPermitidos.length > 0 &&
+      !BS.diasPermitidos.map(Number).includes(dt.getDay());
+    const dis = dt<today || dt.getDay()===0 || noAtiende || diaNoPermitido;
     const sel=BS.fecha===ds;
     h+='<div class="cal-day'+(isT?' today':'')+(dis?' disabled':'')+(sel?' selected':'')+'" onclick="'+(dis?'':'selDate(\''+ds+'\')')+'">'+(d)+'</div>';
   }
@@ -1094,7 +1112,23 @@ window.calNext = calNext;
 window.selSlot = selSlot;
 
 async function selDate(ds){
-  BS.fecha=ds; BS.hora=null; renderCal(); updateSum();
+  BS.fecha=ds; BS.hora=null; BS.nutriNombre=null; renderCal(); updateSum();
+
+  // Cargar nutri del día si la consulta lo requiere
+  const hNutri = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+  fetch(SUPABASE_URL+'/rest/v1/consultation_types?id=eq.'+BS.tipo+'&select=incluye_nutri,offset_nutri_minutos', {headers:hNutri})
+    .then(r=>r.json()).then(async ct => {
+      if(!ct?.[0]?.incluye_nutri) return;
+      BS.nutriOffset = ct[0].offset_nutri_minutos || 30;
+      const diaSem = new Date(ds+'T12:00:00').getDay();
+      const rN = await fetch(SUPABASE_URL+'/rest/v1/nutri_dias?dia_semana=eq.'+diaSem+'&select=medico_id', {headers:hNutri});
+      const nd = await rN.json();
+      if(!nd?.[0]?.medico_id) return;
+      const rM = await fetch(SUPABASE_URL+'/rest/v1/medicos?id=eq.'+nd[0].medico_id+'&select=nombre', {headers:hNutri});
+      const mm = await rM.json();
+      BS.nutriNombre = mm?.[0]?.nombre;
+      updateSum();
+    }).catch(()=>{});
   const sw=document.getElementById('slotsWrap'); sw.style.display='block';
   const [,mm,dd]=ds.split('-');
   document.getElementById('slotsTitle').textContent='Horarios para el '+parseInt(dd)+' de '+MONTHS[parseInt(mm)-1];
@@ -1175,6 +1209,21 @@ function updateSum(){
   }
   if(BS.fecha){ const [y,mm,dd]=BS.fecha.split('-'); document.getElementById('sumFechaRow').style.display=''; document.getElementById('sumFechaVal').textContent=`${parseInt(dd)} de ${MONTHS[parseInt(mm)-1]} ${y}`; }
   if(BS.hora){ document.getElementById('sumHoraRow').style.display=''; document.getElementById('sumHoraVal').textContent=BS.hora+' hs'; }
+
+  // Mostrar info de nutri si aplica
+  const nutriRow = document.getElementById('sumNutriRow');
+  if(nutriRow) {
+    if(BS.hora && BS.nutriNombre) {
+      const [hh,mm] = BS.hora.split(':').map(Number);
+      const offset = BS.nutriOffset || 30;
+      const nd = new Date(2000,0,1,hh,mm+offset);
+      const nutriHora = nd.getHours().toString().padStart(2,'0')+':'+nd.getMinutes().toString().padStart(2,'0');
+      nutriRow.style.display = '';
+      nutriRow.querySelector('.nutri-val').textContent = 'Con '+BS.nutriNombre+' a las '+nutriHora+' hs';
+    } else {
+      nutriRow.style.display = 'none';
+    }
+  }
 }
 
 // Consultas que requieren paciente previo — se carga dinámicamente desde Supabase
@@ -1287,24 +1336,55 @@ async function submitBooking(){
     transfer_name: apellido,
   };
 
-  const sb = getSB();
-  if(!sb){
-    showConfirmacionSena(nom, email, sena, fechaStr, precio);
-    return;
-  }
+  const hFetch = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON, 'Content-Type':'application/json', 'Prefer':'return=representation' };
 
   try {
-    const { data: appt, error } = await sb.from('appointments').insert(apptData);
-    if(error) throw error;
+    const r = await fetch(SUPABASE_URL+'/rest/v1/appointments', {
+      method: 'POST', headers: hFetch, body: JSON.stringify(apptData)
+    });
+    if(!r.ok) { const err = await r.json(); throw new Error(err.message||r.statusText); }
+    const [appt] = await r.json();
 
-    // Crear ficha si no existe (en segundo plano)
+    // Crear turno de nutri automáticamente si la consulta lo requiere
+    try {
+      const rCt = await fetch(SUPABASE_URL+'/rest/v1/consultation_types?id=eq.'+BS.tipo+'&select=incluye_nutri,offset_nutri_minutos', {headers:hFetch});
+      const ctData = await rCt.json();
+      const ct = ctData?.[0];
+      if(ct?.incluye_nutri) {
+        // Buscar nutri del día
+        const diaSem = new Date(BS.fecha+'T12:00:00').getDay();
+        const rN = await fetch(SUPABASE_URL+'/rest/v1/nutri_dias?dia_semana=eq.'+diaSem+'&select=medico_id', {headers:hFetch});
+        const nutriData = await rN.json();
+        const nutriId = nutriData?.[0]?.medico_id;
+        if(nutriId) {
+          // Calcular hora nutri = hora principal + offset
+          const [hh,mm] = BS.hora.split(':').map(Number);
+          const offset = ct.offset_nutri_minutos || 30;
+          const nutriDate = new Date(2000,0,1,hh,mm+offset);
+          const nutriHora = nutriDate.getHours().toString().padStart(2,'0')+':'+nutriDate.getMinutes().toString().padStart(2,'0');
+          await fetch(SUPABASE_URL+'/rest/v1/appointments', {
+            method: 'POST', headers: hFetch,
+            body: JSON.stringify({
+              type: BS.tipo, date: BS.fecha, time: nutriHora+':00',
+              modalidad: BS.modalidad||'presencial', status: 'confirmed',
+              patient_name: nom+' '+apellido, patient_email: email, patient_phone: tel,
+              medico_id: nutriId, price: 0, notes: 'Turno nutri automático (vinculado a turno médica)',
+              sena_status: 'paid', parent_appt_id: appt?.id || null
+            })
+          });
+        }
+      }
+    } catch(e2) { console.warn('Error creando turno nutri:', e2.message); }
+
+    // Crear ficha si no existe
     setTimeout(async () => {
       try {
-        const { data: fe } = await sb.from('fichas_medicas').select('id').eq('patient_email',email).limit(1);
-        if(!fe||!fe.length){
-          await sb.from('fichas_medicas').insert({
-            patient_name:nom, patient_email:email, patient_phone:tel,
-            motivo_consulta_inicial: document.getElementById('pMotivo')?.value.trim()||null,
+        const rF = await fetch(SUPABASE_URL+'/rest/v1/fichas_medicas?patient_email=eq.'+encodeURIComponent(email)+'&select=id&limit=1', {headers:hFetch});
+        const fe = await rF.json();
+        if(!fe||!fe.length) {
+          await fetch(SUPABASE_URL+'/rest/v1/fichas_medicas', {
+            method:'POST', headers:hFetch,
+            body: JSON.stringify({ patient_name:nom, patient_email:email, patient_phone:tel })
           });
         }
       } catch(e2){}
@@ -1318,15 +1398,15 @@ async function submitBooking(){
     // Email a Mariel — nuevo turno pendiente de seña
     sendEmail('behuman.medicinafuncional@gmail.com',
       'Nuevo turno pendiente · ' + (TIPO_NAMES[BS.tipo]||BS.tipo),
-      `<div style="font-family:Arial,sans-serif;padding:24px;max-width:500px">
-        <h2 style="color:#1C1A18;font-family:Georgia,serif">Nuevo turno pendiente de seña</h2>
-        <p><strong>Consulta:</strong> ${TIPO_NAMES[BS.tipo]||BS.tipo}</p>
-        <p><strong>Paciente:</strong> ${nom} ${apellido}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Fecha:</strong> ${fStr} a las ${BS.hora} hs</p>
-        <p><strong>Seña:</strong> ${fmt(sena)}</p>
-        <p style="margin-top:1rem"><a href="https://iglesiastech-behuman.vercel.app" style="background:#3A7D8C;color:#fff;padding:10px 20px;border-radius:100px;text-decoration:none;font-weight:600">Ir al panel admin →</a></p>
-      </div>`
+      '<div style="font-family:Arial,sans-serif;padding:24px;max-width:500px">'
+      +'<h2 style="color:#1C1A18;font-family:Georgia,serif">Nuevo turno pendiente de seña</h2>'
+      +'<p><strong>Consulta:</strong> '+(TIPO_NAMES[BS.tipo]||BS.tipo)+'</p>'
+      +'<p><strong>Paciente:</strong> '+nom+' '+apellido+'</p>'
+      +'<p><strong>Email:</strong> '+email+'</p>'
+      +'<p><strong>Fecha:</strong> '+fStr+' a las '+BS.hora+' hs</p>'
+      +'<p><strong>Seña:</strong> '+fmt(sena)+'</p>'
+      +'<p style="margin-top:1rem"><a href="https://iglesiastech-behuman.vercel.app" style="background:#3A7D8C;color:#fff;padding:10px 20px;border-radius:100px;text-decoration:none;font-weight:600">Ir al panel admin →</a></p>'
+      +'</div>'
     );
 
     showConfirmacionSena(nom, email, sena, fechaStr, precio);
@@ -1335,7 +1415,7 @@ async function submitBooking(){
     console.error('Error al guardar turno:', e);
     btn.disabled = false;
     btn.textContent = 'Confirmar y pagar seña ✓';
-    toast('Error: ' + (e.message||'No se pudo guardar el turno. Revisá tu conexión.'), 'err', 6000);
+    toast('Error: ' + (e.message||'No se pudo guardar el turno.'), 'err', 6000);
   }
 }
 
@@ -1622,7 +1702,7 @@ async function doForgot(){
 
 /* ══ CHECK SESSION AL ABRIR LA PÁGINA DE LOGIN ══ */
 /* ══ ADMIN JS ══ */
-const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas','programas-adm':'Programas','ordenes-programas':'Órdenes de programas',usuarios:'Usuarios',suplementos:'Suplementos',testis:'Testimonios',calendario:'Calendario','medico-horarios':'Horarios por médica',horarios:'Horarios bloqueados',consultas:'Tipos de consulta'};
+const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas','programas-adm':'Programas','ordenes-programas':'Órdenes de programas',usuarios:'Usuarios',suplementos:'Suplementos',testis:'Testimonios',calendario:'Calendario','medico-horarios':'Horarios por médica','nutri-dias':'Nutri por día',horarios:'Horarios bloqueados',consultas:'Tipos de consulta'};
 
 const AMONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const AMONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -1644,6 +1724,7 @@ function showAP(id, btn) {
   if (id==='testis')   loadATestis();
   if (id==='horarios')          loadABlocked();
   if (id==='medico-horarios')   loadMedicoHorarios();
+  if (id==='nutri-dias')        loadNutriDias();
   if (id==='calendario')    initCalendario();
   if (id==='consultas')     loadAConsultas();
   if (id==='programas-adm')    loadAPrograms();
@@ -4396,6 +4477,10 @@ async function openConsulta(c) {
   document.getElementById('cSoloPrevios').value    = c?.solo_pacientes_previos ? 'true' : 'false';
   document.getElementById('cIcono').value          = c?.icono||'';
   document.getElementById('cActivo').value         = c?.activo!==false?'true':'false';
+  const incluyeNutri = document.getElementById('cIncluyeNutri');
+  if(incluyeNutri) { incluyeNutri.checked = !!(c?.incluye_nutri); toggleNutriOffset(); }
+  const offsetNutri = document.getElementById('cOffsetNutri');
+  if(offsetNutri) offsetNutri.value = c?.offset_nutri_minutos || 30;
   document.getElementById('consultaModTitle').textContent = c?.id ? 'Editar: '+c.nombre : 'Nueva consulta';
 
   // Cargar médicas con checkboxes
@@ -4408,29 +4493,54 @@ async function openConsulta(c) {
       const medicos = await r1.json();
       let asignadas = [];
       let preciosPorMedica = {};
+      let diasPresPorMedica = {}, diasVirtPorMedica = {};
       if(c?.id) {
-        const r2 = await fetch(SUPABASE_URL+'/rest/v1/medico_consultas?consulta_id=eq.'+c.id+'&select=medico_id,precio', {headers:h});
+        const r2 = await fetch(SUPABASE_URL+'/rest/v1/medico_consultas?consulta_id=eq.'+c.id+'&select=medico_id,precio,dias_presencial,dias_virtual', {headers:h});
         const mc = await r2.json();
         (Array.isArray(mc)?mc:[]).forEach(x => {
           asignadas.push(x.medico_id);
           if(x.precio) preciosPorMedica[x.medico_id] = x.precio;
+          if(x.dias_presencial && x.dias_presencial.length) diasPresPorMedica[x.medico_id] = x.dias_presencial.map(Number);
+          if(x.dias_virtual    && x.dias_virtual.length)    diasVirtPorMedica[x.medico_id]  = x.dias_virtual.map(Number);
         });
       }
+
+      const DIAS_ABR = ['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
+      const DIAS_ORD = [1,2,3,4,5,6,0];
+
       if(!Array.isArray(medicos)||!medicos.length) {
         wrap.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">No hay médicas cargadas aún.</div>';
       } else {
-        wrap.innerHTML = '<div style="font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem;display:grid;grid-template-columns:1fr 140px;gap:.5rem"><span>Médica</span><span>Precio específico</span></div>'
-        + medicos.map(m => {
-          const checked = asignadas.includes(m.id);
+        wrap.innerHTML = medicos.map(m => {
+          const checked   = asignadas.includes(m.id);
           const precioEsp = preciosPorMedica[m.id] || '';
-          return '<div style="display:grid;grid-template-columns:1fr 140px;gap:.5rem;align-items:center;padding:.35rem 0;border-bottom:1px solid var(--cream-dk)">'
-            +'<label style="display:flex;align-items:center;gap:.5rem;font-size:.84rem;cursor:pointer">'
-            +'<input type="checkbox" value="'+m.id+'" '+(checked?'checked':'')+' class="cMedicaChk" style="accent-color:var(--teal);width:15px;height:15px">'
-            +'<span style="width:10px;height:10px;border-radius:50%;background:'+(m.color||'#3A7D8C')+';flex-shrink:0;display:inline-block"></span>'
-            +' '+m.nombre
-            +'</label>'
-            +'<input type="number" placeholder="Precio (opcional)" value="'+precioEsp+'" data-medica-id="'+m.id+'" class="cMedicaPrecio" style="padding:.3rem .55rem;border:1.5px solid var(--cream-dk);border-radius:8px;font-size:.78rem;font-family:var(--fb);width:100%;outline:none" min="0">'
+          const diasPres  = diasPresPorMedica[m.id] || [];
+          const diasVirt  = diasVirtPorMedica[m.id]  || [];
+
+          function dRow(tipo, sel) {
+            return '<div style="display:flex;align-items:center;gap:.3rem;padding-left:1.5rem;margin-top:.25rem">'
+              +'<span style="font-size:.7rem;color:var(--muted);width:56px;flex-shrink:0">'+(tipo==='pres'?'📍 Pres:':'💻 Virt:')+'</span>'
+              +DIAS_ORD.map(d=>
+                '<label style="display:flex;flex-direction:column;align-items:center;gap:.1rem;cursor:pointer;font-size:.62rem;color:var(--muted)">'
+                +'<input type="checkbox" '+(sel.includes(d)?'checked':'')+' class="cMedica'+tipo+'" data-mid="'+m.id+'" data-dia="'+d+'" style="accent-color:var(--teal);width:12px;height:12px">'
+                +DIAS_ABR[d]+'</label>'
+              ).join('')
+              +'<span style="font-size:.62rem;color:var(--muted);margin-left:.35rem">(vacío=todos)</span>'
             +'</div>';
+          }
+
+          return '<div style="border-bottom:1px solid var(--cream-dk);padding:.6rem 0">'
+            +'<div style="display:grid;grid-template-columns:1fr 140px;gap:.5rem;align-items:center;margin-bottom:.2rem">'
+              +'<label style="display:flex;align-items:center;gap:.5rem;font-size:.84rem;cursor:pointer">'
+                +'<input type="checkbox" value="'+m.id+'" '+(checked?'checked':'')+' class="cMedicaChk" style="accent-color:var(--teal);width:15px;height:15px">'
+                +'<span style="width:10px;height:10px;border-radius:50%;background:'+(m.color||'#3A7D8C')+';flex-shrink:0;display:inline-block"></span>'
+                +' '+m.nombre
+              +'</label>'
+              +'<input type="number" placeholder="Precio (opc.)" value="'+precioEsp+'" data-medica-id="'+m.id+'" class="cMedicaPrecio" style="padding:.3rem .55rem;border:1.5px solid var(--cream-dk);border-radius:8px;font-size:.78rem;font-family:var(--fb);width:100%;outline:none" min="0">'
+            +'</div>'
+            +dRow('pres', diasPres)
+            +dRow('virt', diasVirt)
+          +'</div>';
         }).join('');
       }
     } catch(e) {
@@ -4453,6 +4563,8 @@ async function saveConsulta() {
     modalidad:              document.getElementById('cModalidad').value||'ambas',
     solo_pacientes_previos: document.getElementById('cSoloPrevios').value === 'true',
     icono:                  document.getElementById('cIcono').value.trim()||'📋',
+    incluye_nutri:          !!(document.getElementById('cIncluyeNutri')?.checked),
+    offset_nutri_minutos:   parseInt(document.getElementById('cOffsetNutri')?.value)||30,
     activo:                 document.getElementById('cActivo').value==='true',
   };
   const btn = document.getElementById('cSaveBtn');
@@ -4481,7 +4593,14 @@ async function saveConsulta() {
         const rows = checks.map(cb => {
           const precioInput = document.querySelector('#cMedicasWrap .cMedicaPrecio[data-medica-id="'+cb.value+'"]');
           const precio = precioInput ? (parseInt(precioInput.value)||null) : null;
-          return { medico_id: cb.value, consulta_id: consultaId, precio };
+          const diasChecks = [...document.querySelectorAll('#cMedicasWrap .cMedicaDia[data-mid="'+cb.value+'"]:checked')];
+          const diasPresChecks = [...document.querySelectorAll('#cMedicasWrap .cMedicapres[data-mid="'+cb.value+'"]:checked')];
+          const diasVirtChecks = [...document.querySelectorAll('#cMedicasWrap .cMedicavirt[data-mid="'+cb.value+'"]:checked')];
+          const diasPres = diasPresChecks.map(d=>parseInt(d.dataset.dia));
+          const diasVirt = diasVirtChecks.map(d=>parseInt(d.dataset.dia));
+          const diasFinal = (diasPres.length===0||diasPres.length===7) ? null : diasPres;
+          const diasVirtFinal = (diasVirt.length===0||diasVirt.length===7) ? null : diasVirt;
+          return { medico_id: cb.value, consulta_id: consultaId, precio, dias_presencial: diasFinal, dias_virtual: diasVirtFinal };
         });
         await fetch(`${SUPABASE_URL}/rest/v1/medico_consultas`, {
           method: 'POST', headers: {...h, 'Prefer':'return=minimal'},
@@ -5102,6 +5221,65 @@ window.loadAdmSuplementos = loadAdmSuplementos;
 window.openAdmSupl        = openAdmSupl;
 window.saveAdmSupl        = saveAdmSupl;
 window.deleteAdmSupl      = deleteAdmSupl;
+
+/* ── NUTRI POR DÍA ── */
+const DIAS_SEMANA_N = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
+function toggleNutriOffset() {
+  const chk = document.getElementById('cIncluyeNutri');
+  const wrap = document.getElementById('nutriOffsetWrap');
+  if(wrap) wrap.style.display = chk?.checked ? '' : 'none';
+}
+window.toggleNutriOffset = toggleNutriOffset;
+
+async function loadNutriDias() {
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')) };
+  const wrap = document.getElementById('nutriDiasWrap');
+  try {
+    const [r1, r2] = await Promise.all([
+      fetch(SUPABASE_URL+'/rest/v1/nutri_dias?order=dia_semana', {headers:h}).then(r=>r.json()),
+      fetch(SUPABASE_URL+'/rest/v1/medicos?activo=eq.true&order=nombre&select=id,nombre', {headers:h}).then(r=>r.json())
+    ]);
+    const nutriMap = {};
+    (Array.isArray(r1)?r1:[]).forEach(n => nutriMap[n.dia_semana] = n.medico_id);
+    const medicos = Array.isArray(r2) ? r2 : [];
+    const optsHtml = '<option value="">— Sin nutri —</option>' + medicos.map(m=>'<option value="'+m.id+'">'+m.nombre+'</option>').join('');
+
+    wrap.innerHTML = [1,2,3,4,5,6,0].map(dia => {
+      const sel = nutriMap[dia] || '';
+      return '<div style="display:grid;grid-template-columns:130px 1fr;gap:.75rem;align-items:center;padding:.65rem .85rem;background:#fff;border-radius:10px;border:1.5px solid var(--cream-dk)">'
+        +'<div style="font-weight:500;font-size:.88rem;color:#1C1A18">'+DIAS_SEMANA_N[dia]+'</div>'
+        +'<select data-dia="'+dia+'" class="nutriDiaSel" style="padding:.4rem .65rem;border:1.5px solid var(--cream-dk);border-radius:8px;font-size:.82rem;font-family:var(--fb);outline:none;background:#fff">'
+          +optsHtml.replace('value="'+sel+'"', 'value="'+sel+'" selected')
+        +'</select>'
+      +'</div>';
+    }).join('');
+  } catch(e) {
+    if(wrap) wrap.innerHTML = '<div style="color:var(--muted)">Error: '+e.message+'</div>';
+  }
+}
+
+async function guardarNutriDias() {
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json' };
+  const rows = [...document.querySelectorAll('.nutriDiaSel')].map(sel => ({
+    dia_semana: parseInt(sel.dataset.dia),
+    medico_id:  sel.value || null
+  }));
+  try {
+    // Delete all and reinsert
+    await fetch(SUPABASE_URL+'/rest/v1/nutri_dias', { method:'DELETE', headers:h });
+    const toInsert = rows.filter(r => r.medico_id);
+    if(toInsert.length) {
+      await fetch(SUPABASE_URL+'/rest/v1/nutri_dias', {
+        method:'POST', headers:{...h,'Prefer':'return=minimal'}, body:JSON.stringify(toInsert)
+      });
+    }
+    toast('Configuración guardada ✓','ok');
+  } catch(e) { toast('Error: '+e.message,'err'); }
+}
+
+window.loadNutriDias    = loadNutriDias;
+window.guardarNutriDias = guardarNutriDias;
 
 /* ── HORARIOS POR MÉDICA ── */
 const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -6649,6 +6827,10 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
               <div class="sum-row" id="sumTipoRow" style="display:none"><div class="sum-row-lbl">Consulta</div><div class="sum-row-val" id="sumTipoVal">—</div></div>
               <div class="sum-row" id="sumFechaRow" style="display:none"><div class="sum-row-lbl">Fecha</div><div class="sum-row-val" id="sumFechaVal">—</div></div>
               <div class="sum-row" id="sumHoraRow" style="display:none"><div class="sum-row-lbl">Horario</div><div class="sum-row-val" id="sumHoraVal">—</div></div>
+              <div class="sum-row" id="sumNutriRow" style="display:none;background:rgba(58,125,140,.06);border-radius:8px;padding:.4rem .65rem;margin-top:.25rem">
+                <div class="sum-row-lbl" style="color:var(--teal)">🥗 Nutri</div>
+                <div class="sum-row-val nutri-val" style="font-size:.78rem;color:var(--teal)">—</div>
+              </div>
               <div class="sum-row" id="sumPrecioRow" style="display:none"><div class="sum-row-lbl">Valor</div><div class="sum-row-val" id="sumPrecioVal" style="color:var(--gold)">—</div></div>
             </div>
             <div style="margin-top:auto;border-top:1px solid var(--cream-dk);padding-top:1rem">
@@ -6975,6 +7157,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       <button class="asb-it" onclick="showAP('calendario',this)"><span>📆</span> Calendario</button>
       <button class="asb-it" onclick="showAP('horarios',this)"><span>🕐</span> Horarios bloqueados</button>
       <button class="asb-it" onclick="showAP('medico-horarios',this)"><span>📅</span> Horarios por médica</button>
+      <button class="asb-it" onclick="showAP('nutri-dias',this)"><span>🥗</span> Nutri por día</button>
       <button class="asb-it" onclick="showAP('consultas',this)"><span>💼</span> Tipos de consulta</button>
       <div class="asb-sec">Cuenta</div>
       <button class="asb-it" onclick="goTo('home')"><span>🏠</span> Ver sitio</button>
@@ -7455,6 +7638,15 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         </div>
       </div>
 
+      <!-- NUTRI POR DÍA -->
+      <div id="ap-nutri-dias" class="ap">
+        <p style="font-size:.83rem;color:var(--muted);margin:0 0 1.25rem">Configurá qué nutricionista atiende cada día de la semana. Se asigna automáticamente cuando se reserva una consulta que incluye nutri.</p>
+        <div id="nutriDiasWrap" style="display:flex;flex-direction:column;gap:.5rem;max-width:500px">
+          <div style="text-align:center;padding:2rem;color:var(--muted)">Cargando...</div>
+        </div>
+        <button onclick="guardarNutriDias()" style="margin-top:1.25rem;padding:.6rem 1.5rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar configuración</button>
+      </div>
+
       <!-- HORARIOS POR MÉDICA -->
       <div id="ap-medico-horarios" class="ap">
         <p style="font-size:.83rem;color:var(--muted);margin:0 0 1.25rem">Configurá los días y horarios de atención de cada médica. Esto afecta la disponibilidad en el calendario de turnos.</p>
@@ -7691,6 +7883,25 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         </div>
         <div style="background:rgba(58,125,140,.07);border-radius:10px;padding:.75rem 1rem;font-size:.78rem;color:var(--teal)">
           💡 Los cambios se reflejan en el calendario y la página de turnos automáticamente.
+        </div>
+
+        <!-- NUTRI AUTOMÁTICA -->
+        <div style="border:1.5px solid var(--cream-dk);border-radius:12px;padding:1rem;background:#fff">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+            <div>
+              <div style="font-weight:600;font-size:.88rem;color:#1C1A18">🥗 Consulta con nutricionista incluida</div>
+              <div style="font-size:.73rem;color:var(--muted);margin-top:.15rem">Si activás esto, se genera un turno automático con la nutri del día, 30 min después de la consulta.</div>
+            </div>
+            <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer">
+              <input type="checkbox" id="cIncluyeNutri" style="accent-color:var(--teal);width:16px;height:16px" onchange="toggleNutriOffset()">
+              <span style="font-size:.78rem;color:var(--muted)">Activar</span>
+            </label>
+          </div>
+          <div id="nutriOffsetWrap" style="display:none">
+            <label class="form-label">Minutos después de la consulta médica</label>
+            <input type="number" class="form-input" id="cOffsetNutri" value="30" min="0" max="120" style="width:120px">
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">Ej: si la consulta es a las 14:00 y ponés 30, la nutri atiende a las 14:30.</div>
+          </div>
         </div>
       </div>
     </div>
