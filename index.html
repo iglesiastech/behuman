@@ -1369,7 +1369,7 @@ async function submitBooking(){
               type: BS.tipo, date: BS.fecha, time: nutriHora+':00',
               modalidad: BS.modalidad||'presencial', status: 'confirmed',
               patient_name: nom+' '+apellido, patient_email: email, patient_phone: tel,
-              medico_id: nutriId, price: 0, notes: 'Turno nutri automatico', sena_status: 'paid'
+              medico_id: nutriId, price: 0, notes: 'Turno nutri automatico', sena_status: 'approved'
             })
           });
           if(!rNutri.ok) console.warn('[NUTRI] Error:', await rNutri.text());
