@@ -1347,36 +1347,38 @@ async function submitBooking(){
 
     // Crear turno de nutri automáticamente si la consulta lo requiere
     try {
-      const rCt = await fetch(SUPABASE_URL+'/rest/v1/consultation_types?id=eq.'+BS.tipo+'&select=incluye_nutri,offset_nutri_minutos', {headers:hFetch});
+      const hAnon = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON, 'Content-Type':'application/json', 'Prefer':'return=minimal' };
+      const rCt = await fetch(SUPABASE_URL+'/rest/v1/consultation_types?id=eq.'+BS.tipo+'&select=incluye_nutri,offset_nutri_minutos', {headers:hAnon});
       const ctData = await rCt.json();
       const ct = ctData?.[0];
+      console.log('[NUTRI] incluye_nutri:', ct?.incluye_nutri, 'tipo:', BS.tipo);
       if(ct?.incluye_nutri) {
-        // Buscar nutri del día
         const diaSem = new Date(BS.fecha+'T12:00:00').getDay();
-        const rN = await fetch(SUPABASE_URL+'/rest/v1/nutri_dias?dia_semana=eq.'+diaSem+'&select=medico_id', {headers:hFetch});
+        const rN = await fetch(SUPABASE_URL+'/rest/v1/nutri_dias?dia_semana=eq.'+diaSem+'&select=medico_id', {headers:hAnon});
         const nutriData = await rN.json();
         const nutriId = nutriData?.[0]?.medico_id;
+        console.log('[NUTRI] diaSem:', diaSem, 'nutriId:', nutriId);
         if(nutriId) {
-          // Calcular hora nutri = hora principal + offset
-          const [hh,mm] = BS.hora.split(':').map(Number);
+          const [hh,mm2] = BS.hora.split(':').map(Number);
           const offset = ct.offset_nutri_minutos || 30;
-          const nutriDate = new Date(2000,0,1,hh,mm+offset);
-          const nutriHora = nutriDate.getHours().toString().padStart(2,'0')+':'+nutriDate.getMinutes().toString().padStart(2,'0');
-          await fetch(SUPABASE_URL+'/rest/v1/appointments', {
-            method: 'POST', headers: hFetch,
+          const nd = new Date(2000,0,1,hh,mm2+offset);
+          const nutriHora = nd.getHours().toString().padStart(2,'0')+':'+nd.getMinutes().toString().padStart(2,'0');
+          const rNutri = await fetch(SUPABASE_URL+'/rest/v1/appointments', {
+            method: 'POST', headers: hAnon,
             body: JSON.stringify({
               type: BS.tipo, date: BS.fecha, time: nutriHora+':00',
               modalidad: BS.modalidad||'presencial', status: 'confirmed',
               patient_name: nom+' '+apellido, patient_email: email, patient_phone: tel,
-              medico_id: nutriId, price: 0, notes: 'Turno nutri automático (vinculado a turno médica)',
-              sena_status: 'paid', parent_appt_id: appt?.id || null
+              medico_id: nutriId, price: 0, notes: 'Turno nutri automatico', sena_status: 'paid'
             })
           });
+          if(!rNutri.ok) console.warn('[NUTRI] Error:', await rNutri.text());
+          else console.log('[NUTRI] Turno creado OK a las', nutriHora);
         }
       }
-    } catch(e2) { console.warn('Error creando turno nutri:', e2.message); }
+    } catch(e2) { console.warn('[NUTRI] Exception:', e2.message); }
 
-    // Crear ficha si no existe
+    // Crear ficha si no existe (en segundo plano)
     setTimeout(async () => {
       try {
         const rF = await fetch(SUPABASE_URL+'/rest/v1/fichas_medicas?patient_email=eq.'+encodeURIComponent(email)+'&select=id&limit=1', {headers:hFetch});
