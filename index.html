@@ -312,16 +312,19 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
 .sum-row-val{font-size:.9rem;font-weight:500;color:var(--dark)}
 .sum-empty{font-size:.82rem;color:var(--muted);font-style:italic;text-align:center;padding:.75rem 0}
 .tipo-options{display:flex;flex-direction:column;gap:.9rem}
-.tipo-opt{display:flex;align-items:center;gap:1.1rem;padding:1.1rem 1.4rem;border:2px solid var(--cream-dk);border-radius:16px;cursor:pointer;transition:var(--tf);background:#fff}
-.tipo-opt:hover{border-color:var(--teal)}
-.tipo-opt.selected{border-color:var(--teal);background:rgba(58,125,140,.04)}
-.tipo-icon{font-size:1.6rem;width:44px;flex-shrink:0}
+.tipo-opt{display:flex;align-items:center;gap:1.1rem;padding:1.1rem 1.25rem;border:2px solid var(--cream-dk);border-radius:16px;cursor:pointer;transition:.18s;background:#fff;width:100%;text-align:left;font-family:var(--fb)}
+.tipo-opt:hover{border-color:var(--teal);background:rgba(58,125,140,.03);transform:translateY(-1px);box-shadow:0 4px 16px rgba(58,125,140,.1)}
+.tipo-opt.selected{border-color:var(--teal);background:rgba(58,125,140,.06)}
+.tipo-icon{font-size:1.6rem;width:44px;flex-shrink:0;text-align:center}
 .tipo-info{flex:1}
-.tipo-name{font-weight:600;font-size:.9rem;margin-bottom:.15rem}
-.tipo-desc{font-size:.78rem;color:var(--muted)}
-.tipo-price{font-family:var(--fd);font-size:1.15rem;color:var(--gold);white-space:nowrap}
-.tipo-check{width:19px;height:19px;border-radius:50%;border:2px solid var(--cream-dk);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--teal);transition:var(--tf);flex-shrink:0}
+.tipo-name{font-weight:700;font-size:.95rem;color:#1C1A18;margin-bottom:.2rem}
+.tipo-desc{font-size:.78rem;color:var(--muted);line-height:1.5}
+.tipo-price{font-family:var(--fd);font-size:1rem;font-weight:700;color:var(--teal);white-space:nowrap;flex-shrink:0}
+.tipo-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--cream-dk);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--teal);transition:.18s;flex-shrink:0}
 .tipo-opt.selected .tipo-check{background:var(--teal);border-color:var(--teal);color:#fff}
+.modalidad-btn{padding:1.25rem 1rem;border:2px solid var(--cream-dk);border-radius:14px;cursor:pointer;text-align:center;transition:.18s;background:#fff;font-family:var(--fb);width:100%}
+.modalidad-btn:hover{border-color:var(--teal);background:rgba(58,125,140,.04);transform:translateY(-1px)}
+.modalidad-btn.selected{border-color:var(--teal);background:rgba(58,125,140,.07)}
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
 .cal-nav{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--cream-dk);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--tf);font-size:.85rem;background:none}
 .cal-nav:hover{background:var(--cream-dk)}
@@ -873,39 +876,29 @@ function selTipo(el){
   BS.modalidad  = null;
   BS.medicoId   = null;
   BS.medicoNombre = null;
+  BS.diasPermitidos = null;
 
-  // Mostrar selector de modalidad si la consulta tiene "ambas"
   const modalidad = el.dataset.modalidad || 'ambas';
   const wrap = document.getElementById('modalidadWrap');
-
   if(modalidad === 'ambas') {
     wrap.style.display = '';
-    // Deshabilitar continuar hasta que elija modalidad
-    const btn = document.getElementById('btnBs1');
-    btn.disabled = true; btn.style.opacity = '.5'; btn.style.cursor = 'not-allowed';
+    document.querySelectorAll('.modalidad-btn').forEach(b=>b.classList.remove('selected'));
+    setTimeout(()=>wrap.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
   } else {
     wrap.style.display = 'none';
     BS.modalidad = modalidad;
-    // Si no hay que elegir, habilitar continuar
-    const btn = document.getElementById('btnBs1');
-    btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
+    updateSum();
+    setTimeout(()=>bGoTo(2), 300);
   }
   updateSum();
 }
 
-function selModalidad(mod) {
+function selModalidad(mod, btn) {
   BS.modalidad = mod;
-  ['presencial','virtual'].forEach(m => {
-    const el = document.getElementById('mod-'+m);
-    if(!el) return;
-    const sel = m === mod;
-    el.style.borderColor  = sel ? 'var(--teal)' : 'var(--cream-dk)';
-    el.style.background   = sel ? 'rgba(58,125,140,.05)' : '#fff';
-  });
-  // Habilitar continuar
-  const btn = document.getElementById('btnBs1');
-  btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
+  document.querySelectorAll('.modalidad-btn').forEach(b=>b.classList.remove('selected'));
+  if(btn) btn.classList.add('selected');
   updateSum();
+  setTimeout(()=>bGoTo(2), 350);
 }
 
 /* ── SELECCIÓN DE MÉDICA ── */
@@ -1143,11 +1136,42 @@ async function selDate(ds){
   try {
     const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
 
-    let apptUrl = SUPABASE_URL+'/rest/v1/appointments?date=eq.'+ds+'&select=time&status=neq.cancelled';
+    // Traer turnos del día con duración de la consulta
+    let apptUrl = SUPABASE_URL+'/rest/v1/appointments?date=eq.'+ds+'&select=time,type&status=neq.cancelled';
     if(BS.medicoId) apptUrl += '&medico_id=eq.'+BS.medicoId;
     const r1 = await fetch(apptUrl, {headers:h});
     const appts = await r1.json();
-    ocupados = Array.isArray(appts) ? appts.map(a=>(a.time||'').slice(0,5)) : [];
+
+    // Traer duraciones de los tipos de consulta
+    const rCt = await fetch(SUPABASE_URL+'/rest/v1/consultation_types?select=id,duracion', {headers:h});
+    const ctList = await rCt.json();
+    const durMap = {};
+    (Array.isArray(ctList)?ctList:[]).forEach(ct => {
+      // Parsear duración: "60 min" → 60, "30 min" → 30
+      const m = (ct.duracion||'').match(/(\d+)/);
+      durMap[ct.id] = m ? parseInt(m[1]) : 30;
+    });
+
+    // Para cada turno, bloquear todos los slots dentro de su duración
+    const ocupadosSet = new Set();
+    (Array.isArray(appts)?appts:[]).forEach(a => {
+      const timeStr = (a.time||'').slice(0,5);
+      if(!timeStr) return;
+      const [hh,mm] = timeStr.split(':').map(Number);
+      const dur = durMap[a.type] || 30;
+      // Bloquear desde el inicio hasta el fin del turno
+      ALL_SLOTS.forEach(slot => {
+        const [sh,sm] = slot.split(':').map(Number);
+        const slotMin  = sh*60+sm;
+        const startMin = hh*60+mm;
+        const endMin   = startMin+dur;
+        // Slot está ocupado si cae dentro del rango [start, end)
+        if(slotMin >= startMin && slotMin < endMin) {
+          ocupadosSet.add(slot);
+        }
+      });
+    });
+    ocupados = [...ocupadosSet];
 
     let blockUrl = SUPABASE_URL+'/rest/v1/blocked_slots?date=eq.'+ds+'&select=time,todo_el_dia';
     if(BS.medicoId) blockUrl += '&or=(medico_id.eq.'+BS.medicoId+',medico_id.is.null)';
@@ -1253,9 +1277,14 @@ async function validarYContinuar() {
 
     if(requierePrevio) {
       // Verificar si tiene ficha médica con ese email
-      const r2 = await fetch(`${SUPABASE_URL}/rest/v1/fichas_medicas?patient_email=eq.${encodeURIComponent(email)}&select=id&limit=1`, {headers:h});
+      // Verificar si tiene turnos anteriores confirmados O ficha médica
+      const [r2, r3] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/fichas_medicas?patient_email=eq.${encodeURIComponent(email)}&select=id&limit=1`, {headers:h}),
+        fetch(`${SUPABASE_URL}/rest/v1/appointments?patient_email=eq.${encodeURIComponent(email)}&status=in.(confirmed,completed)&select=id&limit=1`, {headers:h})
+      ]);
       const fichas = await r2.json();
-      const esPrevio = Array.isArray(fichas) && fichas.length > 0;
+      const prevAppts = await r3.json();
+      const esPrevio = (Array.isArray(fichas) && fichas.length > 0) || (Array.isArray(prevAppts) && prevAppts.length > 0);
 
       if(!esPrevio) {
         btn.disabled = false; btn.textContent = 'Continuar → Seña';
@@ -2642,11 +2671,7 @@ async function loadCalData() {
 
     let apptUrl = `${SUPABASE_URL}/rest/v1/appointments?date=gte.${firstDay}&date=lte.${lastDay}&order=time&limit=500`;
     if(calState.medicoId) {
-      if(consultaIds.length) {
-        apptUrl += `&or=(medico_id.eq.${calState.medicoId},type.in.(${consultaIds.join(',')}))`;
-      } else {
-        apptUrl += `&medico_id=eq.${calState.medicoId}`;
-      }
+      apptUrl += `&medico_id=eq.${calState.medicoId}`;
     }
     const r1 = await fetch(apptUrl, {headers:h});
     const appts = await r1.json();
@@ -4668,12 +4693,12 @@ async function loadConsultasEnTurnos() {
     const precioMin  = minPrecio ? Math.min(minPrecio, precioBase||Infinity) : precioBase;
     const variantes  = minPrecio && minPrecio !== precioBase;
     const label      = precioMin > 0 ? (variantes?'Desde ':'')+fmt(precioMin) : 'A confirmar';
-    return '<div class="tipo-opt" data-tipo="'+c.id+'" data-precio="'+(precioMin||0)+'" data-dur="'+(c.duracion||'45 min')+'" data-modalidad="'+(c.modalidad||'ambas')+'" onclick="selTipo(this)">'
+    return '<button class="tipo-opt" data-tipo="'+c.id+'" data-precio="'+(precioMin||0)+'" data-dur="'+(c.duracion||'45 min')+'" data-modalidad="'+(c.modalidad||'ambas')+'" onclick="selTipo(this)">'
       +'<div class="tipo-icon">'+(c.icono||'📋')+'</div>'
       +'<div class="tipo-info"><div class="tipo-name">'+c.nombre+'</div><div class="tipo-desc">'+(c.descripcion||'')+' · '+(c.duracion||'')+'</div></div>'
       +'<div class="tipo-price">'+label+'</div>'
-      +'<div class="tipo-check">✓</div>'
-    +'</div>';
+      +'<div class="tipo-check">→</div>'
+    +'</button>';
   }).join('');
 }
 
@@ -6607,12 +6632,10 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
      TURNOS PAGE
 ════════════════════════════════════════════ -->
 <div class="page" id="page-turnos">
-  <div class="page-hero" style="padding-bottom:4rem">
-    <div class="container page-hero-content" style="text-align:center">
-      <span style="font-size:.67rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:rgba(201,147,90,.7);display:block;margin-bottom:.65rem">Reservá tu espacio</span>
-      <h1>Reservar turno</h1>
-      <p style="margin:0 auto">Elegí tipo de consulta, día y horario. Confirmamos por WhatsApp.</p>
-    </div>
+  <div style="background:#1C1A18;padding:4rem 1.5rem 3rem;text-align:center">
+    <span style="font-size:.65rem;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:.75rem">Reservá tu espacio</span>
+    <h1 style="font-family:var(--fd);font-size:clamp(2rem,4vw,3rem);color:#F0E8D8;margin:0 0 .75rem">Reservar turno</h1>
+    <p style="font-size:.95rem;color:rgba(240,232,216,.5);margin:0 auto;max-width:480px">Elegí consulta, médica y horario. Confirmamos por WhatsApp.</p>
   </div>
 
   <div class="booking-wrap">
@@ -6637,70 +6660,31 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 
             <!-- STEP 1 -->
             <div id="bstep1">
-              <h3 style="font-family:var(--fd);font-size:1.2rem;margin-bottom:.4rem">¿Qué tipo de consulta?</h3>
-              <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.4rem">Por videollamada o presencial en Buenos Aires.</p>
-              <div class="tipo-options" id="tipoOptions">
-                <!-- Se carga desde Supabase. Fallback: las 6 consultas reales -->
-                <div class="tipo-opt" data-tipo="integral" data-precio="0" data-dur="60 min" data-modalidad="ambas" onclick="selTipo(this)">
-                  <div class="tipo-icon">🔬</div>
-                  <div class="tipo-info"><div class="tipo-name">Consulta Integral – Medicina Funcional</div><div class="tipo-desc">Historia clínica completa, evaluación funcional, plan nutricional y estrategia terapéutica · 60 min</div></div>
-                  <div class="tipo-price">A confirmar</div>
-                  <div class="tipo-check">✓</div>
-                </div>
-                <div class="tipo-opt" data-tipo="seguimiento" data-precio="0" data-dur="45 min" data-modalidad="ambas" onclick="selTipo(this)">
-                  <div class="tipo-icon">📊</div>
-                  <div class="tipo-info"><div class="tipo-name">Consulta de Seguimiento</div><div class="tipo-desc">Evaluación de evolución, ajustes de plan y revisión de adherencia · 45 min</div></div>
-                  <div class="tipo-price">A confirmar</div>
-                  <div class="tipo-check">✓</div>
-                </div>
-                <div class="tipo-opt" data-tipo="nutricional" data-precio="0" data-dur="45 min" data-modalidad="ambas" onclick="selTipo(this)">
-                  <div class="tipo-icon">🥗</div>
-                  <div class="tipo-info"><div class="tipo-name">Consulta Nutricional</div><div class="tipo-desc">Planificación alimentaria personalizada, evaluación de hábitos y plan nutricional · 45 min</div></div>
-                  <div class="tipo-price">A confirmar</div>
-                  <div class="tipo-check">✓</div>
-                </div>
-                <div class="tipo-opt" data-tipo="espontanea" data-precio="0" data-dur="20 min" data-modalidad="ambas" onclick="selTipo(this)">
-                  <div class="tipo-icon">💬</div>
-                  <div class="tipo-info"><div class="tipo-name">Consulta Espontánea</div><div class="tipo-desc">Resolución de dudas puntuales · Solo pacientes previos · 20 min</div></div>
-                  <div class="tipo-price">A confirmar</div>
-                  <div class="tipo-check">✓</div>
-                </div>
-                <div class="tipo-opt" data-tipo="pediatrica" data-precio="0" data-dur="60 min" data-modalidad="ambas" onclick="selTipo(this)">
-                  <div class="tipo-icon">👶</div>
-                  <div class="tipo-info"><div class="tipo-name">Consulta Pediátrica</div><div class="tipo-desc">Consulta integral en niños, evaluación clínica y estrategia nutricional · 60 min</div></div>
-                  <div class="tipo-price">A confirmar</div>
-                  <div class="tipo-check">✓</div>
-                </div>
-                <div class="tipo-opt" data-tipo="inbody" data-precio="0" data-dur="20 min" data-modalidad="presencial" onclick="selTipo(this)">
-                  <div class="tipo-icon">⚖️</div>
-                  <div class="tipo-info"><div class="tipo-name">Medición InBody</div><div class="tipo-desc">Composición corporal: masa muscular, grasa, agua y metabolismo · Presencial · 20 min</div></div>
-                  <div class="tipo-price">A confirmar</div>
-                  <div class="tipo-check">✓</div>
-                </div>
+              <div style="margin-bottom:1.5rem">
+                <h3 style="font-family:var(--fd);font-size:1.35rem;color:#1C1A18;margin:0 0 .3rem">¿Qué tipo de consulta?</h3>
+                <p style="font-size:.83rem;color:var(--muted);margin:0">Hacé clic en la consulta que necesitás para continuar.</p>
+              </div>
+              <div id="tipoOptions" style="display:flex;flex-direction:column;gap:.75rem">
+                <!-- Se carga dinámicamente -->
               </div>
 
-              <!-- Selector modalidad — aparece solo si la consulta tiene "ambas" -->
-              <div id="modalidadWrap" style="display:none;margin-top:1.25rem">
-                <div style="font-size:.8rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.65rem">Modalidad de la consulta *</div>
-                <div style="display:flex;gap:.75rem">
-                  <div id="mod-presencial" onclick="selModalidad('presencial')" style="flex:1;padding:1rem;border:2px solid var(--cream-dk);border-radius:14px;cursor:pointer;text-align:center;transition:.18s">
-                    <div style="font-size:1.4rem;margin-bottom:.35rem">📍</div>
-                    <div style="font-size:.85rem;font-weight:600">Presencial</div>
-                    <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">En el consultorio</div>
-                  </div>
-                  <div id="mod-virtual" onclick="selModalidad('virtual')" style="flex:1;padding:1rem;border:2px solid var(--cream-dk);border-radius:14px;cursor:pointer;text-align:center;transition:.18s">
-                    <div style="font-size:1.4rem;margin-bottom:.35rem">💻</div>
-                    <div style="font-size:.85rem;font-weight:600">Virtual</div>
-                    <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">Por videollamada</div>
-                  </div>
+              <!-- Modalidad — oculta hasta elegir tipo -->
+              <div id="modalidadWrap" style="display:none;margin-top:1.75rem">
+                <h3 style="font-family:var(--fd);font-size:1.1rem;color:#1C1A18;margin:0 0 1rem">¿Cómo querés atenderte?</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
+                  <button class="modalidad-btn" id="modPresencial" onclick="selModalidad('presencial',this)">
+                    <div style="font-size:1.75rem;margin-bottom:.5rem">📍</div>
+                    <div style="font-weight:700;font-size:.95rem;color:#1C1A18">Presencial</div>
+                    <div style="font-size:.76rem;color:var(--muted);margin-top:.2rem">En el consultorio</div>
+                  </button>
+                  <button class="modalidad-btn" id="modVirtual" onclick="selModalidad('virtual',this)">
+                    <div style="font-size:1.75rem;margin-bottom:.5rem">💻</div>
+                    <div style="font-weight:700;font-size:.95rem;color:#1C1A18">Virtual</div>
+                    <div style="font-size:.76rem;color:var(--muted);margin-top:.2rem">Por videollamada</div>
+                  </button>
                 </div>
-              </div>
-
-              <div style="margin-top:1.75rem;display:flex;justify-content:flex-end">
-                <button class="btn-teal" id="btnBs1" onclick="bGoTo(2)" disabled style="opacity:.5;padding:.82rem 1.8rem;border-radius:100px;font-family:var(--fb);font-size:.76rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--teal);color:#fff;border:none;cursor:not-allowed">Continuar →</button>
               </div>
             </div>
-
             <!-- STEP 1.5 — SELECCIÓN MÉDICA -->
             <div id="bstep15" style="display:none">
               <h3 style="font-family:var(--fd);font-size:1.15rem;color:#1C1A18;margin:0 0 .35rem">¿Con quién querés atenderte?</h3>
@@ -7552,7 +7536,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         .cal-appt-pill{font-size:.65rem;font-weight:600;padding:.18rem .45rem;border-radius:4px;margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.3}
         .cal-blocked-pill{font-size:.62rem;padding:.15rem .4rem;border-radius:4px;margin-bottom:.2rem;background:rgba(196,97,74,.12);color:#C4614A;border-left:2px solid #C4614A}
         /* Panel lateral */
-        .cal-side{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(28,26,24,.07);overflow:hidden;position:sticky;top:90px;max-height:calc(100vh - 120px);display:flex;flex-direction:column}
+        .cal-side{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(28,26,24,.07);position:sticky;top:90px;max-height:calc(100vh - 120px);display:flex;flex-direction:column}
         .cal-side-head{padding:1rem 1.25rem;border-bottom:1px solid var(--cream-dk);background:var(--cream);flex-shrink:0}
         .cal-side-title{font-family:var(--fd);font-size:1rem}
         .cal-side-body{padding:1.1rem;overflow-y:auto;display:flex;flex-direction:column;gap:.65rem;flex:1}
