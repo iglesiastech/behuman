@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!-- v2.4 -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -292,9 +292,9 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
 /* ════════════════════════════════
    TURNOS PAGE
 ════════════════════════════════ */
-.booking-wrap{max-width:920px;margin:0 auto;padding:0 1.5rem 4rem}
-.booking-card{background:#fff;border-radius:28px;box-shadow:var(--sh2);overflow:hidden;margin-top:-3rem;position:relative;z-index:5}
-.booking-steps-bar{background:var(--cream);padding:1.4rem 2rem;border-bottom:1px solid var(--cream-dk)}
+.booking-wrap{max-width:1060px;margin:0 auto;padding:0 1.5rem 4rem}
+.booking-card{background:#fff;border-radius:24px;box-shadow:0 8px 40px rgba(28,26,24,.12);overflow:hidden;margin-top:-2.5rem;position:relative;z-index:5}
+.booking-steps-bar{background:var(--cream);padding:1.25rem 2rem;border-bottom:1px solid var(--cream-dk)}
 .steps{display:flex;align-items:center;overflow:hidden}
 .step{display:flex;align-items:center;gap:.5rem;flex-shrink:0}
 .step-num{width:32px;height:32px;border-radius:50%;border:2px solid var(--cream-dk);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;color:var(--muted);transition:var(--tr);flex-shrink:0;background:#fff}
@@ -312,19 +312,20 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
 .sum-row-val{font-size:.9rem;font-weight:500;color:var(--dark)}
 .sum-empty{font-size:.82rem;color:var(--muted);font-style:italic;text-align:center;padding:.75rem 0}
 .tipo-options{display:flex;flex-direction:column;gap:.9rem}
-.tipo-opt{display:flex;align-items:center;gap:1.1rem;padding:1.1rem 1.25rem;border:2px solid var(--cream-dk);border-radius:16px;cursor:pointer;transition:.18s;background:#fff;width:100%;text-align:left;font-family:var(--fb)}
-.tipo-opt:hover{border-color:var(--teal);background:rgba(58,125,140,.03);transform:translateY(-1px);box-shadow:0 4px 16px rgba(58,125,140,.1)}
-.tipo-opt.selected{border-color:var(--teal);background:rgba(58,125,140,.06)}
-.tipo-icon{font-size:1.6rem;width:44px;flex-shrink:0;text-align:center}
+.blog-section-card{background:#fff;border-radius:14px;border:1.5px solid var(--cream-dk);padding:1.25rem;margin-bottom:1rem}
+.blog-section-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.85rem}gap:1.1rem;padding:1.25rem 1.4rem;border:2px solid var(--cream-dk);border-radius:16px;cursor:pointer;transition:.2s;background:#fff;width:100%;text-align:left;font-family:var(--fb)}
+.tipo-opt:hover{border-color:var(--teal);background:rgba(58,125,140,.03);transform:translateY(-2px);box-shadow:0 6px 20px rgba(58,125,140,.1)}
+.tipo-opt.selected{border-color:var(--teal);background:rgba(58,125,140,.05);box-shadow:0 4px 16px rgba(58,125,140,.12)}
+.tipo-icon{font-size:1.75rem;width:48px;height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--cream);border-radius:12px}
 .tipo-info{flex:1}
-.tipo-name{font-weight:700;font-size:.95rem;color:#1C1A18;margin-bottom:.2rem}
+.tipo-name{font-weight:700;font-size:.98rem;color:#1C1A18;margin-bottom:.25rem}
 .tipo-desc{font-size:.78rem;color:var(--muted);line-height:1.5}
-.tipo-price{font-family:var(--fd);font-size:1rem;font-weight:700;color:var(--teal);white-space:nowrap;flex-shrink:0}
-.tipo-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--cream-dk);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--teal);transition:.18s;flex-shrink:0}
-.tipo-opt.selected .tipo-check{background:var(--teal);border-color:var(--teal);color:#fff}
-.modalidad-btn{padding:1.25rem 1rem;border:2px solid var(--cream-dk);border-radius:14px;cursor:pointer;text-align:center;transition:.18s;background:#fff;font-family:var(--fb);width:100%}
-.modalidad-btn:hover{border-color:var(--teal);background:rgba(58,125,140,.04);transform:translateY(-1px)}
-.modalidad-btn.selected{border-color:var(--teal);background:rgba(58,125,140,.07)}
+.tipo-price{font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--teal);white-space:nowrap;flex-shrink:0}
+.tipo-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--cream-dk);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--teal);transition:.18s;flex-shrink:0}
+.tipo-opt.selected .tipo-check{background:var(--teal);border-color:var(--teal);color:#fff;content:'✓'}
+.modalidad-btn{padding:1.5rem 1.25rem;border:2px solid var(--cream-dk);border-radius:16px;cursor:pointer;text-align:center;transition:.2s;background:#fff;font-family:var(--fb);width:100%}
+.modalidad-btn:hover{border-color:var(--teal);background:rgba(58,125,140,.04);transform:translateY(-2px);box-shadow:0 4px 14px rgba(58,125,140,.1)}
+.modalidad-btn.selected{border-color:var(--teal);background:rgba(58,125,140,.07);box-shadow:0 4px 14px rgba(58,125,140,.12)}
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
 .cal-nav{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--cream-dk);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--tf);font-size:.85rem;background:none}
 .cal-nav:hover{background:var(--cream-dk)}
@@ -500,6 +501,8 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
   .login-left{display:none}
   .login-right{min-height:100vh}
   .grid-2{grid-template-columns:1fr}
+  #page-turnos>div:first-child{grid-template-columns:1fr!important}
+  #page-turnos>div:first-child>div:first-child{display:none!important}
 }
 @media(max-width:480px){
   .products-grid{grid-template-columns:1fr}
@@ -508,6 +511,7 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
   .step-line{min-width:8px}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 <script>
@@ -705,7 +709,7 @@ function getSB() { return sb(); }
 })();
 
 /* ══ NAVIGATION ══ */
-const PAGES = ['home','programas','tienda','turnos','checkout','login','admin','admin-fichas','portal','programa-detalle','prog-checkout','prog-landing'];
+const PAGES = ['home','programas','tienda','turnos','checkout','login','admin','admin-fichas','portal','programa-detalle','prog-checkout','prog-landing','blog','blog-post'];
 function goTo(id){
   PAGES.forEach(p => {
     const el = document.getElementById('page-'+p);
@@ -736,6 +740,7 @@ function goTo(id){
   if(id==='programa-detalle')  {}
   if(id==='prog-checkout')     initProgCheckout();
   if(id==='programas')         loadProgramasPage();
+  if(id==='blog')              loadBlogPage();
 }
 function closeMob(){ document.getElementById('mobMenu').classList.remove('open'); }
 
@@ -1733,7 +1738,7 @@ async function doForgot(){
 
 /* ══ CHECK SESSION AL ABRIR LA PÁGINA DE LOGIN ══ */
 /* ══ ADMIN JS ══ */
-const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas','programas-adm':'Programas','ordenes-programas':'Órdenes de programas',usuarios:'Usuarios',suplementos:'Suplementos',testis:'Testimonios',calendario:'Calendario','medico-horarios':'Horarios por médica','nutri-dias':'Nutri por día',horarios:'Horarios bloqueados',consultas:'Tipos de consulta'};
+const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas','programas-adm':'Programas','ordenes-programas':'Órdenes de programas',usuarios:'Usuarios',suplementos:'Suplementos',blog:'Blog',testis:'Testimonios',calendario:'Calendario','medico-horarios':'Horarios por médica','nutri-dias':'Nutri por día',horarios:'Horarios bloqueados',consultas:'Tipos de consulta'};
 
 const AMONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const AMONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -1762,6 +1767,7 @@ function showAP(id, btn) {
   if (id==='ordenes-programas') loadOrdenesProgramas();
   if (id==='usuarios')          loadUsuarios();
   if (id==='suplementos')       loadAdmSuplementos();
+  if (id==='blog')              loadAdmBlog();
   if (id==='dash')     loadADash();
 }
 
@@ -1946,33 +1952,209 @@ async function rechazarSena(id) {
 }
 
 /* ── DASHBOARD ── */
+let _dashPeriod = 'mes';
+let _dashRevenueChart = null;
+let _dashConsultaChart = null;
+
+function setDashPeriod(period, btn) {
+  _dashPeriod = period;
+  document.querySelectorAll('.dash-period-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  loadADash();
+}
+window.setDashPeriod = setDashPeriod;
+
 async function loadADash() {
-  const sb = getSB(); if (!sb) return;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')||SUPABASE_ANON) };
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  // Calcular rango de fechas
+  let desde, hasta = todayStr;
+  let chartLabel = '';
+  if(_dashPeriod === 'dia') { desde = todayStr; chartLabel = 'hoy'; }
+  else if(_dashPeriod === 'semana') { const d=new Date(today); d.setDate(d.getDate()-6); desde=d.toISOString().split('T')[0]; chartLabel='últimos 7 días'; }
+  else if(_dashPeriod === 'mes') { const d=new Date(today); d.setDate(d.getDate()-29); desde=d.toISOString().split('T')[0]; chartLabel='últimos 30 días'; }
+  else { const d=new Date(today); d.setFullYear(d.getFullYear()-1); desde=d.toISOString().split('T')[0]; chartLabel='último año'; }
+
+  const cp = document.getElementById('dashChartPeriod'); if(cp) cp.textContent = chartLabel;
+  const dd = document.getElementById('dashTodayDate');
+  if(dd) dd.textContent = today.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const [{ count: tc }, { count: mc }, { count: pc }, { count: sc }] = await Promise.all([
-      sb.from('appointments').select('*',{count:'exact',head:true}).eq('date',today),
-      sb.from('fichas_medicas').select('*',{count:'exact',head:true}),
-      sb.from('appointments').select('*',{count:'exact',head:true}).eq('sena_status','pending').eq('sena_method','transferencia'),
-      sb.from('appointments').select('*',{count:'exact',head:true}).eq('status','pending'),
+    // Cargar datos en paralelo
+    const [rAppts, rOrders, rConsultas, rMedicos] = await Promise.all([
+      fetch(SUPABASE_URL+'/rest/v1/appointments?date=gte.'+desde+'&date=lte.'+hasta+'&select=date,price,status,type,medico_id,sena_amount,sena_status,patient_name,time,modalidad&limit=1000', {headers:h}).then(r=>r.json()),
+      fetch(SUPABASE_URL+'/rest/v1/orders?created_at=gte.'+desde+'T00:00:00&select=amount,status,program_id&limit=500', {headers:h}).then(r=>r.json()),
+      fetch(SUPABASE_URL+'/rest/v1/consultation_types?select=id,nombre,icono&activo=eq.true', {headers:h}).then(r=>r.json()),
+      fetch(SUPABASE_URL+'/rest/v1/medicos?activo=eq.true&select=id,nombre,color', {headers:h}).then(r=>r.json()),
     ]);
-    document.getElementById('admSG').innerHTML = `
-      <div class="asc go"><div class="asc-l">Turnos hoy</div><div class="asc-v">${tc||0}</div></div>
-      <div class="asc te"><div class="asc-l">Fichas médicas</div><div class="asc-v">${mc||0}</div></div>
-      <div class="asc" style="border-left:3px solid #D4853A"><div class="asc-l">Señas pendientes</div><div class="asc-v" style="color:#D4853A">${pc||0}</div></div>
-      <div class="asc re"><div class="asc-l">Turnos sin confirmar</div><div class="asc-v">${sc||0}</div></div>`;
-    // Badge en botón señas
-    const db = document.getElementById('dashSenasBadge');
-    if(db && pc > 0) db.textContent = pc + ' pendiente' + (pc>1?'s':'');
-    // Badge sidebar
-    const sb2 = document.getElementById('senasBadge');
-    if(sb2){ sb2.textContent=pc||0; sb2.style.display=(pc||0)>0?'':'none'; }
+
+    const appts   = Array.isArray(rAppts)   ? rAppts   : [];
+    const orders  = Array.isArray(rOrders)  ? rOrders  : [];
+    const ctypes  = Array.isArray(rConsultas)? rConsultas : [];
+    const medicos = Array.isArray(rMedicos)  ? rMedicos  : [];
+    const ctMap   = {}; ctypes.forEach(c=>ctMap[c.id]=c);
+    const medMap  = {}; medicos.forEach(m=>medMap[m.id]=m);
+
+    // Turnos confirmados/completados
+    const confirmedAppts = appts.filter(a=>['confirmed','completed'].includes(a.status));
+    const pendientes     = appts.filter(a=>['pending','pending_transfer'].includes(a.status));
+
+    // Ingresos
+    const ingresosTurnos   = confirmedAppts.reduce((s,a)=>s+(a.price||0),0);
+    const ingresosPrograms = orders.filter(o=>o.status==='approved').reduce((s,o)=>s+(o.amount||0),0);
+    const totalIngresos    = ingresosTurnos + ingresosPrograms;
+    const senasCobradas    = appts.filter(a=>a.sena_status==='approved').reduce((s,a)=>s+(a.sena_amount||0),0);
+
+    // KPIs
+    const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+    set('dkTotal',       fmt(totalIngresos));
+    set('dkTotalSub',    confirmedAppts.length+' turnos + '+orders.filter(o=>o.status==='approved').length+' programas');
+    set('dkTurnos',      fmt(ingresosTurnos));
+    set('dkTurnosSub',   confirmedAppts.length+' confirmados');
+    set('dkProgramas',   fmt(ingresosPrograms));
+    set('dkProgramasSub',orders.length+' inscripciones');
+    set('dkSenas',       fmt(senasCobradas));
+    set('dkPendientes',  pendientes.length);
+    set('dashSenasBadge', appts.filter(a=>a.sena_status==='pending').length||'');
+
+    // ── GRÁFICO DE INGRESOS POR DÍA ──
+    const dayMap = {};
+    confirmedAppts.forEach(a => { dayMap[a.date]=(dayMap[a.date]||0)+(a.price||0); });
+    orders.filter(o=>o.status==='approved').forEach(o => {
+      const d=(o.created_at||'').split('T')[0];
+      if(d) dayMap[d]=(dayMap[d]||0)+(o.amount||0);
+    });
+
+    // Generar labels según período
+    const labels=[], vals=[];
+    if(_dashPeriod==='dia') {
+      labels.push(todayStr); vals.push(dayMap[todayStr]||0);
+    } else {
+      const days = _dashPeriod==='semana'?7:_dashPeriod==='mes'?30:365;
+      const step = days>60 ? 7 : 1;
+      for(let i=days-1;i>=0;i-=step) {
+        const d=new Date(today); d.setDate(d.getDate()-i);
+        const ds=d.toISOString().split('T')[0];
+        const label = days>60 ? d.toLocaleDateString('es-AR',{day:'numeric',month:'short'}) : d.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+        labels.push(label);
+        if(step>1) {
+          let sum=0;
+          for(let j=0;j<step;j++) { const d2=new Date(d); d2.setDate(d2.getDate()+j); sum+=(dayMap[d2.toISOString().split('T')[0]]||0); }
+          vals.push(sum);
+        } else {
+          vals.push(dayMap[ds]||0);
+        }
+      }
+    }
+
+    const ctx1 = document.getElementById('dashRevenueChart');
+    if(ctx1) {
+      if(_dashRevenueChart) _dashRevenueChart.destroy();
+      _dashRevenueChart = new Chart(ctx1, {
+        type:'bar',
+        data:{ labels, datasets:[{
+          label:'Ingresos',
+          data: vals,
+          backgroundColor:'rgba(58,125,140,.7)',
+          borderColor:'rgba(58,125,140,1)',
+          borderWidth:1.5,
+          borderRadius:6,
+        }]},
+        options:{
+          responsive:true,
+          plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
+          scales:{
+            y:{ticks:{callback:v=>v>=1000?(v/1000).toFixed(0)+'k':v, font:{size:10}}, grid:{color:'rgba(0,0,0,.05)'}},
+            x:{ticks:{font:{size:9},maxRotation:45}, grid:{display:false}}
+          }
+        }
+      });
+    }
+
+    // ── DONUT POR TIPO DE CONSULTA ──
+    const typeCounts = {};
+    appts.forEach(a => { typeCounts[a.type]=(typeCounts[a.type]||0)+1; });
+    const typeEntries = Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]);
+    const COLORS = ['#3A7D8C','#D4853A','#9B6BD4','#4A9B6F','#C4614A','#6B8FB5'];
+
+    const ctx2 = document.getElementById('dashConsultaChart');
+    if(ctx2 && typeEntries.length) {
+      if(_dashConsultaChart) _dashConsultaChart.destroy();
+      _dashConsultaChart = new Chart(ctx2, {
+        type:'doughnut',
+        data:{
+          labels: typeEntries.map(([k])=>ctMap[k]?.nombre||k),
+          datasets:[{ data:typeEntries.map(([,v])=>v), backgroundColor:COLORS, borderWidth:2 }]
+        },
+        options:{ responsive:true, plugins:{legend:{display:false}}, cutout:'65%' }
+      });
+      const leg = document.getElementById('dashConsultaLegend');
+      if(leg) leg.innerHTML = typeEntries.map(([k,v],i)=>
+        '<div style="display:flex;align-items:center;gap:.4rem"><div style="width:8px;height:8px;border-radius:50%;background:'+COLORS[i]+';flex-shrink:0"></div>'
+        +'<span style="flex:1;color:#3A3530">'+( ctMap[k]?.nombre||k)+'</span>'
+        +'<span style="font-weight:600;color:#1C1A18">'+v+'</span></div>'
+      ).join('');
+    }
+
+    // ── TOP CONSULTAS ──
+    const topConsultas = document.getElementById('dashTopConsultas');
+    if(topConsultas) {
+      if(!typeEntries.length) { topConsultas.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Sin datos</div>'; }
+      else topConsultas.innerHTML = typeEntries.slice(0,4).map(([k,v],i)=>{
+        const pct = Math.round(v/appts.length*100);
+        return '<div>'
+          +'<div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.2rem">'
+            +'<span style="color:#3A3530">'+(ctMap[k]?.icono||'📋')+' '+(ctMap[k]?.nombre||k)+'</span>'
+            +'<span style="font-weight:600">'+v+' <span style="color:var(--muted);font-weight:400">('+pct+'%)</span></span>'
+          +'</div>'
+          +'<div style="height:5px;background:var(--cream);border-radius:100px"><div style="width:'+pct+'%;height:100%;background:'+COLORS[i]+';border-radius:100px"></div></div>'
+        +'</div>';
+      }).join('');
+    }
+
+    // ── TOP MÉDICAS ──
+    const medCounts = {};
+    appts.forEach(a => { if(a.medico_id) medCounts[a.medico_id]=(medCounts[a.medico_id]||0)+1; });
+    const topMed = document.getElementById('dashTopMedicas');
+    if(topMed) {
+      const sorted = Object.entries(medCounts).sort((a,b)=>b[1]-a[1]);
+      if(!sorted.length) { topMed.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Sin datos</div>'; }
+      else topMed.innerHTML = sorted.slice(0,5).map(([id,v])=>{
+        const m = medMap[id]; const color=m?.color||'#3A7D8C';
+        return '<div style="display:flex;align-items:center;gap:.6rem;font-size:.78rem">'
+          +'<div style="width:8px;height:8px;border-radius:50%;background:'+color+';flex-shrink:0"></div>'
+          +'<span style="flex:1;color:#3A3530">'+(m?.nombre||'—')+'</span>'
+          +'<span style="font-weight:600;color:#1C1A18">'+v+' turnos</span>'
+        +'</div>';
+      }).join('');
+    }
+
+    // ── TURNOS DE HOY ──
+    const todayAppts = appts.filter(a=>a.date===todayStr).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    const todayEl = document.getElementById('dashTodayAppts');
+    if(todayEl) {
+      if(!todayAppts.length) { todayEl.innerHTML='<div style="font-size:.78rem;color:var(--muted);padding:.5rem 0">No hay turnos para hoy.</div>'; }
+      else todayEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:.5rem">'
+        +todayAppts.map(a=>{
+          const sc = {pending:'#D4853A',confirmed:'#4A9B6F',pending_transfer:'#D4853A',completed:'#3A7D8C',cancelled:'#C4614A'}[a.status]||'#8A7F74';
+          const sl = {pending:'Pendiente',confirmed:'Confirmado',pending_transfer:'Esperando seña',completed:'Completado',cancelled:'Cancelado'}[a.status]||a.status;
+          const m = medMap[a.medico_id];
+          return '<div style="display:flex;align-items:center;gap:.85rem;padding:.65rem .85rem;background:var(--cream);border-radius:10px">'
+            +'<div style="font-family:var(--fd);font-size:1rem;color:var(--teal);width:50px;flex-shrink:0">'+(a.time||'').slice(0,5)+'</div>'
+            +'<div style="flex:1;min-width:0">'
+              +'<div style="font-weight:600;font-size:.85rem;color:#1C1A18">'+( a.patient_name||'—')+'</div>'
+              +'<div style="font-size:.73rem;color:var(--muted)">'+(ctMap[a.type]?.nombre||a.type||'—')+(m?' · '+m.nombre:'')+'</div>'
+            +'</div>'
+            +'<span style="font-size:.65rem;font-weight:700;padding:.18rem .55rem;border-radius:100px;background:'+sc+'18;color:'+sc+';border:1px solid '+sc+'30;white-space:nowrap">'+sl+'</span>'
+          +'</div>';
+        }).join('')
+      +'</div>';
+    }
+
   } catch(e) {
-    document.getElementById('admSG').innerHTML = `
-      <div class="asc go"><div class="asc-l">Turnos hoy</div><div class="asc-v">—</div></div>
-      <div class="asc te"><div class="asc-l">Fichas</div><div class="asc-v">—</div></div>
-      <div class="asc" style="border-left:3px solid #D4853A"><div class="asc-l">Señas pendientes</div><div class="asc-v">—</div></div>
-      <div class="asc re"><div class="asc-l">Sin confirmar</div><div class="asc-v">—</div></div>`;
+    console.error('loadADash:', e);
   }
 }
 
@@ -1989,7 +2171,20 @@ const SITE_IMGS = [
   {key:'programas_hero_bg',  name:'Fondo página Programas',section:'programas'},
   {key:'tienda_hero_bg',     name:'Fondo página Tienda',   section:'tienda'},
   {key:'portal_bg',          name:'Fondo página Login',    section:'general'},
+  {key:'turnos_hero',        name:'Foto página Turnos',    section:'turnos'},
+  {key:'blog_hero_bg',       name:'Fondo página Blog',     section:'blog'},
 ];
+
+async function applySiteImages() {
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+  try {
+    const r = await fetch(SUPABASE_URL+'/rest/v1/site_images?select=key,url', {headers:h});
+    const data = await r.json();
+    (Array.isArray(data)?data:[]).forEach(row => {
+      document.querySelectorAll('[data-site-img="'+row.key+'"]').forEach(el => { el.src = row.url; });
+    });
+  } catch(e) {}
+}
 
 async function loadAFotos() {
   const container = document.getElementById('fotosContent');
@@ -2025,7 +2220,7 @@ async function loadAFotos() {
   }).join('');
 
   // Wrap en secciones
-  const sections = [{id:'hero',label:'🏠 Hero — Homepage'},{id:'programas',label:'📚 Programas'},{id:'tienda',label:'🛍️ Tienda'},{id:'general',label:'👤 General'}];
+  const sections = [{id:'hero',label:'🏠 Hero — Homepage'},{id:'programas',label:'📚 Programas'},{id:'turnos',label:'📅 Turnos'},{id:'blog',label:'✍️ Blog'},{id:'tienda',label:'🛍️ Tienda'},{id:'general',label:'👤 General'}];
   let html = '';
   sections.forEach(sec => {
     const secImgs = SITE_IMGS.filter(i => i.section === sec.id);
@@ -2827,48 +3022,47 @@ function renderCalSide(dateStr) {
       const isActive = a.status === s;
       return '<button onclick="cambiarEstadoAppt(\''+a.id+'\',\''+s+'\')" title="'+sl+'" style="width:18px;height:18px;border-radius:50%;background:'+sc+';border:3px solid '+(isActive?'#1C1A18':sc+'50')+';cursor:pointer;transition:.15s"'+(isActive?' disabled':'')+' data-appt="'+a.id+'" data-s="'+s+'"></button>';
     }).join('');
-
-    html += '<div class="cal-appt-card" style="border-left:4px solid '+color+';padding:0;overflow:hidden">'
-      // Header
-      +'<div style="padding:.75rem .85rem;display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem">'
-        +'<div>'
-          +'<div style="font-size:1.1rem;font-weight:700;color:'+color+';font-family:var(--fd)">'+timeStart+' hs</div>'
-          +(timeEnd ? '<div style="font-size:.7rem;color:var(--muted)">hasta '+timeEnd+' hs · '+durMin+' min</div>' : '')
+    // Card compacta con panel expandible
+    html += '<div class="cal-appt-card" style="border-left:4px solid '+color+';padding:0;overflow:hidden;cursor:pointer" onclick="toggleApptDetail(\'appt-'+a.id+'\')">'
+      // Resumen compacto (siempre visible)
+      +'<div style="padding:.75rem .9rem;display:flex;align-items:center;gap:.75rem">'
+        +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:1rem;font-weight:700;color:'+color+';font-family:var(--fd)">'+timeStart+' hs</div>'
+          +'<div style="font-size:.85rem;font-weight:600;color:#1C1A18;margin-top:.1rem">'+( a.patient_name||'—')+'</div>'
+          +'<div style="font-size:.74rem;color:var(--muted)">'+(ATIPO[a.type]||a.type||'—')+'</div>'
         +'</div>'
-        +'<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;justify-content:flex-end">'
+        +'<div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">'
           +'<span style="font-size:.65rem;font-weight:700;padding:.18rem .55rem;border-radius:100px;background:'+statusColor+'18;color:'+statusColor+';border:1px solid '+statusColor+'30">'+statusLabel+'</span>'
-          +'<button onclick="openEditApptModal(\''+a.id+'\')" title="Editar" style="width:26px;height:26px;border-radius:6px;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-size:.75rem">✏️</button>'
-          +'<button onclick="deleteAppt(\''+a.id+'\')" title="Eliminar" style="width:26px;height:26px;border-radius:6px;border:1.5px solid #f0d0d0;background:#fff;cursor:pointer;font-size:.75rem">🗑</button>'
+          +'<span id="appt-arrow-'+a.id+'" style="color:var(--muted);font-size:.75rem;transition:.2s">▼</span>'
         +'</div>'
       +'</div>'
-      // Paciente
-      +'<div style="padding:.1rem .85rem .65rem">'
-        +'<div style="font-size:.98rem;font-weight:700;color:#1C1A18;margin-bottom:.15rem">'+(a.patient_name||'—')+'</div>'
-        +'<div style="font-size:.78rem;color:var(--muted)">'+(ATIPO[a.type]||a.type||'—')+'</div>'
-        +(precio ? '<div style="font-size:.85rem;font-weight:600;color:#1C1A18;margin-top:.2rem">'+precio+'</div>' : '')
-      +'</div>'
-      // Detalles
-      +'<div style="border-top:1px solid var(--cream-dk);padding:.65rem .85rem;display:flex;flex-direction:column;gap:.45rem">'
-        +(medico ? '<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#3A3530"><span style="width:10px;height:10px;border-radius:50%;background:'+color+';flex-shrink:0;display:inline-block"></span><span>'+medico.nombre+'</span></div>' : '')
-        +(a.patient_phone ? '<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#3A3530"><span style="color:var(--muted)">📱</span><span>'+a.patient_phone+'</span><a href="https://wa.me/'+waPhone+'" target="_blank" style="margin-left:auto;font-size:.7rem;color:#25D366;font-weight:600;text-decoration:none;background:rgba(37,211,102,.08);padding:.15rem .45rem;border-radius:100px;border:1px solid rgba(37,211,102,.2)">WhatsApp</a></div>' : '')
-        +(a.patient_email ? '<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#3A3530;overflow:hidden"><span style="color:var(--muted)">✉️</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+a.patient_email+'</span></div>' : '')
-        +'<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#3A3530"><span style="color:var(--muted)">'+(a.modalidad==='presencial'?'📍':'💻')+'</span><span style="color:'+modalColor+';font-weight:500">'+modalidad+'</span></div>'
-        +(a.sena_status==='paid' ? '<div style="font-size:.75rem;color:#4A9B6F;font-weight:500">✓ Seña confirmada</div>' : a.sena_status==='pending' ? '<div style="font-size:.75rem;color:#D4853A;font-weight:500">⏳ Seña pendiente</div>' : '')
-      +'</div>'
-      // Botones acción
-      +'<div style="border-top:1px solid var(--cream-dk);padding:.55rem .85rem;display:flex;gap:.5rem">'
-        +'<button onclick="abrirFichaDesdeCalendario(\''+( a.patient_email||'')+'\',\''+( a.patient_name||'')+'\',\''+( a.patient_phone||'')+'\')" style="flex:1;padding:.45rem .5rem;border-radius:8px;font-size:.72rem;font-weight:600;border:1.5px solid var(--teal);background:rgba(58,125,140,.06);color:var(--teal);cursor:pointer;font-family:var(--fb)">📋 Ficha médica</button>'
-        +'<button onclick="verPagoTurno(\''+a.id+'\')" style="flex:1;padding:.45rem .5rem;border-radius:8px;font-size:.72rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">$ Ver pago</button>'
-      +'</div>'
-      // Cambiar estado
-      +'<div style="border-top:1px solid var(--cream-dk);padding:.5rem .85rem;display:flex;align-items:center;gap:.35rem;flex-wrap:wrap">'
-        +'<span style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-right:.25rem">Estado:</span>'
-        +statusBtns
-        +'<span style="font-size:.7rem;color:var(--muted);margin-left:.3rem" id="statusLabel-'+a.id+'">'+statusLabel+'</span>'
+      // Panel expandible (oculto por defecto)
+      +'<div id="appt-'+a.id+'" style="display:none;border-top:1px solid var(--cream-dk)">'
+        // Detalles
+        +'<div style="padding:.7rem .9rem;display:flex;flex-direction:column;gap:.4rem">'
+          +(medico ? '<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#3A3530"><span style="width:10px;height:10px;border-radius:50%;background:'+color+';flex-shrink:0;display:inline-block"></span><span>'+medico.nombre+'</span></div>' : '')
+          +(timeEnd ? '<div style="font-size:.72rem;color:var(--muted)">⏱ hasta '+timeEnd+' hs · '+durMin+' min</div>' : '')
+          +(a.patient_phone ? '<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#3A3530"><span>📱</span><span>'+a.patient_phone+'</span><a href="https://wa.me/'+waPhone+'" target="_blank" onclick="event.stopPropagation()" style="margin-left:auto;font-size:.7rem;color:#25D366;font-weight:600;text-decoration:none;background:rgba(37,211,102,.08);padding:.15rem .45rem;border-radius:100px;border:1px solid rgba(37,211,102,.2)">WhatsApp</a></div>' : '')
+          +(a.patient_email ? '<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#3A3530;overflow:hidden"><span>✉️</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+a.patient_email+'</span></div>' : '')
+          +'<div style="font-size:.78rem;color:'+(a.modalidad==='presencial'?'#D4853A':'#3A7D8C')+'">'+(a.modalidad==='presencial'?'📍 Presencial':'💻 Virtual')+'</div>'
+          +(a.sena_status==='paid'||a.sena_status==='approved' ? '<div style="font-size:.75rem;color:#4A9B6F">✓ Seña confirmada</div>' : a.sena_status==='pending' ? '<div style="font-size:.75rem;color:#D4853A">⏳ Seña pendiente</div>' : '')
+        +'</div>'
+        // Botones acción
+        +'<div style="border-top:1px solid var(--cream-dk);padding:.5rem .9rem;display:flex;gap:.4rem">'
+          +'<button onclick="event.stopPropagation();abrirFichaDesdeCalendario(\''+( a.patient_email||'')+'\',\''+( a.patient_name||'')+'\',\''+( a.patient_phone||'')+'\')" style="flex:1;padding:.4rem .5rem;border-radius:8px;font-size:.7rem;font-weight:600;border:1.5px solid var(--teal);background:rgba(58,125,140,.06);color:var(--teal);cursor:pointer;font-family:var(--fb)">📋 Ficha</button>'
+          +'<button onclick="event.stopPropagation();verPagoTurno(\''+a.id+'\')" style="flex:1;padding:.4rem .5rem;border-radius:8px;font-size:.7rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">$ Pago</button>'
+          +'<button onclick="event.stopPropagation();openEditApptModal(\''+a.id+'\')" style="padding:.4rem .6rem;border-radius:8px;font-size:.7rem;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer">✏️</button>'
+          +'<button onclick="event.stopPropagation();deleteAppt(\''+a.id+'\')" style="padding:.4rem .6rem;border-radius:8px;font-size:.7rem;border:1.5px solid #f0d0d0;background:#fff;cursor:pointer;color:#C4614A">🗑</button>'
+        +'</div>'
+        // Cambiar estado
+        +'<div style="border-top:1px solid var(--cream-dk);padding:.45rem .9rem;display:flex;align-items:center;gap:.3rem;flex-wrap:wrap">'
+          +'<span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-right:.2rem">Estado:</span>'
+          +statusBtns
+          +'<span style="font-size:.68rem;color:var(--muted);margin-left:.3rem" id="statusLabel-'+a.id+'">'+statusLabel+'</span>'
+        +'</div>'
       +'</div>'
     +'</div>';
   });
-
   body.innerHTML = html;
 }
 
@@ -3149,6 +3343,7 @@ function openEditProgram(p) {
   document.getElementById('epSlug').value     = p ? (p.slug||'') : '';
   document.getElementById('epImg').value      = p ? (p.image_url||'') : '';
   document.getElementById('epActivo').value   = (p && p.active===false) ? 'false' : 'true';
+  document.getElementById('epMarca').value    = p ? (p.marca||'') : '';
   openAMod('editProgMod');
 }
 
@@ -3167,20 +3362,22 @@ async function saveProgram() {
     slug:        document.getElementById('epSlug').value.trim()||null,
     image_url:   document.getElementById('epImg').value.trim()||null,
     active:      document.getElementById('epActivo').value==='true',
+    marca:       document.getElementById('epMarca').value||null,
   };
   const btn = document.getElementById('epSaveBtn');
   btn.disabled=true; btn.textContent='Guardando...';
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json', 'Prefer':'return=minimal' };
   try {
-    const sb = getSB();
     if(id) {
-      await sb.from('programs').update(data).eq('id',id);
+      await fetch(SUPABASE_URL+'/rest/v1/programs?id=eq.'+id, {method:'PATCH',headers:h,body:JSON.stringify(data)});
       toast('Programa actualizado ✓','ok');
     } else {
-      data.sort_order = Math.floor(Date.now() / 1000) % 1000000;
-      await sb.from('programs').insert(data);
+      data.sort_order = Math.floor(Date.now()/1000)%1000000;
+      await fetch(SUPABASE_URL+'/rest/v1/programs', {method:'POST',headers:h,body:JSON.stringify(data)});
       toast('Programa creado ✓','ok');
     }
     closeAMod('editProgMod');
+    _allPrograms = [];
     loadAPrograms();
   } catch(e) { toast('Error: '+e.message,'err'); }
   finally { btn.disabled=false; btn.textContent='Guardar programa'; }
@@ -3792,110 +3989,143 @@ window.rechazarOrdenPrograma = rechazarOrdenPrograma;
 /* ── PROGRAMAS DINÁMICOS ── */
 let _allPrograms = [];
 
-async function loadProgramasPage() {
-  const container = document.getElementById('progListContainer');
 
-  // Si ya tenemos datos, re-renderizar directo sin loader
-  if(_allPrograms.length) {
-    renderProgList(_allPrograms);
-    renderFilterTabs(_allPrograms);
-    return;
+// Configuración de marcas — SOLO DOS, todo dinámico por campo `marca`
+const MARCAS = {
+  performance: {
+    nombre: 'Be Human Performance',
+    tagline: 'Entrenamiento funcional y composición corporal',
+    descripcion: 'Planes diseñados para transformar tu cuerpo con un enfoque científico. Fuerza, rendimiento y resultados reales.',
+    color: '#1C1A18',
+    colorAccent: '#D4853A',
+    bg: 'linear-gradient(135deg,#1C1A18 0%,#2C2820 100%)',
+    img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80',
+  },
+  indomables: {
+    nombre: 'Indomables',
+    tagline: 'Nutrición funcional y planes de alimentación',
+    descripcion: 'Programas de alimentación diseñados por expertas. Recuperá tu metabolismo, tu energía y tu relación con la comida.',
+    color: '#2C4A3E',
+    colorAccent: '#3A7D8C',
+    bg: 'linear-gradient(135deg,#1C3A30 0%,#2C4A3E 100%)',
+    img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80',
   }
+};
 
-  if(container) container.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Cargando programas...</div>';
+const PROG_IMG_DEFAULTS = {
+  'activacion-muscular': 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80',
+  'indomables':          'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80',
+  'reset-21':            'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80',
+  'reset-mujer':         'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80',
+};
+
+async function loadProgramasPage() {
+  const container = document.getElementById('progMarcasContainer');
+  if(_allPrograms.length) { renderMarcas(_allPrograms); return; }
 
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/programs?order=name`, {headers:h});
-    if(!r.ok) throw new Error('HTTP '+r.status);
+    const r = await fetch(SUPABASE_URL+'/rest/v1/programs?order=name&select=*', {headers:h});
     const progs = await r.json();
-    _allPrograms = Array.isArray(progs) ? progs : [];
-    if(!_allPrograms.length) {
-      if(container) container.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">No hay programas disponibles.</div>';
-      return;
-    }
-    renderProgList(_allPrograms);
-    renderFilterTabs(_allPrograms);
-    setTimeout(initReveal, 50);
+    _allPrograms = Array.isArray(progs) ? progs.filter(p=>p.is_active!==false) : [];
+    renderMarcas(_allPrograms);
   } catch(e) {
-    console.error('loadProgramasPage:', e);
-    if(container) container.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Error: '+e.message+'</div>';
+    if(container) container.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Error al cargar programas.</div>';
   }
 }
 
-function renderFilterTabs(progs) {
-  const cats = [...new Set(progs.map(p=>p.category).filter(Boolean))];
-  const tabs = document.getElementById('progFilterTabs');
-  if(!tabs) return;
-  tabs.innerHTML = '<button class="ftab active" onclick="filterProgs(\'all\',this)">Todos</button>'
-    + cats.map(c=>`<button class="ftab" onclick="filterProgs('${c}',this)">${c}</button>`).join('');
-}
-
-// Imágenes por defecto por slug
-const PROG_DEFAULTS = {
-  'reset-21':          { img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80', tags: 'reset' },
-  'activacion-muscular':{ img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80', tags: 'performance' },
-  'indomables':        { img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80', tags: 'completo' },
-  'reset-mujer':       { img: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80', tags: 'mujer' },
-};
-
-function renderProgList(progs) {
-  const container = document.getElementById('progListContainer');
+function renderMarcas(progs) {
+  const container = document.getElementById('progMarcasContainer');
   if(!container) return;
-  if(!progs.length) {
-    container.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">No hay programas disponibles.</div>';
-    return;
-  }
-  container.innerHTML = progs.map((prog, idx) => {
-    const def      = PROG_DEFAULTS[prog.slug] || {};
-    const img      = prog.image_url || def.img || 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80';
-    const tags     = prog.category || def.tags || 'all';
-    const benefits = Array.isArray(prog.benefits) ? prog.benefits : (tryParseJSON(prog.benefits)||[]);
-    const price    = prog.price ? fmt(prog.price) : '';
-    const alt      = idx % 2 !== 0;
 
-    return `
-      <div class="prog-item" data-tags="${tags}" ${alt ? 'style="direction:rtl"' : ''}>
-        <div class="prog-img-wrap" ${alt ? 'style="direction:ltr"' : ''}>
-          <img class="prog-list-img" src="${img}" alt="${prog.name}">
-          ${prog.duration ? `<div class="prog-dur-badge">${prog.duration}</div>` : ''}
-        </div>
-        <div ${alt ? 'style="direction:ltr"' : ''}>
-          ${prog.category ? `<span class="prog-lbl">${prog.category}</span>` : ''}
-          <h2 class="prog-list-title"
-            data-prog-name="${prog.name}"
-            data-prog-slug="${prog.slug||prog.id}"
-            data-prog-price="${prog.price||0}"
-            data-prog-id="${prog.id}">
-            ${prog.name}
-          </h2>
-          ${prog.subtitle ? `<div class="prog-sub">${prog.subtitle}</div>` : ''}
-          ${prog.description ? `<p class="prog-desc">${prog.description}</p>` : ''}
-          ${benefits.length ? `
-          <div class="prog-includes">
-            ${benefits.slice(0,5).map(b=>`<div class="prog-inc"><div class="prog-inc-ck">✓</div><span>${b}</span></div>`).join('')}
-          </div>` : ''}
-          <div class="prog-price-box">
-            <div>
-              <div class="prog-price-main">${price}</div>
-              <div class="prog-price-note">ARS · Pago único</div>
-            </div>
-          </div>
-          <div class="prog-ctas">
-            <button class="btn-gold" onclick="inscribirsePrograma(this)">Inscribirme ahora</button>
-            <button class="btn-outline" onclick="abrirLandingPrograma('${prog.id}')">Más info</button>
-          </div>
-        </div>
-      </div>`;
-  }).join('');
+  // Agrupar por marca
+  const byMarca = {};
+  progs.forEach(p => {
+    const m = p.marca || 'sin-categoria';
+    if(!byMarca[m]) byMarca[m] = [];
+    byMarca[m].push(p);
+  });
+
+  // Renderizar primero las marcas conocidas, después sin categoría
+  const marcasOrden = ['performance','indomables', ...Object.keys(byMarca).filter(k=>!['performance','indomables'].includes(k))];
+  let html = '';
+
+  marcasOrden.forEach(marcaKey => {
+    const progsMarca = byMarca[marcaKey];
+    if(!progsMarca || !progsMarca.length) return;
+
+    const cfg = MARCAS[marcaKey];
+    if(cfg) {
+      // Sección con diseño de marca
+      html += renderMarcaSection(marcaKey, cfg, progsMarca);
+    } else {
+      // Sin categoría — lista simple
+      html += '<section style="padding:4rem clamp(1.5rem,5vw,5rem);background:#fff">'
+        +'<div style="max-width:1200px;margin:0 auto">'
+        +'<h2 style="font-family:var(--fd);font-size:1.8rem;color:#1C1A18;margin:0 0 2rem">Otros programas</h2>'
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem">'
+        +progsMarca.map(p=>renderProgCard(p,'#3A7D8C')).join('')
+        +'</div></div></section>';
+    }
+  });
+
+  if(!html) html = '<div style="text-align:center;padding:4rem;color:var(--muted)">No hay programas disponibles.</div>';
+  container.innerHTML = html;
+  setTimeout(initReveal, 50);
 }
 
-function filterProgs(tag, btn) {
-  document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  const filtered = tag==='all' ? _allPrograms : _allPrograms.filter(p=>p.category===tag);
-  renderProgList(filtered);
+function renderMarcaSection(marcaKey, cfg, progs) {
+  return '<section style="background:#F8F5F0" class="rv">'
+    // Header de la marca
+    +'<div style="position:relative;min-height:320px;background:'+cfg.bg+';display:flex;align-items:flex-end;overflow:hidden">'
+      +'<img src="'+cfg.img+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.25">'
+      +'<div style="position:absolute;inset:0;background:'+cfg.bg+';opacity:.7"></div>'
+      +'<div style="position:relative;z-index:2;padding:3rem clamp(1.5rem,5vw,5rem);max-width:700px">'
+        +'<span style="font-size:.62rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:'+cfg.colorAccent+';display:block;margin-bottom:.65rem">Línea de programas</span>'
+        +'<h2 style="font-family:var(--fd);font-size:clamp(2rem,4vw,3rem);color:#F0E8D8;margin:0 0 .75rem;line-height:1.1">'+cfg.nombre+'</h2>'
+        +'<p style="font-family:var(--fd);font-style:italic;font-size:1.1rem;color:'+cfg.colorAccent+';margin:0 0 .75rem">'+cfg.tagline+'</p>'
+        +'<p style="font-size:.88rem;color:rgba(240,232,216,.6);margin:0;max-width:480px;line-height:1.7">'+cfg.descripcion+'</p>'
+      +'</div>'
+    +'</div>'
+    // Grid de programas
+    +'<div style="padding:3rem clamp(1.5rem,5vw,5rem)">'
+      +'<div style="max-width:1200px;margin:0 auto">'
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem">'
+          +progs.map(p=>renderProgCard(p,cfg.colorAccent)).join('')
+        +'</div>'
+      +'</div>'
+    +'</div>'
+  +'</section>';
 }
+
+function renderProgCard(prog, accentColor) {
+  const img = prog.image_url || PROG_IMG_DEFAULTS[prog.slug] || 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80';
+  const benefits = Array.isArray(prog.benefits) ? prog.benefits : (tryParseJSON(prog.benefits)||[]);
+  const price = prog.price ? fmt(prog.price) : 'A consultar';
+
+  return '<div class="rv" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.07);transition:.2s" onmouseover="this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 32px rgba(0,0,0,.12)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'0 2px 16px rgba(0,0,0,.07)\'">'
+    +'<div style="position:relative;height:200px;overflow:hidden">'
+      +'<img src="'+img+'" style="width:100%;height:100%;object-fit:cover;transition:.3s" loading="lazy">'
+      +(prog.duration?'<div style="position:absolute;top:.75rem;left:.75rem;background:rgba(28,26,24,.7);backdrop-filter:blur(4px);color:#F0E8D8;font-size:.7rem;font-weight:600;padding:.25rem .65rem;border-radius:100px">'+prog.duration+'</div>':'')
+    +'</div>'
+    +'<div style="padding:1.25rem">'
+      +'<h3 style="font-family:var(--fd);font-size:1.15rem;color:#1C1A18;margin:0 0 .4rem;line-height:1.2">'+prog.name+'</h3>'
+      +(prog.subtitle?'<p style="font-family:var(--fd);font-style:italic;font-size:.82rem;color:'+accentColor+';margin:0 0 .65rem">'+prog.subtitle+'</p>':'')
+      +(prog.description?'<p style="font-size:.81rem;color:#6B6460;line-height:1.6;margin:0 0 .85rem">'+prog.description+'</p>':'')
+      +(benefits.length?'<ul style="margin:0 0 1rem;padding:0;list-style:none;display:flex;flex-direction:column;gap:.3rem">'
+        +benefits.slice(0,3).map(b=>'<li style="font-size:.77rem;color:#6B6460;display:flex;align-items:flex-start;gap:.4rem"><span style="color:'+accentColor+';font-weight:700;flex-shrink:0">✓</span>'+b+'</li>').join('')
+      +'</ul>':'')
+      +'<div style="display:flex;align-items:center;justify-content:space-between;padding-top:.85rem;border-top:1px solid #f0ebe3">'
+        +'<div><div style="font-family:var(--fd);font-size:1.3rem;font-weight:700;color:'+accentColor+'">'+price+'</div><div style="font-size:.68rem;color:var(--muted)">ARS · Pago único</div></div>'
+        +'<div style="display:flex;gap:.5rem">'
+          +'<button onclick="abrirLandingPrograma(\''+prog.id+'\')" style="padding:.5rem 1rem;border-radius:100px;font-size:.75rem;font-weight:600;border:1.5px solid '+accentColor+';color:'+accentColor+';background:transparent;cursor:pointer;font-family:var(--fb)">Más info</button>'
+          +'<button onclick="inscribirsePrograma(this)" data-prog-name="'+prog.name+'" data-prog-id="'+prog.id+'" data-prog-price="'+(prog.price||0)+'" style="padding:.5rem 1rem;border-radius:100px;font-size:.75rem;font-weight:600;border:none;background:'+accentColor+';color:#fff;cursor:pointer;font-family:var(--fb)">Inscribirme</button>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+  +'</div>';
+}
+
 
 /* ── LANDING INDIVIDUAL DE PROGRAMA ── */
 let _currentLandingProg = null;
@@ -4086,6 +4316,8 @@ async function loadLandingData() {
     const p = progs?.[0];
     if(!p) return;
     document.getElementById('plSubtitle').value   = p.subtitle||'';
+    const plMarca = document.getElementById('plMarca');
+    if(plMarca) plMarca.value = p.marca||'';
     document.getElementById('plCategory').value   = p.category||'';
     document.getElementById('plDuration').value   = p.duration||'';
     document.getElementById('plLevel').value       = p.level||'';
@@ -4139,7 +4371,8 @@ async function saveLandingData() {
 
   const data = {
     subtitle:         document.getElementById('plSubtitle').value.trim()||null,
-    category:         document.getElementById('plCategory').value.trim()||null,
+    marca:            document.getElementById('plMarca')?.value||null,
+    category:         document.getElementById('plCategory')?.value.trim()||null,
     duration:         document.getElementById('plDuration').value.trim()||null,
     level:            document.getElementById('plLevel').value.trim()||null,
     image_url:        document.getElementById('plImageUrl').value.trim()||null,
@@ -4356,6 +4589,24 @@ window.admPreviewOpenLeccion  = admPreviewOpenLeccion;
 window.admPreviewBack         = admPreviewBack;
 window.admPreviewBackToLanding= admPreviewBackToLanding;
 window.resetAdmPreview        = resetAdmPreview;
+
+function toggleApptDetail(id) {
+  const panel = document.getElementById(id);
+  const arrow  = document.getElementById('appt-arrow-'+id.replace('appt-',''));
+  if(!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  // Cerrar todos los demás
+  document.querySelectorAll('[id^="appt-"]').forEach(el => {
+    if(el.id !== id && !el.id.includes('arrow')) {
+      el.style.display = 'none';
+      const a = document.getElementById('appt-arrow-'+el.id.replace('appt-',''));
+      if(a) a.textContent = '▼';
+    }
+  });
+  panel.style.display = isOpen ? 'none' : '';
+  if(arrow) arrow.textContent = isOpen ? '▼' : '▲';
+}
+window.toggleApptDetail = toggleApptDetail;
 
 async function cambiarEstadoAppt(id, newStatus) {
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json' };
@@ -4727,7 +4978,7 @@ async function sendEmail(to, subject, html) {
 }
 
 function emailTurnoPendiente(nombre, email, fecha, hora, consulta, sena, total, apellido) {
-  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
+  const html = `<!DOCTYPE html><!-- v2.4 --><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px">
   <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden">
     <tr><td style="background:#1C1A18;padding:32px 40px;text-align:center">
@@ -4763,7 +5014,7 @@ function emailTurnoPendiente(nombre, email, fecha, hora, consulta, sena, total, 
 }
 
 function emailTurnoConfirmado(nombre, email, fecha, hora, consulta) {
-  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
+  const html = `<!DOCTYPE html><!-- v2.4 --><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px">
   <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden">
     <tr><td style="background:#1C1A18;padding:32px 40px;text-align:center">
@@ -4793,7 +5044,7 @@ function emailTurnoConfirmado(nombre, email, fecha, hora, consulta) {
 }
 
 function emailProgramaPendiente(nombre, email, programa, total) {
-  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
+  const html = `<!DOCTYPE html><!-- v2.4 --><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px">
   <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
     <tr><td style="background:#1C1A18;padding:32px 40px;text-align:center">
@@ -4838,7 +5089,7 @@ function emailProgramaPendiente(nombre, email, programa, total) {
 }
 
 function emailProgramaConfirmado(nombre, email, programa) {
-  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
+  const html = `<!DOCTYPE html><!-- v2.4 --><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px">
   <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
     <tr><td style="background:#1C1A18;padding:32px 40px;text-align:center">
@@ -5130,7 +5381,7 @@ async function enviarSuplementosPorMail() {
     +'</tr>'
   ).join('');
 
-  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
+  const html = `<!DOCTYPE html><!-- v2.4 --><html><body style="margin:0;padding:0;background:#F0E8D8;font-family:Arial,sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px">
 <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 30px rgba(0,0,0,.1)">
   <tr><td style="background:#1C1A18;padding:36px 44px">
@@ -5182,6 +5433,343 @@ window.openSuplementos          = openSuplementos;
 window.toggleSupl               = toggleSupl;
 window.guardarSuplementos       = guardarSuplementos;
 window.enviarSuplementosPorMail = enviarSuplementosPorMail;
+
+/* ── BLOG ── */
+let _blogPosts = [];
+let _blogCurrentPost = null;
+
+async function loadBlogPage() {
+  if(_blogPosts.length) { renderBlogGrid(_blogPosts); renderBlogCats(_blogPosts); return; }
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+  try {
+    const r = await fetch(SUPABASE_URL+'/rest/v1/blog_posts?published=eq.true&order=sort_order.desc,created_at.desc', {headers:h});
+    _blogPosts = await r.json() || [];
+    renderBlogGrid(_blogPosts);
+    renderBlogCats(_blogPosts);
+  } catch(e) {
+    const g = document.getElementById('blogGrid');
+    if(g) g.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Error al cargar artículos.</div>';
+  }
+}
+
+function renderBlogCats(posts) {
+  const tabs = document.getElementById('blogCatTabs');
+  if(!tabs) return;
+  const cats = [...new Set(posts.map(p=>p.category).filter(Boolean))];
+  tabs.innerHTML = '<button class="ftab active" onclick="filterBlog(\'all\',this)">Todos</button>'
+    + cats.map(c=>'<button class="ftab" onclick="filterBlog(\''+c+'\',this)">'+c+'</button>').join('');
+}
+
+function renderBlogGrid(posts) {
+  const grid = document.getElementById('blogGrid');
+  if(!grid) return;
+  if(!posts.length) { grid.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">No hay artículos publicados aún.</div>'; return; }
+
+  // Primer post destacado (featured o el más reciente)
+  const featured = posts.find(p=>p.featured) || posts[0];
+  const rest     = posts.filter(p=>p.id !== featured.id);
+
+  let html = '';
+
+  // Card featured grande
+  html += '<div onclick="abrirBlogPost(\''+featured.id+'\')" style="cursor:pointer;background:#fff;border-radius:20px;overflow:hidden;display:grid;grid-template-columns:1.2fr 1fr;margin-bottom:2rem;box-shadow:0 4px 24px rgba(0,0,0,.08);transition:.2s" onmouseover="this.style.transform=\'translateY(-3px)\'" onmouseout="this.style.transform=\'none\'">'
+    +'<div style="position:relative;min-height:320px;overflow:hidden">'
+      +(featured.cover_url?'<img src="'+featured.cover_url+'" style="width:100%;height:100%;object-fit:cover">':'<div style="width:100%;height:100%;background:linear-gradient(135deg,#1C1A18,#3A7D8C)"></div>')
+      +'<div style="position:absolute;top:1rem;left:1rem"><span style="background:var(--gold);color:#fff;font-size:.65rem;font-weight:700;padding:.3rem .75rem;border-radius:100px;text-transform:uppercase;letter-spacing:.1em">'+(featured.featured?'⭐ Destacado':'Reciente')+'</span></div>'
+    +'</div>'
+    +'<div style="padding:2.5rem;display:flex;flex-direction:column;justify-content:center">'
+      +(featured.category?'<span style="font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--teal);margin-bottom:.75rem;display:block">'+featured.category+'</span>':'')
+      +'<h2 style="font-family:var(--fd);font-size:1.6rem;color:#1C1A18;margin:0 0 1rem;line-height:1.2">'+featured.title+'</h2>'
+      +(featured.excerpt?'<p style="font-size:.88rem;color:#6B6460;line-height:1.7;margin:0 0 1.5rem">'+featured.excerpt+'</p>':'')
+      +'<div style="display:flex;align-items:center;gap:.75rem">'
+        +'<div style="width:36px;height:36px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.8rem;font-weight:700">'+(featured.author||'M')[0]+'</div>'
+        +'<div><div style="font-size:.82rem;font-weight:600;color:#1C1A18">'+(featured.author||'Dra. Mariel Dobenau')+'</div>'
+        +'<div style="font-size:.72rem;color:var(--muted)">'+new Date(featured.created_at).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})+'</div></div>'
+        +'<div style="margin-left:auto;font-size:.78rem;font-weight:600;color:var(--teal)">Leer →</div>'
+      +'</div>'
+    +'</div>'
+  +'</div>';
+
+  // Grid del resto
+  if(rest.length) {
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem">';
+    rest.forEach(post => {
+      html += '<div onclick="abrirBlogPost(\''+post.id+'\')" style="cursor:pointer;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:.2s" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'0 8px 28px rgba(0,0,0,.1)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'0 2px 12px rgba(0,0,0,.06)\'">'
+        +'<div style="height:200px;overflow:hidden;background:linear-gradient(135deg,#2C4A3E,#3A7D8C)">'
+          +(post.cover_url?'<img src="'+post.cover_url+'" style="width:100%;height:100%;object-fit:cover;transition:.3s" loading="lazy">':'')
+        +'</div>'
+        +'<div style="padding:1.25rem">'
+          +(post.category?'<span style="font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:.5rem">'+post.category+'</span>':'')
+          +'<h3 style="font-family:var(--fd);font-size:1.1rem;color:#1C1A18;margin:0 0 .6rem;line-height:1.3">'+post.title+'</h3>'
+          +(post.excerpt?'<p style="font-size:.8rem;color:#6B6460;line-height:1.6;margin:0 0 1rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+post.excerpt+'</p>':'')
+          +'<div style="display:flex;align-items:center;justify-content:space-between">'
+            +'<div style="font-size:.72rem;color:var(--muted)">'+new Date(post.created_at).toLocaleDateString('es-AR',{day:'numeric',month:'short'})+'</div>'
+            +'<div style="font-size:.75rem;font-weight:600;color:var(--teal)">Leer →</div>'
+          +'</div>'
+        +'</div>'
+      +'</div>';
+    });
+    html += '</div>';
+  }
+
+  grid.innerHTML = html;
+}
+
+function filterBlog(cat, btn) {
+  document.querySelectorAll('#blogCatTabs .ftab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const filtered = cat==='all' ? _blogPosts : _blogPosts.filter(p=>p.category===cat);
+  renderBlogGrid(filtered);
+}
+
+async function abrirBlogPost(postId) {
+  goTo('blog-post');
+  const content = document.getElementById('blogPostContent');
+  if(content) content.innerHTML = '<div style="text-align:center;padding:6rem;color:var(--muted)">Cargando...</div>';
+
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+  try {
+    const r = await fetch(SUPABASE_URL+'/rest/v1/blog_posts?id=eq.'+postId+'&select=*', {headers:h});
+    const posts = await r.json();
+    const post = posts?.[0];
+    if(!post) throw new Error('Artículo no encontrado');
+    _blogCurrentPost = post;
+    renderBlogPost(post);
+  } catch(e) {
+    if(content) content.innerHTML = '<div style="text-align:center;padding:6rem;color:var(--muted)">Error: '+e.message+'</div>';
+  }
+}
+
+function renderBlogPost(post) {
+  const content = document.getElementById('blogPostContent');
+  if(!content) return;
+  const fecha = new Date(post.created_at).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
+
+  let ex = {};
+  try { ex = typeof post.content==='string' ? JSON.parse(post.content) : (post.content||{}); } catch(e){}
+
+  function g(k) { return ex[k]||''; }
+
+  function sec(titulo, texto, foto) {
+    if(!titulo && !texto) return '';
+    return '<div style="margin:2.5rem 0">'
+      +(titulo?'<h2 style="font-family:var(--fd);font-size:1.5rem;color:#1C1A18;margin:0 0 1rem;line-height:1.2">'+titulo+'</h2>':'')
+      +(foto?'<img src="'+foto+'" style="width:100%;border-radius:14px;margin-bottom:1.25rem;display:block;max-height:420px;object-fit:cover">':'')
+      +(texto?'<p style="font-size:.95rem;color:#3A3530;line-height:1.9;white-space:pre-line;margin:0">'+texto+'</p>':'')
+    +'</div>';
+  }
+
+  const spotifyEmbed = g('spotify') ? (() => { const m=g('spotify').match(/spotify\.com\/(episode|show|track)\/([A-Za-z0-9]+)/); return m?'https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator&theme=0':null; })() : null;
+
+  content.innerHTML =
+    // Topbar
+    '<div style="background:#fff;border-bottom:1px solid #e8e8e8;padding:.7rem 1.5rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:70px;z-index:10">'
+      +'<button onclick="goTo(\'blog\')" style="font-size:.8rem;color:var(--muted);background:none;border:1.5px solid var(--cream-dk);border-radius:100px;padding:.35rem .85rem;cursor:pointer;font-family:var(--fb)">← Blog</button>'
+      +'<span style="font-size:.85rem;font-weight:600;color:#1C1A18;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+post.title+'</span>'
+    +'</div>'
+    // Hero
+    +'<div style="position:relative;min-height:480px;background:#1C1A18;display:flex;align-items:flex-end;overflow:hidden">'
+      +(post.cover_url?'<img src="'+post.cover_url+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.45">':'')
+      +'<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(28,26,24,.97) 30%,rgba(28,26,24,.1))"></div>'
+      +'<div style="position:relative;z-index:2;padding:3.5rem clamp(1.5rem,5vw,5rem);max-width:800px">'
+        +(post.category?'<span style="font-size:.62rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:.85rem">'+post.category+'</span>':'')
+        +'<h1 style="font-family:var(--fd);font-size:clamp(1.9rem,4vw,3.2rem);color:#F0E8D8;margin:0 0 1rem;line-height:1.1">'+post.title+'</h1>'
+        +(post.excerpt?'<p style="font-size:.95rem;color:rgba(240,232,216,.6);line-height:1.7;margin:0 0 1.5rem;max-width:560px">'+post.excerpt+'</p>':'')
+        +'<div style="display:flex;align-items:center;gap:.85rem">'
+          +'<div style="width:40px;height:40px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.9rem;font-weight:700">'+(post.author||'M')[0].toUpperCase()+'</div>'
+          +'<div><div style="font-size:.85rem;font-weight:600;color:#F0E8D8">'+(post.author||'Dra. Mariel Dobenau')+'</div>'
+          +'<div style="font-size:.74rem;color:rgba(240,232,216,.45)">'+fecha+'</div></div>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+    // Contenido
+    +'<div style="background:#fff;padding:3.5rem clamp(1.5rem,5vw,5rem)">'
+      +'<div style="max-width:780px;margin:0 auto">'
+        +(g('intro')?'<p style="font-size:1.05rem;color:#3A3530;line-height:1.9;white-space:pre-line;margin:0 0 2rem">'+g('intro')+'</p>':'')
+        +sec(g('s1_titulo'),g('s1_texto'),g('s1_foto'))
+        +sec(g('s2_titulo'),g('s2_texto'),g('s2_foto'))
+        +sec(g('s3_titulo'),g('s3_texto'),g('s3_foto'))
+        +(g('cita')?'<blockquote style="border-left:4px solid var(--teal);margin:2.5rem 0;padding:1.25rem 1.5rem;background:rgba(58,125,140,.05);border-radius:0 14px 14px 0;font-size:1.05rem;font-style:italic;color:#3A3530;line-height:1.75">'+g('cita')+'</blockquote>':'')
+        +(g('conclusion')?'<div style="margin:2.5rem 0"><h2 style="font-family:var(--fd);font-size:1.5rem;color:#1C1A18;margin:0 0 1rem">Para cerrar</h2><p style="font-size:.95rem;color:#3A3530;line-height:1.9;white-space:pre-line;margin:0">'+g('conclusion')+'</p></div>':'')
+        +(spotifyEmbed?'<div style="margin:2.5rem 0"><h3 style="font-family:var(--fd);font-size:1.1rem;color:#1C1A18;margin:0 0 .75rem">🎵 Escuchá el episodio</h3><iframe src="'+spotifyEmbed+'" width="100%" height="152" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen" style="border-radius:12px"></iframe></div>':'')
+        +(g('dl_url')?'<a href="'+g('dl_url')+'" target="_blank" download style="display:flex;align-items:center;gap:1rem;padding:1.1rem 1.4rem;background:rgba(58,125,140,.07);border:1.5px solid rgba(58,125,140,.25);border-radius:14px;text-decoration:none;margin:2rem 0;transition:.15s" onmouseover="this.style.background=\'rgba(58,125,140,.12)\'" onmouseout="this.style.background=\'rgba(58,125,140,.07)\'">'
+          +'<div style="width:44px;height:44px;background:var(--teal);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">📄</div>'
+          +'<div style="flex:1"><div style="font-weight:600;color:#1C1A18;font-size:.9rem">'+(g('dl_nombre')||'Descargar material')+'</div>'
+          +(g('dl_size')?'<div style="font-size:.76rem;color:var(--muted)">'+g('dl_size')+'</div>':'')+'</div>'
+          +'<span style="font-size:.82rem;font-weight:600;color:var(--teal)">Descargar ↓</span>'
+        +'</a>':'')
+        +(post.tags&&post.tags.length?'<div style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--cream-dk);display:flex;flex-wrap:wrap;gap:.5rem">'
+          +post.tags.map(t=>'<span style="font-size:.72rem;font-weight:600;padding:.3rem .75rem;border-radius:100px;background:rgba(58,125,140,.08);color:var(--teal);border:1.5px solid rgba(58,125,140,.2)">#'+t+'</span>').join('')
+        +'</div>':'')
+      +'</div>'
+    +'</div>'
+    // CTA
+    +'<section style="background:var(--teal);padding:4rem clamp(1.5rem,5vw,5rem);text-align:center">'
+      +'<div style="max-width:560px;margin:0 auto">'
+        +'<h2 style="font-family:var(--fd);font-size:2rem;color:#fff;margin:0 0 .75rem">¿Querés profundizar?</h2>'
+        +'<p style="font-size:.9rem;color:rgba(255,255,255,.75);margin:0 0 1.75rem">Reservá una consulta con nuestras especialistas.</p>'
+        +'<button onclick="goTo(\'turnos\')" style="padding:.9rem 2.5rem;border-radius:100px;font-family:var(--fb);font-size:.82rem;font-weight:600;background:#fff;color:var(--teal);border:none;cursor:pointer">Reservar turno</button>'
+      +'</div>'
+    +'</section>';
+}
+window.loadBlogPage   = loadBlogPage;
+window.filterBlog     = filterBlog;
+window.abrirBlogPost  = abrirBlogPost;
+
+/* ── BLOG ADMIN ── */
+let _admBlogPosts = [];
+
+/* ── BLOG FIELDS MAPPING ── */
+const BF = ['intro','s1_titulo','s1_texto','s1_foto','s2_titulo','s2_texto','s2_foto','s3_titulo','s3_texto','s3_foto','cita','conclusion','spotify','dl_nombre','dl_size','dl_url'];
+
+function getBF(key) { return document.getElementById('bf_'+key)?.value || ''; }
+function setBF(key, val) { const el=document.getElementById('bf_'+key); if(el) el.value=val||''; }
+
+async function loadAdmBlog() {
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')) };
+  const list = document.getElementById('admBlogList');
+  try {
+    const r = await fetch(SUPABASE_URL+'/rest/v1/blog_posts?order=created_at.desc', {headers:h});
+    _admBlogPosts = await r.json() || [];
+    if(!_admBlogPosts.length) { if(list) list.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">Sin artículos. Creá el primero.</div>'; return; }
+    if(list) list.innerHTML = _admBlogPosts.map(p => {
+      const st = p.published
+        ? '<span style="font-size:.68rem;font-weight:600;padding:.2rem .6rem;border-radius:100px;background:rgba(74,155,111,.1);color:#4A9B6F">Publicado</span>'
+        : '<span style="font-size:.68rem;font-weight:600;padding:.2rem .6rem;border-radius:100px;background:rgba(138,127,116,.1);color:#8A7F74">Borrador</span>';
+      return '<div style="background:#fff;border-radius:12px;border:1.5px solid var(--cream-dk);padding:.85rem 1.1rem;display:flex;align-items:center;gap:.85rem">'
+        +(p.cover_url?'<img src="'+p.cover_url+'" style="width:64px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0">':'<div style="width:64px;height:48px;border-radius:8px;background:var(--cream);flex-shrink:0;display:flex;align-items:center;justify-content:center">✍️</div>')
+        +'<div style="flex:1;min-width:0"><div style="font-weight:600;color:#1C1A18;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+p.title+'</div>'
+        +'<div style="font-size:.73rem;color:var(--muted);margin-top:.15rem">'+(p.category||'Sin categoría')+' · '+new Date(p.created_at).toLocaleDateString('es-AR')+'</div></div>'
+        +'<div style="display:flex;align-items:center;gap:.4rem">'+st
+        +(p.featured?'<span style="font-size:.68rem;padding:.2rem .5rem;border-radius:100px;background:rgba(201,147,90,.1);color:var(--gold)">⭐</span>':'')
+        +'<button onclick="openAdmBlogPost(\''+p.id+'\')" style="padding:.35rem .7rem;border-radius:8px;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-size:.75rem;font-family:var(--fb)">Editar</button>'
+        +'<button onclick="deleteAdmBlogPost(\''+p.id+'\')" style="width:28px;height:28px;border-radius:8px;border:1.5px solid #f0d0d0;background:#fff;cursor:pointer;font-size:.8rem">🗑</button>'
+        +'</div></div>';
+    }).join('');
+  } catch(e) { if(list) list.innerHTML='<div style="color:var(--muted)">Error: '+e.message+'</div>'; }
+}
+
+function openAdmBlogPost(id) {
+  const p = id ? _admBlogPosts.find(x=>x.id===id) : null;
+  document.getElementById('admBlogId').value        = p?.id||'';
+  document.getElementById('admBlogTitle').value     = p?.title||'';
+  document.getElementById('admBlogExcerpt').value   = p?.excerpt||'';
+  document.getElementById('admBlogCat').value       = p?.category||'';
+  document.getElementById('admBlogAuthor').value    = p?.author||'Dra. Mariel Dobenau';
+  document.getElementById('admBlogCover').value     = p?.cover_url||'';
+  document.getElementById('admBlogTags').value      = (p?.tags||[]).join(', ');
+  document.getElementById('admBlogPublished').value = p?.published?'true':'false';
+  document.getElementById('admBlogFeatured').checked= !!(p?.featured);
+  document.getElementById('admBlogModTitle').textContent = p ? 'Editar: '+p.title : 'Nuevo artículo';
+
+  // Cargar campos de contenido
+  let extra = {};
+  try { extra = typeof p?.content === 'string' ? JSON.parse(p.content) : (p?.content || {}); } catch(e){}
+  BF.forEach(k => setBF(k, extra[k]||''));
+
+  updateBlogPreview();
+  openAMod('admBlogMod');
+}
+
+async function saveAdmBlogPost() {
+  const title = document.getElementById('admBlogTitle').value.trim();
+  if(!title) { toast('El título es obligatorio','err'); return; }
+  const id = document.getElementById('admBlogId').value;
+  const tagsRaw = document.getElementById('admBlogTags').value.trim();
+  const extra = {};
+  BF.forEach(k => { const v=getBF(k); if(v) extra[k]=v; });
+
+  const data = {
+    title,
+    excerpt:   document.getElementById('admBlogExcerpt').value.trim()||null,
+    category:  document.getElementById('admBlogCat').value.trim()||null,
+    author:    document.getElementById('admBlogAuthor').value.trim()||'Dra. Mariel Dobenau',
+    cover_url: document.getElementById('admBlogCover').value.trim()||null,
+    tags:      tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(Boolean) : [],
+    published: document.getElementById('admBlogPublished').value==='true',
+    featured:  !!(document.getElementById('admBlogFeatured').checked),
+    content:   JSON.stringify(extra),
+    updated_at: new Date().toISOString(),
+  };
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')), 'Content-Type':'application/json', 'Prefer':'return=minimal' };
+  try {
+    if(id) await fetch(SUPABASE_URL+'/rest/v1/blog_posts?id=eq.'+id, {method:'PATCH',headers:h,body:JSON.stringify(data)});
+    else   await fetch(SUPABASE_URL+'/rest/v1/blog_posts', {method:'POST',headers:h,body:JSON.stringify(data)});
+    toast('Artículo guardado ✓','ok');
+    _blogPosts = [];
+    loadAdmBlog();
+  } catch(e) { toast('Error: '+e.message,'err'); }
+}
+
+async function deleteAdmBlogPost(id) {
+  if(!confirm('¿Eliminar este artículo?')) return;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')) };
+  await fetch(SUPABASE_URL+'/rest/v1/blog_posts?id=eq.'+id, {method:'DELETE',headers:h});
+  _blogPosts = []; loadAdmBlog(); toast('Artículo eliminado','ok');
+}
+
+function getSpotifyEmbed(url) {
+  const m = url.match(/spotify\.com\/(episode|show|track)\/([A-Za-z0-9]+)/);
+  return m ? 'https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator&theme=0' : null;
+}
+
+function updateBlogPreview() {
+  const preview = document.getElementById('blogPostPreview');
+  if(!preview) return;
+  const title   = document.getElementById('admBlogTitle')?.value || 'Sin título';
+  const excerpt = document.getElementById('admBlogExcerpt')?.value || '';
+  const cat     = document.getElementById('admBlogCat')?.value || '';
+  const author  = document.getElementById('admBlogAuthor')?.value || 'Dra. Mariel Dobenau';
+  const cover   = document.getElementById('admBlogCover')?.value || '';
+
+  function sec(titulo, texto, foto) {
+    if(!titulo && !texto) return '';
+    return '<div style="margin:2rem 0">'
+      +(titulo?'<h2 style="font-family:var(--fd);font-size:1.35rem;color:#1C1A18;margin:0 0 .85rem;line-height:1.2">'+titulo+'</h2>':'')
+      +(foto?'<img src="'+foto+'" style="width:100%;border-radius:12px;margin-bottom:1rem;display:block">':'')
+      +(texto?'<p style="font-size:.9rem;color:#3A3530;line-height:1.85;white-space:pre-line;margin:0">'+texto+'</p>':'')
+    +'</div>';
+  }
+
+  const spotify = getBF('spotify');
+  const dlUrl   = getBF('dl_url');
+  const cita    = getBF('cita');
+  const concl   = getBF('conclusion');
+
+  preview.innerHTML =
+    // Hero mini
+    '<div style="position:relative;min-height:200px;background:#1C1A18;display:flex;align-items:flex-end;overflow:hidden">'
+      +(cover?'<img src="'+cover+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.4">':'')
+      +'<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(28,26,24,.97) 25%,rgba(28,26,24,.1))"></div>'
+      +'<div style="position:relative;z-index:2;padding:1.25rem">'
+        +(cat?'<span style="font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:.4rem">'+cat+'</span>':'')
+        +'<h2 style="font-family:var(--fd);font-size:1.15rem;color:#F0E8D8;margin:0 0 .4rem;line-height:1.2">'+title+'</h2>'
+        +'<div style="font-size:.7rem;color:rgba(240,232,216,.45)">'+author+'</div>'
+      +'</div>'
+    +'</div>'
+    // Cuerpo
+    +'<div style="padding:1.25rem">'
+      +(excerpt?'<p style="font-size:.84rem;font-style:italic;color:#3A3530;border-left:3px solid var(--teal);padding-left:.85rem;margin:0 0 1.25rem;line-height:1.7">'+excerpt+'</p>':'')
+      +(getBF('intro')?'<p style="font-size:.9rem;color:#3A3530;line-height:1.85;white-space:pre-line;margin:0 0 1.5rem">'+getBF('intro')+'</p>':'')
+      +sec(getBF('s1_titulo'),getBF('s1_texto'),getBF('s1_foto'))
+      +sec(getBF('s2_titulo'),getBF('s2_texto'),getBF('s2_foto'))
+      +sec(getBF('s3_titulo'),getBF('s3_texto'),getBF('s3_foto'))
+      +(cita?'<blockquote style="border-left:4px solid var(--teal);margin:1.5rem 0;padding:.85rem 1rem;background:rgba(58,125,140,.05);border-radius:0 10px 10px 0;font-size:.9rem;font-style:italic;color:#3A3530;line-height:1.7">'+cita+'</blockquote>':'')
+      +(concl?'<div style="margin:1.5rem 0"><h2 style="font-family:var(--fd);font-size:1.15rem;color:#1C1A18;margin:0 0 .75rem">Para cerrar</h2><p style="font-size:.9rem;color:#3A3530;line-height:1.85;white-space:pre-line;margin:0">'+concl+'</p></div>':'')
+      +(spotify&&getSpotifyEmbed(spotify)?'<div style="margin:1.5rem 0"><iframe src="'+getSpotifyEmbed(spotify)+'" width="100%" height="152" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen" style="border-radius:12px" loading="lazy"></iframe></div>':'')
+      +(dlUrl?'<a href="'+dlUrl+'" target="_blank" style="display:flex;align-items:center;gap:.85rem;padding:.85rem 1rem;background:rgba(58,125,140,.06);border:1.5px solid rgba(58,125,140,.2);border-radius:12px;text-decoration:none;margin:1rem 0">'
+        +'<div style="width:36px;height:36px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">📄</div>'
+        +'<div><div style="font-weight:600;color:#1C1A18;font-size:.84rem">'+(getBF('dl_nombre')||'Descargar archivo')+'</div>'
+        +(getBF('dl_size')?'<div style="font-size:.72rem;color:var(--muted)">'+getBF('dl_size')+'</div>':'')+'</div>'
+        +'<span style="margin-left:auto;font-size:.75rem;font-weight:600;color:var(--teal)">Descargar ↓</span>'
+      +'</a>':'')
+    +'</div>';
+}
+window.updateBlogPreview = updateBlogPreview;
+window.loadAdmBlog       = loadAdmBlog;
+window.openAdmBlogPost   = openAdmBlogPost;
+window.saveAdmBlogPost   = saveAdmBlogPost;
+window.deleteAdmBlogPost = deleteAdmBlogPost;
 
 /* ── SUPLEMENTOS ADMIN CRUD ── */
 async function loadAdmSuplementos() {
@@ -6156,6 +6744,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initReveal();
     checkSession();
     loadConsultasEnTurnos();
+    applySiteImages();
   } catch(e) {
     console.error('DOMContentLoaded error:', e);
   }
@@ -6164,7 +6753,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── Exponer funciones globalmente para los onclick del HTML ──
 window.goTo               = goTo;
 window.closeMob           = closeMob;
-window.filterProgs        = filterProgs;
+window.filterProgs        = function(){};  // replaced by marca system
 window.filterTienda       = filterTienda;
 window.sortTienda         = sortTienda;
 window.selTipo            = selTipo;
@@ -6370,6 +6959,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       <button class="nav-link" id="nl-programas" onclick="goTo('programas')">Programas</button>
       <button class="nav-link" id="nl-turnos" onclick="goTo('turnos')">Turnos</button>
       <button class="nav-link" id="nl-tienda" onclick="goTo('tienda')">Tienda</button>
+      <button class="nav-link" id="nl-blog" onclick="goTo('blog')">Blog</button>
     </div>
     <div class="nav-actions">
       <button class="cart-btn" onclick="Cart.openDrawer()">🛒<span class="cart-badge" id="cartBadge">0</span></button>
@@ -6632,13 +7222,41 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
      TURNOS PAGE
 ════════════════════════════════════════════ -->
 <div class="page" id="page-turnos">
-  <div style="background:#1C1A18;padding:4rem 1.5rem 3rem;text-align:center">
-    <span style="font-size:.65rem;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:.75rem">Reservá tu espacio</span>
-    <h1 style="font-family:var(--fd);font-size:clamp(2rem,4vw,3rem);color:#F0E8D8;margin:0 0 .75rem">Reservar turno</h1>
-    <p style="font-size:.95rem;color:rgba(240,232,216,.5);margin:0 auto;max-width:480px">Elegí consulta, médica y horario. Confirmamos por WhatsApp.</p>
+
+  <!-- Hero split: foto izquierda, texto derecha -->
+  <div style="min-height:380px;display:grid;grid-template-columns:1fr 1fr;position:relative;overflow:hidden">
+    <!-- Foto -->
+    <div style="position:relative;overflow:hidden">
+      <img data-site-img="turnos_hero" src="https://images.unsplash.com/photo-1559757175-5700dde675bc?w=900&q=80" alt="Consulta médica" style="width:100%;height:100%;object-fit:cover;object-position:center top">
+      <div style="position:absolute;inset:0;background:linear-gradient(to right,transparent 60%,#1C1A18 100%)"></div>
+    </div>
+    <!-- Texto -->
+    <div style="background:#1C1A18;display:flex;flex-direction:column;justify-content:center;padding:4rem clamp(2rem,5vw,5rem);position:relative">
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(58,125,140,.15),transparent 70%)"></div>
+      <div style="position:relative;z-index:1">
+        <span style="font-size:.62rem;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:1rem">Reservá tu espacio</span>
+        <h1 style="font-family:var(--fd);font-size:clamp(2.2rem,3.5vw,3.2rem);color:#F0E8D8;margin:0 0 1.25rem;line-height:1.1">Tu salud, <br><em style="color:var(--gold)">tu decisión</em></h1>
+        <p style="font-size:.9rem;color:rgba(240,232,216,.6);margin:0 0 2rem;line-height:1.8;max-width:380px">Elegí el tipo de consulta, la profesional y el horario que mejor se adaptan a vos. Confirmamos por WhatsApp en menos de 24hs.</p>
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div style="width:32px;height:32px;border-radius:50%;background:rgba(58,125,140,.2);display:flex;align-items:center;justify-content:center;font-size:.85rem">✓</div>
+            <span style="font-size:.78rem;color:rgba(240,232,216,.65)">Confirmación por WhatsApp</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div style="width:32px;height:32px;border-radius:50%;background:rgba(58,125,140,.2);display:flex;align-items:center;justify-content:center;font-size:.85rem">✓</div>
+            <span style="font-size:.78rem;color:rgba(240,232,216,.65)">Presencial o videollamada</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div style="width:32px;height:32px;border-radius:50%;background:rgba(58,125,140,.2);display:flex;align-items:center;justify-content:center;font-size:.85rem">✓</div>
+            <span style="font-size:.78rem;color:rgba(240,232,216,.65)">Cancelación gratuita hasta 24hs</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="booking-wrap">
+  <div style="background:linear-gradient(180deg,#1C1A18 0%,var(--cream) 120px);padding:0 0 3rem">
+    <div class="booking-wrap">
     <div class="booking-card">
       <div class="booking-steps-bar">
         <div class="steps">
@@ -6841,6 +7459,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       </div>
     </div>
   </div>
+  </div><!-- /booking area bg -->
 </div><!-- /page-turnos -->
 
 <!-- ════════════════════════════════════════════
@@ -7068,6 +7687,12 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 .ap{display:none}.ap.on{display:block}
 .asg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-bottom:1.6rem}
 .asc{background:#fff;border-radius:13px;padding:1.1rem 1.25rem;box-shadow:0 2px 10px rgba(28,26,24,.07)}
+.dash-kpi{background:#fff;border-radius:12px;padding:1rem 1.1rem;border:1.5px solid var(--cream-dk)}
+.dash-kpi-label{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.35rem}
+.dash-kpi-val{font-family:var(--fd);font-size:1.5rem;color:#1C1A18;line-height:1}
+.dash-kpi-sub{font-size:.7rem;color:var(--muted);margin-top:.3rem}
+.dash-period-btn{padding:.35rem .85rem;border-radius:100px;border:none;background:none;font-size:.74rem;font-weight:500;cursor:pointer;font-family:var(--fb);color:var(--muted);transition:.15s}
+.dash-period-btn.active{background:#fff;color:#1C1A18;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .asc.go{border-left:3px solid var(--gold)}.asc.te{border-left:3px solid var(--teal)}.asc.gr{border-left:3px solid #4A9B6F}.asc.re{border-left:3px solid #C4614A}
 .asc-l{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.38rem}
 .asc-v{font-family:var(--fd);font-size:1.75rem;color:var(--dark)}
@@ -7140,6 +7765,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       <button class="asb-it" onclick="showAP('ordenes-programas',this)"><span>🛒</span> Órdenes programas</button>
       <button class="asb-it" onclick="showAP('usuarios',this)"><span>👥</span> Usuarios</button>
       <button class="asb-it" onclick="showAP('suplementos',this)"><span>💊</span> Suplementos</button>
+      <button class="asb-it" onclick="showAP('blog',this)"><span>✍️</span> Blog</button>
       <button class="asb-it" onclick="showAP('calendario',this)"><span>📆</span> Calendario</button>
       <button class="asb-it" onclick="showAP('horarios',this)"><span>🕐</span> Horarios bloqueados</button>
       <button class="asb-it" onclick="showAP('medico-horarios',this)"><span>📅</span> Horarios por médica</button>
@@ -7162,31 +7788,104 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 
       <!-- DASHBOARD -->
       <div id="ap-dash" class="ap on">
-        <div class="asg" id="admSG">
-          <div class="asc go skeleton" style="height:80px"></div>
-          <div class="asc te skeleton" style="height:80px"></div>
-          <div class="asc gr skeleton" style="height:80px"></div>
-          <div class="asc re skeleton" style="height:80px"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.1rem">
-          <div class="atw" style="padding:1.25rem">
-            <div style="font-family:var(--fd);font-size:.95rem;margin-bottom:.9rem">Acciones rápidas</div>
-            <div style="display:flex;flex-direction:column;gap:.55rem">
-              <button class="btn-primary" style="justify-content:center;width:100%;font-size:.76rem" onclick="showAP('senas',null)">💰 Señas pendientes <span id="dashSenasBadge" style="background:rgba(255,255,255,.3);border-radius:100px;padding:.1rem .4rem;font-size:.65rem;margin-left:.25rem"></span></button>
-              <button class="btn-primary" style="justify-content:center;width:100%;font-size:.76rem;background:var(--teal-lt,#4E94A4)" onclick="showAP('fotos',null)">🖼️ Editar fotos del sitio</button>
-              <button class="btn-outline" style="justify-content:center;width:100%;font-size:.76rem" onclick="showAP('turnos',null)">📅 Turnos de hoy</button>
-              <button class="btn-outline" style="justify-content:center;width:100%;font-size:.76rem" onclick="showAP('fichas',null)">📋 Fichas médicas</button>
-            </div>
-          </div>
-          <div class="atw" style="padding:1.25rem">
-            <div style="font-family:var(--fd);font-size:.95rem;margin-bottom:.9rem">Estado</div>
-            <div style="font-size:.8rem;display:flex;flex-direction:column;gap:.55rem">
-              <div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--cream-dk)"><span>Sitio web</span><span style="background:rgba(74,155,111,.12);color:#2E7A52;padding:.18rem .6rem;border-radius:100px;font-size:.66rem;font-weight:600">✓ Online</span></div>
-              <div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--cream-dk)"><span>Base de datos</span><span style="background:rgba(74,155,111,.12);color:#2E7A52;padding:.18rem .6rem;border-radius:100px;font-size:.66rem;font-weight:600">✓ Conectada</span></div>
-              <div style="display:flex;justify-content:space-between;padding:.4rem 0"><span>Turnos online</span><span style="background:rgba(74,155,111,.12);color:#2E7A52;padding:.18rem .6rem;border-radius:100px;font-size:.66rem;font-weight:600">✓ Activo</span></div>
-            </div>
+
+        <!-- Selector de período -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
+          <div style="font-family:var(--fd);font-size:1.1rem;color:#1C1A18">Resumen financiero</div>
+          <div style="display:flex;gap:.4rem;background:var(--cream);border-radius:100px;padding:.3rem">
+            <button class="dash-period-btn active" onclick="setDashPeriod('dia',this)">Hoy</button>
+            <button class="dash-period-btn" onclick="setDashPeriod('semana',this)">Semana</button>
+            <button class="dash-period-btn" onclick="setDashPeriod('mes',this)">Mes</button>
+            <button class="dash-period-btn" onclick="setDashPeriod('anio',this)">Año</button>
           </div>
         </div>
+
+        <!-- KPI Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem" id="dashKPIs">
+          <div class="dash-kpi" style="border-left:4px solid var(--gold)">
+            <div class="dash-kpi-label">Facturado total</div>
+            <div class="dash-kpi-val" id="dkTotal">—</div>
+            <div class="dash-kpi-sub" id="dkTotalSub">turnos + programas</div>
+          </div>
+          <div class="dash-kpi" style="border-left:4px solid var(--teal)">
+            <div class="dash-kpi-label">Turnos</div>
+            <div class="dash-kpi-val" id="dkTurnos">—</div>
+            <div class="dash-kpi-sub" id="dkTurnosSub">confirmados</div>
+          </div>
+          <div class="dash-kpi" style="border-left:4px solid #9B6BD4">
+            <div class="dash-kpi-label">Programas</div>
+            <div class="dash-kpi-val" id="dkProgramas">—</div>
+            <div class="dash-kpi-sub" id="dkProgramasSub">inscripciones</div>
+          </div>
+          <div class="dash-kpi" style="border-left:4px solid #D4853A">
+            <div class="dash-kpi-label">Señas cobradas</div>
+            <div class="dash-kpi-val" id="dkSenas">—</div>
+            <div class="dash-kpi-sub">aprobadas</div>
+          </div>
+          <div class="dash-kpi" style="border-left:4px solid #C4614A">
+            <div class="dash-kpi-label">Pendientes</div>
+            <div class="dash-kpi-val" id="dkPendientes" style="color:#C4614A">—</div>
+            <div class="dash-kpi-sub">sin confirmar</div>
+          </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:1.5rem">
+          <!-- Gráfico de ingresos -->
+          <div class="atw" style="padding:1.25rem">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+              <div style="font-family:var(--fd);font-size:.95rem;color:#1C1A18">Ingresos por día</div>
+              <div style="font-size:.72rem;color:var(--muted)" id="dashChartPeriod">últimos 30 días</div>
+            </div>
+            <canvas id="dashRevenueChart" style="max-height:220px"></canvas>
+          </div>
+          <!-- Donut por tipo de consulta -->
+          <div class="atw" style="padding:1.25rem">
+            <div style="font-family:var(--fd);font-size:.95rem;color:#1C1A18;margin-bottom:1rem">Consultas por tipo</div>
+            <canvas id="dashConsultaChart" style="max-height:180px"></canvas>
+            <div id="dashConsultaLegend" style="margin-top:.75rem;font-size:.72rem;display:flex;flex-direction:column;gap:.3rem"></div>
+          </div>
+        </div>
+
+        <!-- Rankings + Alertas -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;margin-bottom:1.5rem">
+          <!-- Consulta más popular -->
+          <div class="atw" style="padding:1.25rem">
+            <div style="font-family:var(--fd);font-size:.88rem;color:#1C1A18;margin-bottom:.85rem">🏆 Más demandadas</div>
+            <div id="dashTopConsultas" style="display:flex;flex-direction:column;gap:.5rem">
+              <div style="font-size:.78rem;color:var(--muted)">Cargando...</div>
+            </div>
+          </div>
+          <!-- Médicas con más turnos -->
+          <div class="atw" style="padding:1.25rem">
+            <div style="font-family:var(--fd);font-size:.88rem;color:#1C1A18;margin-bottom:.85rem">👩‍⚕️ Médicas activas</div>
+            <div id="dashTopMedicas" style="display:flex;flex-direction:column;gap:.5rem">
+              <div style="font-size:.78rem;color:var(--muted)">Cargando...</div>
+            </div>
+          </div>
+          <!-- Alertas / Acciones rápidas -->
+          <div class="atw" style="padding:1.25rem">
+            <div style="font-family:var(--fd);font-size:.88rem;color:#1C1A18;margin-bottom:.85rem">⚡ Acciones rápidas</div>
+            <div style="display:flex;flex-direction:column;gap:.5rem">
+              <button onclick="showAP('senas',document.querySelector('[onclick*=senas]'))" style="padding:.5rem .85rem;border-radius:100px;font-size:.74rem;font-weight:600;background:rgba(212,133,58,.1);color:#D4853A;border:1.5px solid rgba(212,133,58,.2);cursor:pointer;font-family:var(--fb);text-align:left">💰 Señas pendientes <span id="dashSenasBadge" style="float:right;background:#D4853A;color:#fff;border-radius:100px;padding:.1rem .4rem;font-size:.65rem"></span></button>
+              <button onclick="showAP('calendario',document.querySelector('[onclick*=calendario]'))" style="padding:.5rem .85rem;border-radius:100px;font-size:.74rem;font-weight:600;background:rgba(58,125,140,.08);color:var(--teal);border:1.5px solid rgba(58,125,140,.15);cursor:pointer;font-family:var(--fb)">📅 Ver calendario</button>
+              <button onclick="showAP('fichas',document.querySelector('[onclick*=fichas]'))" style="padding:.5rem .85rem;border-radius:100px;font-size:.74rem;font-weight:600;background:var(--cream);color:#1C1A18;border:1.5px solid var(--cream-dk);cursor:pointer;font-family:var(--fb)">📋 Fichas médicas</button>
+              <button onclick="showAP('ordenes-programas',document.querySelector('[onclick*=ordenes]'))" style="padding:.5rem .85rem;border-radius:100px;font-size:.74rem;font-weight:600;background:rgba(155,107,212,.08);color:#9B6BD4;border:1.5px solid rgba(155,107,212,.2);cursor:pointer;font-family:var(--fb)">🎓 Órdenes programas</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Próximos turnos del día -->
+        <div class="atw" style="padding:1.25rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem">
+            <div style="font-family:var(--fd);font-size:.95rem;color:#1C1A18">📅 Turnos de hoy</div>
+            <div style="font-size:.74rem;color:var(--muted)" id="dashTodayDate"></div>
+          </div>
+          <div id="dashTodayAppts">
+            <div style="font-size:.78rem;color:var(--muted);padding:.5rem 0">Cargando...</div>
+          </div>
+        </div>
+
       </div>
 
       <!-- FOTOS -->
@@ -7367,6 +8066,139 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         </div>
       </div>
 
+      <!-- BLOG ADMIN -->
+      <div id="ap-blog" class="ap">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
+          <p style="font-size:.83rem;color:var(--muted);margin:0">Artículos del blog. Los publicados aparecen en la página pública.</p>
+          <button onclick="openAdmBlogPost(null)" style="padding:.5rem 1.1rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">+ Nuevo artículo</button>
+        </div>
+        <div id="admBlogList" style="display:flex;flex-direction:column;gap:.75rem">
+          <div style="color:var(--muted);font-size:.84rem;padding:2rem;text-align:center">Cargando...</div>
+        </div>
+      </div>
+
+      <!-- MODAL BLOG POST — PLANTILLA FIJA -->
+      <div class="amb" id="admBlogMod" style="align-items:flex-start;padding:0">
+        <div style="width:100%;max-width:1300px;margin:0 auto;height:100vh;display:grid;grid-template-columns:1fr 400px;background:#F8F5F0">
+
+          <!-- EDITOR -->
+          <div style="display:flex;flex-direction:column;height:100vh;overflow:hidden">
+            <!-- Topbar -->
+            <div style="background:#fff;border-bottom:1px solid var(--cream-dk);padding:.8rem 1.5rem;display:flex;align-items:center;gap:.85rem;flex-shrink:0">
+              <button onclick="closeAMod('admBlogMod')" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>
+              <span style="font-weight:700;font-size:.9rem;color:#1C1A18;flex:1" id="admBlogModTitle">Nuevo artículo</span>
+              <select id="admBlogPublished" style="padding:.38rem .7rem;border:1.5px solid var(--cream-dk);border-radius:100px;font-size:.75rem;font-family:var(--fb);outline:none;background:#fff">
+                <option value="false">Borrador</option>
+                <option value="true">✓ Publicado</option>
+              </select>
+              <label style="display:flex;align-items:center;gap:.35rem;font-size:.75rem;color:var(--muted);cursor:pointer;white-space:nowrap">
+                <input type="checkbox" id="admBlogFeatured" style="accent-color:var(--gold)"> ⭐ Destacado
+              </label>
+              <button onclick="saveAdmBlogPost()" style="padding:.45rem 1.2rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">Guardar</button>
+            </div>
+
+            <!-- Formulario scrolleable -->
+            <div style="flex:1;overflow-y:auto;padding:1.5rem 2rem">
+              <input type="hidden" id="admBlogId">
+
+              <!-- Portada -->
+              <div class="blog-section-card">
+                <div class="blog-section-title">📌 Portada</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
+                  <div class="form-group" style="grid-column:1/-1"><label class="form-label">Título del artículo *</label>
+                    <input type="text" class="form-input" id="admBlogTitle" placeholder="Ej: 5 claves para mejorar tu digestión" oninput="updateBlogPreview()">
+                  </div>
+                  <div class="form-group"><label class="form-label">Categoría</label>
+                    <input type="text" class="form-input" id="admBlogCat" placeholder="Nutrición, Bienestar..." oninput="updateBlogPreview()">
+                  </div>
+                  <div class="form-group"><label class="form-label">Autor</label>
+                    <input type="text" class="form-input" id="admBlogAuthor" placeholder="Dra. Mariel Dobenau" oninput="updateBlogPreview()">
+                  </div>
+                  <div class="form-group" style="grid-column:1/-1"><label class="form-label">Foto de portada (URL)</label>
+                    <input type="url" class="form-input" id="admBlogCover" placeholder="https://... (pegá la URL de cualquier imagen)" oninput="updateBlogPreview()">
+                  </div>
+                  <div class="form-group" style="grid-column:1/-1"><label class="form-label">Extracto / bajada</label>
+                    <textarea class="form-textarea" id="admBlogExcerpt" rows="2" placeholder="Frase corta que aparece bajo el título y en la lista de artículos..." oninput="updateBlogPreview()"></textarea>
+                  </div>
+                  <div class="form-group" style="grid-column:1/-1"><label class="form-label">Tags (separados por coma)</label>
+                    <input type="text" class="form-input" id="admBlogTags" placeholder="nutricion, digestión, salud">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Intro -->
+              <div class="blog-section-card">
+                <div class="blog-section-title">📝 Introducción</div>
+                <textarea class="form-textarea" id="bf_intro" rows="5" placeholder="Primer párrafo del artículo. Contá de qué se trata y por qué es importante..." oninput="updateBlogPreview()"></textarea>
+              </div>
+
+              <!-- Sección 1 -->
+              <div class="blog-section-card">
+                <div class="blog-section-title">🔖 Sección 1</div>
+                <div class="form-group"><input type="text" class="form-input" id="bf_s1_titulo" placeholder="Título de la sección (ej: ¿Qué es la inflamación?)" oninput="updateBlogPreview()"></div>
+                <textarea class="form-textarea" id="bf_s1_texto" rows="5" placeholder="Contenido de esta sección..." oninput="updateBlogPreview()"></textarea>
+                <div class="form-group" style="margin-top:.75rem"><label class="form-label">Foto de esta sección (URL, opcional)</label>
+                  <input type="url" class="form-input" id="bf_s1_foto" placeholder="https://..." oninput="updateBlogPreview()">
+                </div>
+              </div>
+
+              <!-- Sección 2 -->
+              <div class="blog-section-card">
+                <div class="blog-section-title">🔖 Sección 2</div>
+                <div class="form-group"><input type="text" class="form-input" id="bf_s2_titulo" placeholder="Título de la sección" oninput="updateBlogPreview()"></div>
+                <textarea class="form-textarea" id="bf_s2_texto" rows="5" placeholder="Contenido de esta sección..." oninput="updateBlogPreview()"></textarea>
+                <div class="form-group" style="margin-top:.75rem"><label class="form-label">Foto (URL, opcional)</label>
+                  <input type="url" class="form-input" id="bf_s2_foto" placeholder="https://..." oninput="updateBlogPreview()">
+                </div>
+              </div>
+
+              <!-- Sección 3 -->
+              <div class="blog-section-card">
+                <div class="blog-section-title">🔖 Sección 3</div>
+                <div class="form-group"><input type="text" class="form-input" id="bf_s3_titulo" placeholder="Título de la sección" oninput="updateBlogPreview()"></div>
+                <textarea class="form-textarea" id="bf_s3_texto" rows="5" placeholder="Contenido de esta sección..." oninput="updateBlogPreview()"></textarea>
+                <div class="form-group" style="margin-top:.75rem"><label class="form-label">Foto (URL, opcional)</label>
+                  <input type="url" class="form-input" id="bf_s3_foto" placeholder="https://..." oninput="updateBlogPreview()">
+                </div>
+              </div>
+
+              <!-- Cita destacada -->
+              <div class="blog-section-card">
+                <div class="blog-section-title">💬 Cita destacada (opcional)</div>
+                <textarea class="form-textarea" id="bf_cita" rows="2" placeholder="Frase o consejo clave para destacar..." oninput="updateBlogPreview()"></textarea>
+              </div>
+
+              <!-- Conclusión -->
+              <div class="blog-section-card">
+                <div class="blog-section-title">✅ Conclusión</div>
+                <textarea class="form-textarea" id="bf_conclusion" rows="4" placeholder="Cierre del artículo, resumen o llamada a la acción..." oninput="updateBlogPreview()"></textarea>
+              </div>
+
+              <!-- Extras -->
+              <div class="blog-section-card">
+                <div class="blog-section-title">🎵 Podcast Spotify (opcional)</div>
+                <input type="url" class="form-input" id="bf_spotify" placeholder="https://open.spotify.com/episode/..." oninput="updateBlogPreview()">
+              </div>
+
+              <div class="blog-section-card">
+                <div class="blog-section-title">📎 Archivo descargable (opcional)</div>
+                <div style="display:grid;grid-template-columns:1fr 130px;gap:.75rem">
+                  <input type="text" class="form-input" id="bf_dl_nombre" placeholder="Nombre del archivo (ej: Guía de alimentación)" oninput="updateBlogPreview()">
+                  <input type="text" class="form-input" id="bf_dl_size" placeholder="Tamaño (2 MB)">
+                  <input type="url" class="form-input" id="bf_dl_url" placeholder="URL del archivo (Google Drive, Dropbox...)" style="grid-column:1/-1">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- VISTA PREVIA -->
+          <div style="height:100vh;overflow-y:auto;border-left:1px solid var(--cream-dk);background:#fff">
+            <div style="background:#1C1A18;padding:.65rem 1.1rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:rgba(240,232,216,.4)">Vista previa</div>
+            <div id="blogPostPreview"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- SUPLEMENTOS ADMIN -->
       <div id="ap-suplementos" class="ap">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
@@ -7536,10 +8368,10 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         .cal-appt-pill{font-size:.65rem;font-weight:600;padding:.18rem .45rem;border-radius:4px;margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.3}
         .cal-blocked-pill{font-size:.62rem;padding:.15rem .4rem;border-radius:4px;margin-bottom:.2rem;background:rgba(196,97,74,.12);color:#C4614A;border-left:2px solid #C4614A}
         /* Panel lateral */
-        .cal-side{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(28,26,24,.07);position:sticky;top:90px;max-height:calc(100vh - 120px);display:flex;flex-direction:column}
+        .cal-side{background:var(--cream);border-radius:14px;box-shadow:0 2px 12px rgba(28,26,24,.07);position:sticky;top:90px;height:calc(100vh - 120px);display:flex;flex-direction:column;overflow:hidden}
         .cal-side-head{padding:1rem 1.25rem;border-bottom:1px solid var(--cream-dk);background:var(--cream);flex-shrink:0}
         .cal-side-title{font-family:var(--fd);font-size:1rem}
-        .cal-side-body{padding:1.1rem;overflow-y:auto;display:flex;flex-direction:column;gap:.65rem;flex:1}
+        .cal-side-body{padding:1.1rem;overflow-y:auto;display:flex;flex-direction:column;gap:.65rem;flex:1;-webkit-overflow-scrolling:touch}
         .cal-appt-card{padding:.85rem;border-radius:10px;border:1.5px solid var(--cream-dk);cursor:pointer;transition:.15s}
         .cal-appt-card:hover{border-color:var(--teal);background:rgba(58,125,140,.03)}
         .cal-appt-time{font-family:var(--fd);font-size:1.1rem;color:var(--gold)}
@@ -7994,24 +8826,23 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 ════════════════════════════════════════════ -->
 <!-- ════ PROGRAMAS ════ -->
 <div class="page" id="page-programas">
-  <div class="page-hero">
-    <img class="page-hero-bg" src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1400&q=50" alt="">
-    <div class="container page-hero-content">
-      <span style="font-size:.67rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:rgba(201,147,90,.7);display:block;margin-bottom:.65rem">Transformación real</span>
-      <h1>Nuestros <em>programas</em></h1>
-      <p>Diseñados para distintos momentos de tu proceso. Todos incluyen acompañamiento profesional y comunidad privada.</p>
+
+  <!-- Hero -->
+  <div style="background:#1C1A18;padding:5rem 1.5rem 4rem;text-align:center;position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(58,125,140,.15),transparent 60%),radial-gradient(ellipse at 70% 50%,rgba(201,147,90,.1),transparent 60%)"></div>
+    <div style="position:relative;z-index:1">
+      <span style="font-size:.65rem;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:.85rem">Transformación real</span>
+      <h1 style="font-family:var(--fd);font-size:clamp(2.2rem,5vw,3.5rem);color:#F0E8D8;margin:0 0 1rem">Nuestros <em style="color:var(--gold)">programas</em></h1>
+      <p style="font-size:.95rem;color:rgba(240,232,216,.55);max-width:520px;margin:0 auto">Dos líneas de transformación. Elegí la que se adapta a tu objetivo.</p>
     </div>
   </div>
-  <div class="filter-bar">
-    <div class="container"><div class="filter-tabs" id="progFilterTabs">
-      <button class="ftab active" onclick="filterProgs('all',this)">Todos</button>
-    </div></div>
+
+  <!-- Dos marcas como secciones -->
+  <div id="progMarcasContainer">
+    <div style="text-align:center;padding:4rem;color:var(--muted)">Cargando programas...</div>
   </div>
-  <div class="prog-list">
-    <div class="container" id="progListContainer">
-      <div style="text-align:center;padding:4rem;color:var(--muted)">Cargando programas...</div>
-    </div>
-  </div>
+
+  <!-- CTA final -->
   <section class="cta-strip">
     <div class="container"><div class="cta-inner">
       <span class="cta-tag">¿No sabés cuál elegir?</span>
@@ -8024,6 +8855,51 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
     </div></div>
   </section>
 </div><!-- /page-programas -->
+
+<!-- ════ BLOG ════ -->
+<div class="page" id="page-blog">
+  <!-- Hero -->
+  <div style="background:#1C1A18;padding:5rem 1.5rem 4rem;text-align:center;position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(58,125,140,.2),transparent 70%)"></div>
+    <div style="position:relative;z-index:1">
+      <span style="font-size:.65rem;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:.85rem">Conocimiento que transforma</span>
+      <h1 style="font-family:var(--fd);font-size:clamp(2.2rem,5vw,3.5rem);color:#F0E8D8;margin:0 0 1rem">Blog de <em style="color:var(--gold)">salud</em></h1>
+      <p style="font-size:.95rem;color:rgba(240,232,216,.55);max-width:520px;margin:0 auto">Artículos, consejos y novedades sobre medicina funcional, nutrición y bienestar.</p>
+    </div>
+  </div>
+
+  <!-- Filtros por categoría -->
+  <div style="background:#fff;border-bottom:1px solid var(--cream-dk);padding:.85rem clamp(1.5rem,5vw,5rem);position:sticky;top:70px;z-index:90">
+    <div style="max-width:1200px;margin:0 auto;display:flex;gap:.5rem;overflow-x:auto;scrollbar-width:none" id="blogCatTabs">
+      <button class="ftab active" onclick="filterBlog('all',this)">Todos</button>
+    </div>
+  </div>
+
+  <!-- Grid de artículos -->
+  <div style="background:#F8F5F0;padding:3rem clamp(1.5rem,5vw,5rem);min-height:400px">
+    <div style="max-width:1200px;margin:0 auto" id="blogGrid">
+      <div style="text-align:center;padding:4rem;color:var(--muted)">Cargando artículos...</div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <section class="cta-strip">
+    <div class="container"><div class="cta-inner">
+      <span class="cta-tag">¿Querés saber más?</span>
+      <h2 class="cta-title">Reservá una consulta</h2>
+      <p class="cta-sub">Hablemos de tu caso particular con una de nuestras profesionales.</p>
+      <div class="cta-btns">
+        <button class="btn-white" onclick="goTo('turnos')">Reservar turno</button>
+        <a href="https://wa.me/5491176179836" target="_blank" class="btn-ghost">WhatsApp →</a>
+      </div>
+    </div></div>
+  </section>
+</div><!-- /page-blog -->
+
+<!-- ════ BLOG POST ════ -->
+<div class="page" id="page-blog-post">
+  <div id="blogPostContent"><!-- renderizado dinámico --></div>
+</div><!-- /page-blog-post -->
 
 <!-- ════ LANDING INDIVIDUAL DE PROGRAMA ════ -->
 <div class="page" id="page-prog-landing">
@@ -8335,6 +9211,14 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
           <!-- Básicos -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
             <div class="form-group"><label class="form-label">Subtítulo (frase destacada)</label><input type="text" class="form-input" id="plSubtitle" placeholder="Empezá desde cero, de verdad"></div>
+            <div class="form-group">
+              <label class="form-label">Línea / Marca</label>
+              <select class="form-input" id="plMarca">
+                <option value="">Sin categoría</option>
+                <option value="performance">Be Human Performance (entrenamiento)</option>
+                <option value="indomables">Indomables (alimentación)</option>
+              </select>
+            </div>
             <div class="form-group"><label class="form-label">Categoría</label><input type="text" class="form-input" id="plCategory" placeholder="Ej: Depuración · Inicio"></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
@@ -8642,6 +9526,13 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
           <div class="form-group"><label class="form-label">Slug (URL)</label><input type="text" class="form-input" id="epSlug" placeholder="reset-21"></div>
         </div>
         <div class="form-group"><label class="form-label">URL de imagen</label><input type="url" class="form-input" id="epImg" placeholder="https://..."></div>
+        <div class="form-group"><label class="form-label">Línea / Marca *</label>
+          <select class="form-select" id="epMarca">
+            <option value="">Sin categoría</option>
+            <option value="performance">⚡ Be Human Performance (entrenamiento)</option>
+            <option value="indomables">🌿 Indomables (alimentación)</option>
+          </select>
+        </div>
         <div class="form-group"><label class="form-label">Estado</label>
           <select class="form-select" id="epActivo">
             <option value="true">Activo — visible en el sitio</option>
