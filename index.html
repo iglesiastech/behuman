@@ -2281,38 +2281,71 @@ function previewAUrl() {
 
 async function saveAImg() {
   const isUp = document.getElementById('itup').style.display !== 'none';
-  const btn = document.getElementById('imgSB');
-  btn.disabled = true; btn.textContent = 'Guardando...';
+  const btn  = document.getElementById('imgSB');
+  btn.disabled = true; btn.textContent = 'Subiendo...';
   try {
-    const sb = getSB();
-    if (!sb) throw new Error('Supabase no configurado');
+    const token = _authToken || localStorage.getItem('bh_token');
     let url;
-    if (isUp) {
-      if (!aSelFile) { toast('Seleccioná un archivo','err'); return; }
-      const ext = aSelFile.name.split('.').pop();
+    if(isUp) {
+      if(!aSelFile) { toast('Seleccioná un archivo','err'); btn.disabled=false; btn.textContent='Guardar'; return; }
+      const ext  = aSelFile.name.split('.').pop().toLowerCase();
       const path = `site-images/${aCurrImgKey}-${Date.now()}.${ext}`;
-      const { error: ue } = await sb.storage.from('site-images').upload(path, aSelFile, {upsert:true});
-      if (ue) throw ue;
-      const { data: { publicUrl } } = sb.storage.from('site-images').getPublicUrl(path);
-      url = publicUrl;
+      // Upload via Supabase Storage REST API
+      const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token, 'Content-Type': aSelFile.type, 'x-upsert': 'true' },
+        body: aSelFile
+      });
+      if(!rUp.ok) { const e=await rUp.json(); throw new Error(e.error||e.message||rUp.statusText); }
+      url = `${SUPABASE_URL}/storage/v1/object/public/site-media/${path}`;
     } else {
       url = document.getElementById('aUI').value.trim();
-      if (!url) { toast('Ingresá una URL','err'); return; }
+      if(!url) { toast('Ingresá una URL','err'); btn.disabled=false; btn.textContent='Guardar'; return; }
     }
-    await sb.from('site_images').upsert({key:aCurrImgKey, url, updated_at: new Date().toISOString()});
-    // Actualizar preview en la grilla
-    document.querySelectorAll(`[id="aip-${aCurrImgKey}"]`).forEach(el => el.src = url);
-    // Actualizar también las imágenes del sitio visible
-    document.querySelectorAll(`[data-site-img="${aCurrImgKey}"]`).forEach(el => el.src = url);
+    // Save URL to site_images table
+    const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token, 'Content-Type':'application/json', 'Prefer':'resolution=merge-duplicates,return=minimal' };
+    await fetch(SUPABASE_URL+'/rest/v1/site_images', { method:'POST', headers:h, body:JSON.stringify({key:aCurrImgKey, url, updated_at:new Date().toISOString()}) });
+    // Update all images on page
+    document.querySelectorAll('[id="aip-'+aCurrImgKey+'"]').forEach(el=>el.src=url);
+    document.querySelectorAll('[data-site-img="'+aCurrImgKey+'"]').forEach(el=>el.src=url);
     toast('✓ Imagen actualizada en toda la web','ok');
     closeAMod('imgMod');
     loadAFotos();
-  } catch(e) {
-    toast('Error: '+e.message,'err');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Guardar';
-  }
+  } catch(e) { toast('Error: '+e.message,'err'); }
+  finally { btn.disabled=false; btn.textContent='Guardar'; }
 }
+
+/* ── UNIVERSAL IMAGE UPLOAD ── */
+// Crea un input file oculto y lo dispara. Al completar, pone la URL en el campo destino.
+function triggerImgUpload(targetInputId, folder) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*'; input.style.display = 'none';
+  document.body.appendChild(input);
+  input.onchange = async () => {
+    const file = input.files[0];
+    document.body.removeChild(input);
+    if(!file) return;
+    const btn = document.querySelector('[onclick*="triggerImgUpload"]');
+    toast('Subiendo imagen...', 'info', 60000);
+    try {
+      const token = _authToken || localStorage.getItem('bh_token');
+      const ext   = file.name.split('.').pop().toLowerCase();
+      const path  = `${folder||'uploads'}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token, 'Content-Type': file.type, 'x-upsert': 'true' },
+        body: file
+      });
+      if(!rUp.ok) { const e=await rUp.json(); throw new Error(e.error||e.message||rUp.statusText); }
+      const url = `${SUPABASE_URL}/storage/v1/object/public/site-media/${path}`;
+      const el = document.getElementById(targetInputId);
+      if(el) { el.value = url; el.dispatchEvent(new Event('input')); }
+      toast('✓ Imagen subida','ok');
+    } catch(e) { toast('Error al subir: '+e.message,'err'); }
+  };
+  input.click();
+}
+window.triggerImgUpload = triggerImgUpload;
 
 /* ── TURNOS ── */
 async function loadATurnos() {
@@ -8114,8 +8147,11 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
                   <div class="form-group"><label class="form-label">Autor</label>
                     <input type="text" class="form-input" id="admBlogAuthor" placeholder="Dra. Mariel Dobenau" oninput="updateBlogPreview()">
                   </div>
-                  <div class="form-group" style="grid-column:1/-1"><label class="form-label">Foto de portada (URL)</label>
-                    <input type="url" class="form-input" id="admBlogCover" placeholder="https://... (pegá la URL de cualquier imagen)" oninput="updateBlogPreview()">
+                  <div class="form-group" style="grid-column:1/-1"><label class="form-label">Foto de portada</label>
+                    <div style="display:flex;gap:.5rem">
+                      <input type="url" class="form-input" id="admBlogCover" placeholder="Pegá una URL o subí desde tu PC →" oninput="updateBlogPreview()" style="flex:1">
+                      <button type="button" onclick="triggerImgUpload('admBlogCover','blog')" style="padding:.45rem 1rem;border-radius:100px;font-size:.75rem;font-weight:600;border:1.5px solid var(--teal);color:var(--teal);background:#fff;cursor:pointer;white-space:nowrap;font-family:var(--fb)">📁 Subir foto</button>
+                    </div>
                   </div>
                   <div class="form-group" style="grid-column:1/-1"><label class="form-label">Extracto / bajada</label>
                     <textarea class="form-textarea" id="admBlogExcerpt" rows="2" placeholder="Frase corta que aparece bajo el título y en la lista de artículos..." oninput="updateBlogPreview()"></textarea>
@@ -8138,7 +8174,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
                 <div class="form-group"><input type="text" class="form-input" id="bf_s1_titulo" placeholder="Título de la sección (ej: ¿Qué es la inflamación?)" oninput="updateBlogPreview()"></div>
                 <textarea class="form-textarea" id="bf_s1_texto" rows="5" placeholder="Contenido de esta sección..." oninput="updateBlogPreview()"></textarea>
                 <div class="form-group" style="margin-top:.75rem"><label class="form-label">Foto de esta sección (URL, opcional)</label>
-                  <input type="url" class="form-input" id="bf_s1_foto" placeholder="https://..." oninput="updateBlogPreview()">
+                  <div style="display:flex;gap:.5rem"><input type="url" class="form-input" id="bf_s1_foto" placeholder="URL o subí →" oninput="updateBlogPreview()" style="flex:1"><button type="button" onclick="triggerImgUpload('bf_s1_foto','blog')" style="padding:.4rem .85rem;border-radius:100px;font-size:.73rem;font-weight:600;border:1.5px solid var(--teal);color:var(--teal);background:#fff;cursor:pointer;white-space:nowrap;font-family:var(--fb)">📁 Subir</button></div>
                 </div>
               </div>
 
@@ -8148,7 +8184,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
                 <div class="form-group"><input type="text" class="form-input" id="bf_s2_titulo" placeholder="Título de la sección" oninput="updateBlogPreview()"></div>
                 <textarea class="form-textarea" id="bf_s2_texto" rows="5" placeholder="Contenido de esta sección..." oninput="updateBlogPreview()"></textarea>
                 <div class="form-group" style="margin-top:.75rem"><label class="form-label">Foto (URL, opcional)</label>
-                  <input type="url" class="form-input" id="bf_s2_foto" placeholder="https://..." oninput="updateBlogPreview()">
+                  <div style="display:flex;gap:.5rem"><input type="url" class="form-input" id="bf_s2_foto" placeholder="URL o subí →" oninput="updateBlogPreview()" style="flex:1"><button type="button" onclick="triggerImgUpload('bf_s2_foto','blog')" style="padding:.4rem .85rem;border-radius:100px;font-size:.73rem;font-weight:600;border:1.5px solid var(--teal);color:var(--teal);background:#fff;cursor:pointer;white-space:nowrap;font-family:var(--fb)">📁 Subir</button></div>
                 </div>
               </div>
 
@@ -8158,7 +8194,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
                 <div class="form-group"><input type="text" class="form-input" id="bf_s3_titulo" placeholder="Título de la sección" oninput="updateBlogPreview()"></div>
                 <textarea class="form-textarea" id="bf_s3_texto" rows="5" placeholder="Contenido de esta sección..." oninput="updateBlogPreview()"></textarea>
                 <div class="form-group" style="margin-top:.75rem"><label class="form-label">Foto (URL, opcional)</label>
-                  <input type="url" class="form-input" id="bf_s3_foto" placeholder="https://..." oninput="updateBlogPreview()">
+                  <div style="display:flex;gap:.5rem"><input type="url" class="form-input" id="bf_s3_foto" placeholder="URL o subí →" oninput="updateBlogPreview()" style="flex:1"><button type="button" onclick="triggerImgUpload('bf_s3_foto','blog')" style="padding:.4rem .85rem;border-radius:100px;font-size:.73rem;font-weight:600;border:1.5px solid var(--teal);color:var(--teal);background:#fff;cursor:pointer;white-space:nowrap;font-family:var(--fb)">📁 Subir</button></div>
                 </div>
               </div>
 
@@ -8185,7 +8221,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
                 <div style="display:grid;grid-template-columns:1fr 130px;gap:.75rem">
                   <input type="text" class="form-input" id="bf_dl_nombre" placeholder="Nombre del archivo (ej: Guía de alimentación)" oninput="updateBlogPreview()">
                   <input type="text" class="form-input" id="bf_dl_size" placeholder="Tamaño (2 MB)">
-                  <input type="url" class="form-input" id="bf_dl_url" placeholder="URL del archivo (Google Drive, Dropbox...)" style="grid-column:1/-1">
+                  <div style="display:flex;gap:.5rem;grid-column:1/-1"><input type="url" class="form-input" id="bf_dl_url" placeholder="URL del archivo o subí →" style="flex:1"><button type="button" onclick="triggerImgUpload('bf_dl_url','descargas')" style="padding:.4rem .85rem;border-radius:100px;font-size:.73rem;font-weight:600;border:1.5px solid var(--teal);color:var(--teal);background:#fff;cursor:pointer;white-space:nowrap;font-family:var(--fb)">📁 Subir</button></div>
                 </div>
               </div>
             </div>
@@ -9228,7 +9264,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
           <!-- Imágenes -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
             <div class="form-group"><label class="form-label">Imagen de portada (lista de programas)</label><input type="url" class="form-input" id="plImageUrl" placeholder="https://..."></div>
-            <div class="form-group"><label class="form-label">Imagen del hero (landing)</label><input type="url" class="form-input" id="plHeroImage" placeholder="https://..."></div>
+            <div class="form-group"><label class="form-label">Imagen del hero (landing)</label><div style="display:flex;gap:.5rem"><input type="url" class="form-input" id="plHeroImage" placeholder="URL o subí →" style="flex:1"><button type="button" onclick="triggerImgUpload('plHeroImage','programas')" style="padding:.4rem .85rem;border-radius:100px;font-size:.73rem;font-weight:600;border:1.5px solid var(--teal);color:var(--teal);background:#fff;cursor:pointer;white-space:nowrap;font-family:var(--fb)">📁 Subir</button></div></div>
           </div>
           <!-- Descripciones -->
           <div class="form-group"><label class="form-label">Descripción corta (aparece en la lista)</label><textarea class="form-textarea" id="plDesc" rows="3" placeholder="Breve descripción para la lista de programas..."></textarea></div>
@@ -9525,7 +9561,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
           <div class="form-group"><label class="form-label">Nivel</label><input type="text" class="form-input" id="epNivel" placeholder="Principiantes"></div>
           <div class="form-group"><label class="form-label">Slug (URL)</label><input type="text" class="form-input" id="epSlug" placeholder="reset-21"></div>
         </div>
-        <div class="form-group"><label class="form-label">URL de imagen</label><input type="url" class="form-input" id="epImg" placeholder="https://..."></div>
+        <div class="form-group"><label class="form-label">Imagen del programa</label><div style="display:flex;gap:.5rem"><input type="url" class="form-input" id="epImg" placeholder="URL o subí →" style="flex:1"><button type="button" onclick="triggerImgUpload('epImg','programas')" style="padding:.4rem .85rem;border-radius:100px;font-size:.73rem;font-weight:600;border:1.5px solid var(--teal);color:var(--teal);background:#fff;cursor:pointer;white-space:nowrap;font-family:var(--fb)">📁 Subir</button></div></div>
         <div class="form-group"><label class="form-label">Línea / Marca *</label>
           <select class="form-select" id="epMarca">
             <option value="">Sin categoría</option>
