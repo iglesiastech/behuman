@@ -1986,7 +1986,7 @@ async function loadADash() {
     // Cargar datos en paralelo
     const [rAppts, rOrders, rConsultas, rMedicos] = await Promise.all([
       fetch(SUPABASE_URL+'/rest/v1/appointments?date=gte.'+desde+'&date=lte.'+hasta+'&select=date,price,status,type,medico_id,sena_amount,sena_status,patient_name,time,modalidad&limit=1000', {headers:h}).then(r=>r.json()),
-      fetch(SUPABASE_URL+'/rest/v1/orders?created_at=gte.'+desde+'T00:00:00&select=amount,status,program_id&limit=500', {headers:h}).then(r=>r.json()),
+      fetch(SUPABASE_URL+'/rest/v1/orders?select=amount,status,program_id&limit=500', {headers:h}).then(r=>r.json()),
       fetch(SUPABASE_URL+'/rest/v1/consultation_types?select=id,nombre,icono&activo=eq.true', {headers:h}).then(r=>r.json()),
       fetch(SUPABASE_URL+'/rest/v1/medicos?activo=eq.true&select=id,nombre,color', {headers:h}).then(r=>r.json()),
     ]);
@@ -2182,7 +2182,8 @@ async function applySiteImages() {
     const r = await fetch(SUPABASE_URL+'/rest/v1/site_images?select=key,url', {headers:h});
     const data = await r.json();
     (Array.isArray(data)?data:[]).forEach(row => {
-      document.querySelectorAll('[data-site-img="'+row.key+'"]').forEach(el => { el.src = row.url; });
+      const url = row.url + (row.url.includes('supabase') ? '?t='+Date.now() : '');
+      document.querySelectorAll('[data-site-img="'+row.key+'"]').forEach(el => { el.src = url; });
     });
   } catch(e) {}
 }
@@ -2310,10 +2311,17 @@ async function saveAImg() {
       url = document.getElementById('aUI').value.trim();
       if(!url) { toast('Ingresá una URL','err'); btn.disabled=false; btn.textContent='Guardar'; return; }
     }
-    const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token, 'Content-Type':'application/json', 'Prefer':'resolution=merge-duplicates,return=minimal' };
-    await fetch(SUPABASE_URL+'/rest/v1/site_images', { method:'POST', headers:h, body:JSON.stringify({key:aCurrImgKey, url, updated_at:new Date().toISOString()}) });
-    document.querySelectorAll('[id="aip-'+aCurrImgKey+'"]').forEach(el=>el.src=url);
-    document.querySelectorAll('[data-site-img="'+aCurrImgKey+'"]').forEach(el=>el.src=url);
+    const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token, 'Content-Type':'application/json' };
+    // Intentar update primero, si no existe hacer insert
+    const rCheck = await fetch(SUPABASE_URL+'/rest/v1/site_images?key=eq.'+aCurrImgKey, {headers:h});
+    const existing = await rCheck.json();
+    if(Array.isArray(existing) && existing.length) {
+      await fetch(SUPABASE_URL+'/rest/v1/site_images?key=eq.'+aCurrImgKey, {method:'PATCH', headers:{...h,'Prefer':'return=minimal'}, body:JSON.stringify({url, updated_at:new Date().toISOString()})});
+    } else {
+      await fetch(SUPABASE_URL+'/rest/v1/site_images', {method:'POST', headers:{...h,'Prefer':'return=minimal'}, body:JSON.stringify({key:aCurrImgKey, url, updated_at:new Date().toISOString()})});
+    }
+    document.querySelectorAll('[id="aip-'+aCurrImgKey+'"]').forEach(el=>el.src=url+'?t='+Date.now());
+    document.querySelectorAll('[data-site-img="'+aCurrImgKey+'"]').forEach(el=>el.src=url+'?t='+Date.now());
     toast('✓ Imagen actualizada','ok');
     closeAMod('imgMod');
     loadAFotos();
@@ -7078,9 +7086,9 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
     </div>
     <div class="hero-right">
       <div class="hero-grid">
-        <img class="himg himg-a" src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=900&q=85" alt="Consultorio">
-        <img class="himg himg-b" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&q=85" alt="Dra. Mariel">
-        <img class="himg himg-c" src="https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=600&q=85" alt="Consultorio">
+        <img class="himg himg-a" data-site-img="hero_consultorio_1" src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=900&q=85" alt="Consultorio">
+        <img class="himg himg-b" data-site-img="hero_dra" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&q=85" alt="Dra. Mariel">
+        <img class="himg himg-c" data-site-img="hero_consultorio_2" src="https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=600&q=85" alt="Consultorio">
       </div>
       <div class="hero-pill"><div class="pill-dot"></div><div class="pill-txt">Turnos <span>disponibles esta semana</span></div></div>
       <div class="hero-deco"></div>
@@ -7127,25 +7135,25 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       </div>
       <div class="prog-grid">
         <div class="prog-card rv" onclick="goTo('programas')">
-          <img class="prog-img" src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=900&q=80" alt="Reset">
+          <img class="prog-img" data-site-img="prog_reset_21" src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=900&q=80" alt="Reset">
           <div class="prog-ov"></div>
           <div class="prog-body"><div class="prog-tag">21 días</div><div class="prog-name">Reset Integral</div><div class="prog-meta"><span>Principiantes</span><span>·</span><span>Online</span><div class="prog-price">$89.000</div></div></div>
           <div class="prog-arrow">→</div>
         </div>
         <div class="prog-card rv d1" onclick="goTo('programas')">
-          <img class="prog-img" src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&q=80" alt="Performance">
+          <img class="prog-img" data-site-img="prog_activacion" src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&q=80" alt="Performance">
           <div class="prog-ov"></div>
           <div class="prog-body"><div class="prog-tag">8 semanas</div><div class="prog-name">Be Human Performance</div><div class="prog-meta"><span>Intermedio</span><span>·</span><span>Online</span><div class="prog-price">$145.000</div></div></div>
           <div class="prog-arrow">→</div>
         </div>
         <div class="prog-card prog-feat rv d2" onclick="goTo('programas')">
-          <img class="prog-img" src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&q=80" alt="Indomables">
+          <img class="prog-img" data-site-img="prog_indomables" src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&q=80" alt="Indomables">
           <div class="prog-ov"></div>
           <div class="prog-body"><div class="prog-tag">⭐ Más elegido · 3 meses</div><div class="prog-name">Indomables by Be Human</div><div class="prog-meta"><span>Programa completo</span><span>·</span><span>Comunidad privada</span><div class="prog-price">$249.000</div></div></div>
           <div class="prog-arrow">→</div>
         </div>
         <div class="prog-card rv d1" onclick="goTo('programas')">
-          <img class="prog-img" src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=900&q=80" alt="Reset Mujer">
+          <img class="prog-img" data-site-img="prog_reset_mujer" src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=900&q=80" alt="Reset Mujer">
           <div class="prog-ov"></div>
           <div class="prog-body"><div class="prog-tag">6 semanas · Hormonal</div><div class="prog-name">Reset Mujer</div><div class="prog-meta"><span>Para ella</span><span>·</span><span>Online</span><div class="prog-price">$119.000</div></div></div>
           <div class="prog-arrow">→</div>
@@ -7159,7 +7167,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
     <div class="container">
       <div class="mariel-grid">
         <div class="mariel-img-w rv">
-          <img class="mariel-img" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=700&q=85" alt="Dra. Mariel Dobenau">
+          <img class="mariel-img" data-site-img="mariel_portrait" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=700&q=85" alt="Dra. Mariel Dobenau">
           <div class="mariel-chip">MN 12345 · Médica Funcional</div>
         </div>
         <div class="rv d2">
@@ -7243,7 +7251,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 ════════════════════════════════════════════ -->
 <div class="page" id="page-tienda">
   <div class="page-hero">
-    <img class="page-hero-bg" src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1400&q=50" alt="">
+    <img class="page-hero-bg" data-site-img="tienda_hero_bg" src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1400&q=50" alt="">
     <div class="container page-hero-content">
       <span style="font-size:.67rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:rgba(201,147,90,.7);display:block;margin-bottom:.65rem">Suplementación inteligente</span>
       <h1>Nuestra <em>tienda</em></h1>
@@ -7612,7 +7620,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 
     <!-- LEFT: imagen + beneficios -->
     <div class="login-left">
-      <img class="login-left-bg" src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=60" alt="">
+      <img class="login-left-bg" data-site-img="portal_bg" src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=60" alt="">
       <div class="login-left-content">
         <div class="login-logo">Be Human</div>
         <h2 class="login-quote">Tu espacio de <em>salud</em> te espera</h2>
