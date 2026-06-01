@@ -2284,31 +2284,37 @@ async function saveAImg() {
   const btn  = document.getElementById('imgSB');
   btn.disabled = true; btn.textContent = 'Subiendo...';
   try {
-    const token = _authToken || localStorage.getItem('bh_token');
+    const token = _authToken || localStorage.getItem('bh_token') || SUPABASE_ANON;
     let url;
     if(isUp) {
       if(!aSelFile) { toast('Seleccioná un archivo','err'); btn.disabled=false; btn.textContent='Guardar'; return; }
-      const ext  = aSelFile.name.split('.').pop().toLowerCase();
+      const ext  = aSelFile.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
       const path = `site-images/${aCurrImgKey}-${Date.now()}.${ext}`;
-      // Upload via Supabase Storage REST API
       const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token, 'Content-Type': aSelFile.type, 'x-upsert': 'true' },
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': aSelFile.type || 'image/jpeg',
+          'x-upsert': 'true',
+          'cache-control': '3600'
+        },
         body: aSelFile
       });
-      if(!rUp.ok) { const e=await rUp.json(); throw new Error(e.error||e.message||rUp.statusText); }
+      if(!rUp.ok) {
+        const err = await rUp.json().catch(()=>({message:rUp.statusText}));
+        throw new Error(err.error || err.message || 'Error al subir');
+      }
       url = `${SUPABASE_URL}/storage/v1/object/public/site-media/${path}`;
     } else {
       url = document.getElementById('aUI').value.trim();
       if(!url) { toast('Ingresá una URL','err'); btn.disabled=false; btn.textContent='Guardar'; return; }
     }
-    // Save URL to site_images table
     const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token, 'Content-Type':'application/json', 'Prefer':'resolution=merge-duplicates,return=minimal' };
     await fetch(SUPABASE_URL+'/rest/v1/site_images', { method:'POST', headers:h, body:JSON.stringify({key:aCurrImgKey, url, updated_at:new Date().toISOString()}) });
-    // Update all images on page
     document.querySelectorAll('[id="aip-'+aCurrImgKey+'"]').forEach(el=>el.src=url);
     document.querySelectorAll('[data-site-img="'+aCurrImgKey+'"]').forEach(el=>el.src=url);
-    toast('✓ Imagen actualizada en toda la web','ok');
+    toast('✓ Imagen actualizada','ok');
     closeAMod('imgMod');
     loadAFotos();
   } catch(e) { toast('Error: '+e.message,'err'); }
@@ -2319,28 +2325,36 @@ async function saveAImg() {
 // Crea un input file oculto y lo dispara. Al completar, pone la URL en el campo destino.
 function triggerImgUpload(targetInputId, folder) {
   const input = document.createElement('input');
-  input.type = 'file'; input.accept = 'image/*'; input.style.display = 'none';
+  input.type = 'file'; input.accept = 'image/*,application/pdf,.pdf'; input.style.display = 'none';
   document.body.appendChild(input);
   input.onchange = async () => {
     const file = input.files[0];
     document.body.removeChild(input);
     if(!file) return;
-    const btn = document.querySelector('[onclick*="triggerImgUpload"]');
-    toast('Subiendo imagen...', 'info', 60000);
+    const toastId = toast('Subiendo archivo...', 'info', 30000);
     try {
-      const token = _authToken || localStorage.getItem('bh_token');
-      const ext   = file.name.split('.').pop().toLowerCase();
+      const token = _authToken || localStorage.getItem('bh_token') || SUPABASE_ANON;
+      const ext   = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
       const path  = `${folder||'uploads'}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token, 'Content-Type': file.type, 'x-upsert': 'true' },
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': file.type || 'application/octet-stream',
+          'x-upsert': 'true',
+          'cache-control': '3600'
+        },
         body: file
       });
-      if(!rUp.ok) { const e=await rUp.json(); throw new Error(e.error||e.message||rUp.statusText); }
+      if(!rUp.ok) {
+        const err = await rUp.json().catch(()=>({message:rUp.statusText}));
+        throw new Error(err.error || err.message || 'Error al subir');
+      }
       const url = `${SUPABASE_URL}/storage/v1/object/public/site-media/${path}`;
       const el = document.getElementById(targetInputId);
       if(el) { el.value = url; el.dispatchEvent(new Event('input')); }
-      toast('✓ Imagen subida','ok');
+      toast('✓ Archivo subido correctamente','ok');
     } catch(e) { toast('Error al subir: '+e.message,'err'); }
   };
   input.click();
@@ -7761,7 +7775,9 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
 .fi.y{background:rgba(74,155,111,.12);color:#2E7A52}
 .fi.n{background:rgba(212,133,58,.12);color:#D4853A}
 .umb{display:none}
-.uz{border:2px dashed var(--cream-dk);border-radius:13px;padding:1.75rem;text-align:center;cursor:pointer;transition:var(--tf);background:#fff}
+.uz{display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px dashed var(--cream-dk);border-radius:13px;padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:.18s;background:#fafaf8;min-height:130px}
+.uz:hover{border-color:var(--teal);background:rgba(58,125,140,.03)}
+.uz input[type=file]{display:none}
 .uz:hover,.uz.drag{border-color:var(--teal);background:rgba(58,125,140,.04)}
 .uz input{display:none}
 .up{height:4px;background:var(--cream-dk);border-radius:2px;overflow:hidden;margin-top:.65rem;display:none}
