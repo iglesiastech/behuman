@@ -153,6 +153,7 @@ h1,h2,h3,h4{font-family:var(--fd);font-weight:400;line-height:1.12}
 .pillar p{font-size:.79rem;color:rgba(240,232,216,.42);line-height:1.8}
 .p-line{position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform var(--tr)}
 .pillar:hover .p-line{transform:scaleX(1)}
+.pillar:hover img{opacity:1!important;transform:scale(1.04)}
 
 /* Programs cards */
 .prog-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.2rem}
@@ -731,10 +732,15 @@ function goTo(id){
   if(id==='tienda')            renderProducts();
   if(id==='checkout')          renderCkItems();
   if(id==='admin') {
-    // Verificar que sea admin antes de mostrar
     const token = _authToken || localStorage.getItem('bh_token');
     if(!token) { goTo('login'); return; }
     initAdminPage();
+    // Esperar a que checkSession cargue el rol
+    if(_userRol === 'user') {
+      checkSession().then(() => applyAdminRol());
+    } else {
+      applyAdminRol();
+    }
   }
   if(id==='turnos')            loadConsultasEnTurnos();
   if(id==='portal')            initPortal();
@@ -1566,20 +1572,20 @@ async function checkExistingSession(){
 async function afterLogin(user){
   setLoginLoading(true, 'Verificando permisos...');
   try{
-    const sb = getSB();
-    const { data: profile } = await sb
-      .from('profiles')
-      .select('role, full_name')
-      .eq('id', user.id)
-      .single();
+    const token = localStorage.getItem('bh_token');
+    const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(token||SUPABASE_ANON) };
+    const rP = await fetch(SUPABASE_URL+'/rest/v1/profiles?id=eq.'+user.id+'&select=rol,full_name&limit=1', {headers:h});
+    const pd = await rP.json();
+    const profile = Array.isArray(pd) ? pd[0] : null;
 
-    const role   = profile?.role || 'user';
+    const rol    = profile?.rol || 'user';
     const nombre = profile?.full_name?.split(' ')[0] || user.email;
+    _userRol = rol;
 
-    if(role === 'admin'){
+    if(rol === 'super_admin' || rol === 'medica'){
       setLoginLoading(true, '¡Bienvenida!');
       localStorage.setItem('bh_admin_session', JSON.stringify({
-        email: user.email, id: user.id, name: profile.full_name || user.email
+        email: user.email, id: user.id, name: profile?.full_name || user.email
       }));
       updateNavUI('admin');
       document.getElementById('navBtnAdmin').innerHTML = `⚙️ Hola, ${nombre}`;
@@ -1739,7 +1745,7 @@ async function doForgot(){
 
 /* ══ CHECK SESSION AL ABRIR LA PÁGINA DE LOGIN ══ */
 /* ══ ADMIN JS ══ */
-const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas','programas-adm':'Programas','ordenes-programas':'Órdenes de programas',usuarios:'Usuarios',suplementos:'Suplementos',blog:'Blog',testis:'Testimonios',calendario:'Calendario','medico-horarios':'Horarios por médica','nutri-dias':'Nutri por día',horarios:'Horarios bloqueados',consultas:'Tipos de consulta'};
+const ATITLES = {dash:'Dashboard',fotos:'Fotos del sitio',turnos:'Turnos',senas:'Señas y transferencias',fichas:'Fichas médicas','programas-adm':'Programas','ordenes-programas':'Órdenes de programas',usuarios:'Usuarios',suplementos:'Suplementos',blog:'Blog',testis:'Testimonios',calendario:'Calendario','medico-horarios':'Horarios por médica','nutri-dias':'Nutri por día',horarios:'Horarios bloqueados',consultas:'Tipos de consulta',terminos:'Términos y condiciones'};
 
 const AMONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const AMONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -1764,6 +1770,7 @@ function showAP(id, btn) {
   if (id==='nutri-dias')        loadNutriDias();
   if (id==='calendario')    initCalendario();
   if (id==='consultas')     loadAConsultas();
+  if (id==='terminos')      loadATerminos();
   if (id==='programas-adm')    loadAPrograms();
   if (id==='ordenes-programas') loadOrdenesProgramas();
   if (id==='usuarios')          loadUsuarios();
@@ -2174,6 +2181,11 @@ const SITE_IMGS = [
   {key:'portal_bg',          name:'Fondo página Login',    section:'general'},
   {key:'turnos_hero',        name:'Foto página Turnos',    section:'turnos'},
   {key:'blog_hero_bg',       name:'Fondo página Blog',     section:'blog'},
+  {key:'pillars_bg',         name:'Fondo sección Pilares', section:'home'},
+  {key:'pillar_1',           name:'Pilar 1 — Diagnóstico', section:'home'},
+  {key:'pillar_2',           name:'Pilar 2 — Nutrición',   section:'home'},
+  {key:'pillar_3',           name:'Pilar 3 — Suplementos', section:'home'},
+  {key:'pillar_4',           name:'Pilar 4 — Acompañamiento', section:'home'},
 ];
 
 async function applySiteImages() {
@@ -2222,7 +2234,7 @@ async function loadAFotos() {
   }).join('');
 
   // Wrap en secciones
-  const sections = [{id:'hero',label:'🏠 Hero — Homepage'},{id:'programas',label:'📚 Programas'},{id:'turnos',label:'📅 Turnos'},{id:'blog',label:'✍️ Blog'},{id:'tienda',label:'🛍️ Tienda'},{id:'general',label:'👤 General'}];
+  const sections = [{id:'hero',label:'🏠 Hero — Homepage'},{id:'home',label:'🏠 Home — Secciones'},{id:'programas',label:'📚 Programas'},{id:'turnos',label:'📅 Turnos'},{id:'blog',label:'✍️ Blog'},{id:'tienda',label:'🛍️ Tienda'},{id:'general',label:'👤 General'}];
   let html = '';
   sections.forEach(sec => {
     const secImgs = SITE_IMGS.filter(i => i.section === sec.id);
@@ -2368,6 +2380,81 @@ function triggerImgUpload(targetInputId, folder) {
   input.click();
 }
 window.triggerImgUpload = triggerImgUpload;
+
+/* ── TÉRMINOS Y CONDICIONES ── */
+async function abrirTerminos(e) {
+  if(e) e.preventDefault();
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+  try {
+    const r = await fetch(SUPABASE_URL+'/rest/v1/site_settings?key=eq.terminos_url&select=value&limit=1', {headers:h});
+    const data = await r.json();
+    const url = data?.[0]?.value;
+    if(url) window.open(url, '_blank');
+    else toast('Los términos y condiciones no están cargados aún.','info');
+  } catch(e2) { toast('Error al cargar los términos','err'); }
+}
+window.abrirTerminos = abrirTerminos;
+
+/* ── ROLES ADMIN ── */
+// Secciones visibles por rol
+const ROL_SECTIONS = {
+  super_admin: null, // null = todas
+  medica: ['calendario','fichas'],
+};
+
+function applyAdminRol() {
+  const rol = _userRol;
+  if(!rol || rol === 'super_admin') return; // super_admin ve todo sin cambios
+
+  const allowed = ROL_SECTIONS[rol];
+  if(!allowed) return;
+
+  // Ocultar secciones no permitidas
+  document.querySelectorAll('.asb-it').forEach(btn => {
+    const onclick = btn.getAttribute('onclick') || '';
+    const match = onclick.match(/showAP\('([^']+)'/);
+    const section = match ? match[1] : null;
+    if(section && !allowed.includes(section)) btn.style.display = 'none';
+  });
+
+  // Badge de rol
+  const rolBadge = document.getElementById('adminRolBadge');
+  if(rolBadge) { rolBadge.textContent = 'Médica'; rolBadge.style.display = ''; }
+
+  // Ir al calendario
+  setTimeout(() => {
+    const calBtn = document.querySelector('.asb-it[onclick*="calendario"]');
+    showAP('calendario', calBtn);
+
+    // Filtrar por medico_id del perfil
+    const token = _authToken || localStorage.getItem('bh_token');
+    const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token };
+    fetch(SUPABASE_URL+'/auth/v1/user', {headers:h})
+      .then(r=>r.json())
+      .then(u => fetch(SUPABASE_URL+'/rest/v1/profiles?id=eq.'+u.id+'&select=medico_id&limit=1', {headers:h}))
+      .then(r=>r.json())
+      .then(prof => {
+        const medicoId = prof?.[0]?.medico_id;
+        if(!medicoId) return;
+        // Esperar que carguen los botones de médica en el calendario
+        let tries = 0;
+        const interval = setInterval(() => {
+          const btn = document.querySelector(`[data-medico="${medicoId}"]`);
+          if(btn) {
+            clearInterval(interval);
+            btn.click();
+            // Ocultar todos los botones de médica menos el suyo y el "Todos"
+            document.querySelectorAll('#calMedicoFilters button[data-medico]').forEach(b => {
+              if(b.dataset.medico && b.dataset.medico !== medicoId) b.style.display = 'none';
+            });
+          }
+          if(++tries > 30) clearInterval(interval);
+        }, 200);
+      })
+      .catch(() => {});
+  }, 200);
+}
+window.applyAdminRol = applyAdminRol;
 
 /* ── TURNOS ── */
 async function loadATurnos() {
@@ -2848,6 +2935,28 @@ const CAL_COLORS = ['#3A7D8C','#C9935A','#4A9B6F','#7B5EA7','#C4614A','#2D6A79']
 
 async function initCalendario() {
   await loadMedicos();
+
+  // Si es médica, forzar filtro por su medico_id
+  if(_userRol === 'medica') {
+    try {
+      const token = _authToken || localStorage.getItem('bh_token');
+      const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token };
+      const rU = await fetch(SUPABASE_URL+'/auth/v1/user', {headers:h});
+      const u  = await rU.json();
+      const rP = await fetch(SUPABASE_URL+'/rest/v1/profiles?id=eq.'+u.id+'&select=medico_id&limit=1', {headers:h});
+      const pd = await rP.json();
+      const medicoId = pd?.[0]?.medico_id;
+      if(medicoId) {
+        calState.medicoId = medicoId;
+        // Ocultar todos los filtros de médica
+        const filtersWrap = document.getElementById('calMedicoFilters');
+        if(filtersWrap) filtersWrap.style.display = 'none';
+        // Ocultar botón "Todos"
+        document.querySelector('[data-medico=""]')?.parentElement && (document.getElementById('calMedicoFilters').style.display='none');
+      }
+    } catch(e) {}
+  }
+
   await loadCalData();
   renderCalAdmin();
 }
@@ -5190,7 +5299,7 @@ async function loadUsuarios() {
 
   try {
     // Traer perfiles
-    const r1 = await fetch(`${SUPABASE_URL}/rest/v1/profiles?order=created_at.desc`, {headers:h});
+    const r1 = await fetch(`${SUPABASE_URL}/rest/v1/profiles?order=created_at.desc&select=id,full_name,email,created_at,rol,medico_id`, {headers:h});
     const profiles = await r1.json();
     if(!Array.isArray(profiles)) throw new Error('No se pudieron cargar los usuarios');
 
@@ -5218,31 +5327,100 @@ function renderUsuarios(users) {
   const tbody = document.getElementById('usuariosBody');
   if(!tbody) return;
   if(!users.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">No hay usuarios registrados aún.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">No hay usuarios registrados aún.</td></tr>';
     return;
   }
+  const ROL_LABELS = { super_admin:'⭐ Super Admin', medica:'👩‍⚕️ Médica', user:'👤 Usuario' };
+  const ROL_COLORS = { super_admin:'rgba(201,147,90,.15)', medica:'rgba(58,125,140,.1)', user:'rgba(138,127,116,.1)' };
+  const ROL_TEXT   = { super_admin:'var(--gold)', medica:'var(--teal)', user:'#8A7F74' };
+
   tbody.innerHTML = users.map(u => {
-    const fecha = u.created_at ? new Date(u.created_at).toLocaleDateString('es-AR') : '—';
-    const progs = u.membs?.map(m=>m.programs?.name||'—').join(', ') || '—';
+    const fecha   = u.created_at ? new Date(u.created_at).toLocaleDateString('es-AR') : '—';
+    const progs   = u.membs?.map(m=>m.programs?.name||'—').join(', ') || '—';
     const nTurnos = u.appts?.length || 0;
+    const rol     = u.rol || 'user';
     return `<tr style="border-bottom:1px solid var(--cream-dk)">
       <td style="padding:.75rem 1rem">
         <div style="font-weight:500;color:#1C1A18">${u.full_name||'Sin nombre'}</div>
         <div style="font-size:.74rem;color:var(--muted)">${u.email||'—'}</div>
-        ${u.role==='admin'?'<span style="font-size:.65rem;background:rgba(58,125,140,.1);color:var(--teal);padding:.1rem .45rem;border-radius:100px;font-weight:600">Admin</span>':''}
+      </td>
+      <td style="padding:.75rem 1rem">
+        <span style="font-size:.68rem;font-weight:600;padding:.2rem .6rem;border-radius:100px;background:${ROL_COLORS[rol]};color:${ROL_TEXT[rol]}">${ROL_LABELS[rol]||rol}</span>
       </td>
       <td style="padding:.75rem 1rem;font-size:.8rem;color:var(--muted)">${fecha}</td>
       <td style="padding:.75rem 1rem;font-size:.82rem">${progs}</td>
       <td style="padding:.75rem 1rem;font-size:.82rem;color:var(--muted)">${nTurnos} turno${nTurnos!==1?'s':''}</td>
       <td style="padding:.75rem 1rem">
-        <button onclick="openEditUser('${u.id}','${(u.full_name||'').replace(/'/g,'')}','${u.email||''}')" style="padding:.35rem .85rem;border-radius:100px;font-size:.72rem;font-weight:600;background:rgba(58,125,140,.08);color:var(--teal);border:1.5px solid rgba(58,125,140,.2);cursor:pointer;font-family:var(--fb)">✏️ Editar</button>
+        <div style="display:flex;flex-direction:column;gap:.35rem">
+          <select onchange="cambiarRolUsuario('${u.id}',this.value)" style="padding:.3rem .6rem;border:1.5px solid var(--cream-dk);border-radius:8px;font-size:.73rem;font-family:var(--fb);outline:none;background:#fff">
+            <option value="user"${rol==='user'?' selected':''}>Usuario</option>
+            <option value="medica"${rol==='medica'?' selected':''}>Médica</option>
+            <option value="super_admin"${rol==='super_admin'?' selected':''}>Super Admin</option>
+          </select>
+          <div id="medicaSel-${u.id}" style="display:${rol==='medica'?'block':'none'}">
+            <select onchange="asignarMedicaAUsuario('${u.id}',this.value)" id="medicoSel-${u.id}" data-current="${u.medico_id||''}" style="padding:.3rem .6rem;border:1.5px solid rgba(58,125,140,.4);border-radius:8px;font-size:.73rem;font-family:var(--fb);outline:none;background:rgba(58,125,140,.04);color:var(--teal);width:100%">
+              <option value="">— ¿Cuál médica es? —</option>
+            </select>
+          </div>
+          <button onclick="openEditUser('${u.id}','${(u.full_name||'').replace(/'/g,'')}','${u.email||''}')" style="padding:.3rem .75rem;border-radius:100px;font-size:.72rem;font-weight:600;background:rgba(58,125,140,.08);color:var(--teal);border:1.5px solid rgba(58,125,140,.2);cursor:pointer;font-family:var(--fb)">✏️</button>
+        </div>
       </td>
     </tr>`;
   }).join('');
+
+  // Poblar los selects de médica
+  poblarSelectsMedica();
+}
+
+async function poblarSelectsMedica() {
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')) };
+  try {
+    const r = await fetch(SUPABASE_URL+'/rest/v1/medicos?activo=eq.true&select=id,nombre&order=nombre', {headers:h});
+    const medicos = await r.json();
+    if(!Array.isArray(medicos)) return;
+    document.querySelectorAll('[id^="medicoSel-"]').forEach(sel => {
+      const current = sel.dataset.current || '';
+      sel.innerHTML = '<option value="">— ¿Cuál médica es? —</option>'
+        + medicos.map(m=>`<option value="${m.id}"${m.id===current?' selected':''}>${m.nombre}</option>`).join('');
+    });
+  } catch(e) {}
+}
+window.poblarSelectsMedica = poblarSelectsMedica;
+
+async function asignarMedicaAUsuario(userId, medicoId) {
+  const token = _authToken || localStorage.getItem('bh_token');
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization':'Bearer '+token, 'Content-Type':'application/json', 'Prefer':'return=minimal' };
+  try {
+    await fetch(SUPABASE_URL+'/rest/v1/profiles?id=eq.'+userId, {method:'PATCH', headers:h, body:JSON.stringify({medico_id: medicoId||null})});
+    toast('Médica asignada ✓','ok');
+    const u = _usuarios.find(x=>x.id===userId);
+    if(u) u.medico_id = medicoId;
+  } catch(e) { toast('Error: '+e.message,'err'); }
+}
+window.asignarMedicaAUsuario = asignarMedicaAUsuario;
+
+async function cambiarRolUsuario(userId, nuevoRol) {
+  const token = _authToken || localStorage.getItem('bh_token');
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization':'Bearer '+token, 'Content-Type':'application/json', 'Prefer':'return=minimal' };
+  try {
+    const r = await fetch(SUPABASE_URL+'/rest/v1/profiles?id=eq.'+userId, {method:'PATCH', headers:h, body:JSON.stringify({rol:nuevoRol})});
+    if(!r.ok) {
+      const err = await r.json().catch(()=>({}));
+      throw new Error(err.message || err.error || r.statusText);
+    }
+    toast('Rol actualizado ✓','ok');
+    const u = _usuarios.find(x=>x.id===userId);
+    if(u) u.rol = nuevoRol;
+    // Mostrar/ocultar selector de médica
+    const medicaSel = document.getElementById('medicaSel-'+userId);
+    if(medicaSel) {
+      medicaSel.style.display = nuevoRol === 'medica' ? 'block' : 'none';
+      if(nuevoRol === 'medica') poblarSelectsMedica();
+    }
+  } catch(e) { toast('Error: '+e.message,'err'); }
 }
 
 function filterUsuarios() {
-  const q = document.getElementById('usuariosSearch')?.value.toLowerCase()||'';
   const filtered = _usuarios.filter(u=>
     (u.full_name||'').toLowerCase().includes(q) ||
     (u.email||'').toLowerCase().includes(q)
@@ -5950,6 +6128,70 @@ async function guardarNutriDias() {
 
 window.loadNutriDias    = loadNutriDias;
 window.guardarNutriDias = guardarNutriDias;
+
+/* ── TÉRMINOS Y CONDICIONES ADMIN ── */
+async function loadATerminos() {
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||localStorage.getItem('bh_token')) };
+  try {
+    const r = await fetch(SUPABASE_URL+'/rest/v1/site_settings?key=eq.terminos_url&select=value&limit=1', {headers:h});
+    const data = await r.json();
+    const url = data?.[0]?.value;
+    const wrap = document.getElementById('terminosActualUrl');
+    const link = document.getElementById('terminosActualLink');
+    if(url && wrap && link) {
+      wrap.style.display = '';
+      link.href = url;
+      link.textContent = 'Ver documento actual →';
+    }
+  } catch(e) {}
+}
+
+function uploadTerminosPDF() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.pdf,application/pdf'; input.style.display = 'none';
+  document.body.appendChild(input);
+  input.onchange = async () => {
+    const file = input.files[0];
+    document.body.removeChild(input);
+    if(!file) return;
+    toast('Subiendo PDF...', 'info', 30000);
+    try {
+      const path = 'terminos-'+Date.now()+'.pdf';
+      const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
+        method:'POST',
+        headers:{ 'apikey':SUPABASE_UPLOAD, 'Authorization':'Bearer '+SUPABASE_UPLOAD, 'Content-Type':'application/pdf', 'x-upsert':'true' },
+        body: file
+      });
+      if(!rUp.ok) { const e=await rUp.json().catch(()=>({})); throw new Error(e.error||e.message||'Error al subir'); }
+      const url = `${SUPABASE_URL}/storage/v1/object/public/site-media/${path}`;
+      document.getElementById('terminosUrlInput').value = url;
+      await saveTerminosUrl();
+    } catch(e) { toast('Error: '+e.message,'err'); }
+  };
+  input.click();
+}
+
+async function saveTerminosUrl() {
+  const url = document.getElementById('terminosUrlInput').value.trim();
+  if(!url) { toast('Ingresá o subí un PDF primero','err'); return; }
+  const token = _authToken || localStorage.getItem('bh_token');
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' };
+  try {
+    const rCheck = await fetch(SUPABASE_URL+'/rest/v1/site_settings?key=eq.terminos_url&select=id', {headers:h});
+    const existing = await rCheck.json();
+    if(Array.isArray(existing) && existing.length) {
+      await fetch(SUPABASE_URL+'/rest/v1/site_settings?key=eq.terminos_url', {method:'PATCH', headers:{...h,'Prefer':'return=minimal'}, body:JSON.stringify({value:url})});
+    } else {
+      await fetch(SUPABASE_URL+'/rest/v1/site_settings', {method:'POST', headers:{...h,'Prefer':'return=minimal'}, body:JSON.stringify({key:'terminos_url',value:url})});
+    }
+    toast('✓ Términos actualizados','ok');
+    loadATerminos();
+  } catch(e) { toast('Error: '+e.message,'err'); }
+}
+
+window.loadATerminos    = loadATerminos;
+window.uploadTerminosPDF = uploadTerminosPDF;
+window.saveTerminosUrl  = saveTerminosUrl;
 
 /* ── HORARIOS POR MÉDICA ── */
 const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -6736,37 +6978,41 @@ function updateNavUI(role) {
   }
 }
 
+let _userRol = 'user'; // 'super_admin' | 'medica' | 'user'
+
 async function checkSession() {
-  const sb = getSB();
-  if (!sb) {
-    // Sin Supabase — revisar localStorage
-    const adminSess = localStorage.getItem('bh_admin_session');
-    const userSess  = localStorage.getItem('bh_user_session');
-    if (adminSess) updateNavUI('admin');
-    else if (userSess) updateNavUI('user');
-    else updateNavUI(null);
-    return;
-  }
+  const token = localStorage.getItem('bh_token');
+  if(!token) { updateNavUI(null); return; }
+  _authToken = token;
 
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+token };
   try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { updateNavUI(null); return; }
+    const rUser = await fetch(SUPABASE_URL+'/auth/v1/user', {headers:{...h,'Authorization':'Bearer '+token}});
+    if(!rUser.ok) { localStorage.removeItem('bh_token'); updateNavUI(null); return; }
+    const user = await rUser.json();
 
-    const { data: profile } = await sb
-      .from('profiles')
-      .select('role, full_name')
-      .eq('id', session.user.id)
-      .single();
+    const rProf = await fetch(SUPABASE_URL+'/rest/v1/profiles?id=eq.'+user.id+'&select=rol,full_name,email&limit=1', {headers:h});
+    const prof = await rProf.json();
+    const profile = Array.isArray(prof) ? prof[0] : null;
 
-    const role = profile?.role || 'user';
-    updateNavUI(role);
+    _userRol = profile?.rol || 'user';
+    const nombre = (profile?.full_name||'').split(' ')[0] || profile?.email?.split('@')[0] || 'Admin';
+    const admName = document.getElementById('admName');
+    if(admName) admName.textContent = nombre;
 
-    // Si es admin, actualizar texto del botón con nombre
-    if (role === 'admin') {
-      const nombre = profile.full_name?.split(' ')[0] || 'Admin';
-      document.getElementById('navBtnAdmin').innerHTML = `⚙️ Hola, ${nombre}`;
+    if(_userRol === 'super_admin' || _userRol === 'medica') {
+      updateNavUI('admin');
+      const nombre = (profile?.full_name||'').split(' ')[0] || 'Admin';
+      const navBtn = document.getElementById('navBtnAdmin');
+      if(navBtn) navBtn.innerHTML = '⚙️ Hola, '+nombre;
+    } else {
+      updateNavUI('user');
     }
 
+    // Si está en el admin, aplicar restricciones de rol
+    if(document.getElementById('page-admin')?.classList.contains('active')) {
+      applyAdminRol();
+    }
   } catch(e) {
     updateNavUI(null);
   }
@@ -7023,7 +7269,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       <button class="btn-nav" id="navBtnGuest" onclick="goTo('login')">Ingresar</button>
 
       <button class="btn-nav" id="navBtnAdmin"
-        style="display:none;background:var(--gold);display:none;align-items:center;gap:.4rem"
+        style="display:none;background:var(--gold);align-items:center;gap:.4rem"
         onclick="goTo('admin')">
         ⚙️ Panel admin
       </button>
@@ -7111,18 +7357,55 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
     <span class="mq-item">Acompañamiento real <span class="mq-dot">·</span></span>
   </div></div>
 
-  <section class="pillars">
+  <section class="pillars" style="position:relative">
+    <img data-site-img="pillars_bg" src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1600&q=60" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.12;pointer-events:none">
     <div class="pillars-wm">SALUD</div>
-    <div class="container">
+    <div class="container" style="position:relative;z-index:1">
       <div class="section-head">
         <div class="stag">El método Be Human</div>
         <h2 class="stitle lt">Cuatro pilares, un solo camino</h2>
       </div>
       <div class="pillars-grid">
-        <div class="pillar rv"><div class="p-n">01</div><div class="p-icon">🔬</div><h3>Diagnóstico funcional</h3><p>Laboratorios integrales más allá del rango convencional. Identificamos la causa raíz.</p><div class="p-line"></div></div>
-        <div class="pillar rv d1"><div class="p-n">02</div><div class="p-icon">🌿</div><h3>Nutrición de precisión</h3><p>Tu alimentación según tu bioquímica, estilo de vida y objetivos concretos.</p><div class="p-line"></div></div>
-        <div class="pillar rv d2"><div class="p-n">03</div><div class="p-icon">💊</div><h3>Suplementación precisa</h3><p>Solo lo que necesitás, en la dosis correcta. Todo con evidencia científica.</p><div class="p-line"></div></div>
-        <div class="pillar rv d3"><div class="p-n">04</div><div class="p-icon">🤝</div><h3>Acompañamiento continuo</h3><p>No te dejamos solo. Soporte, ajustes y comunidad activa.</p><div class="p-line"></div></div>
+        <div class="pillar rv">
+          <div class="p-n">01</div>
+          <div style="height:160px;border-radius:12px;overflow:hidden;margin-bottom:1.1rem;background:rgba(255,255,255,.05)">
+            <img data-site-img="pillar_1" src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80" alt="" style="width:100%;height:100%;object-fit:cover;opacity:.75;transition:.3s">
+          </div>
+          <div class="p-icon">🔬</div>
+          <h3>Diagnóstico funcional</h3>
+          <p>Laboratorios integrales más allá del rango convencional. Identificamos la causa raíz.</p>
+          <div class="p-line"></div>
+        </div>
+        <div class="pillar rv d1">
+          <div class="p-n">02</div>
+          <div style="height:160px;border-radius:12px;overflow:hidden;margin-bottom:1.1rem;background:rgba(255,255,255,.05)">
+            <img data-site-img="pillar_2" src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&q=80" alt="" style="width:100%;height:100%;object-fit:cover;opacity:.75;transition:.3s">
+          </div>
+          <div class="p-icon">🌿</div>
+          <h3>Nutrición de precisión</h3>
+          <p>Tu alimentación según tu bioquímica, estilo de vida y objetivos concretos.</p>
+          <div class="p-line"></div>
+        </div>
+        <div class="pillar rv d2">
+          <div class="p-n">03</div>
+          <div style="height:160px;border-radius:12px;overflow:hidden;margin-bottom:1.1rem;background:rgba(255,255,255,.05)">
+            <img data-site-img="pillar_3" src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&q=80" alt="" style="width:100%;height:100%;object-fit:cover;opacity:.75;transition:.3s">
+          </div>
+          <div class="p-icon">💊</div>
+          <h3>Suplementación precisa</h3>
+          <p>Solo lo que necesitás, en la dosis correcta. Todo con evidencia científica.</p>
+          <div class="p-line"></div>
+        </div>
+        <div class="pillar rv d3">
+          <div class="p-n">04</div>
+          <div style="height:160px;border-radius:12px;overflow:hidden;margin-bottom:1.1rem;background:rgba(255,255,255,.05)">
+            <img data-site-img="pillar_4" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&q=80" alt="" style="width:100%;height:100%;object-fit:cover;opacity:.75;transition:.3s">
+          </div>
+          <div class="p-icon">🤝</div>
+          <h3>Acompañamiento continuo</h3>
+          <p>No te dejamos solo. Soporte, ajustes y comunidad activa.</p>
+          <div class="p-line"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -7240,7 +7523,10 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
           <span class="flink">Buenos Aires, Argentina</span>
         </div></div>
       </div>
-      <div class="fbot"><span>© 2025 Be Human · Todos los derechos reservados</span></div>
+      <div class="fbot">
+        <span>© 2025 Be Human · Todos los derechos reservados</span>
+        <a id="tcLink" href="#" onclick="abrirTerminos(event)" style="font-size:.72rem;color:rgba(240,232,216,.35);text-decoration:none;border-bottom:1px solid rgba(240,232,216,.15);transition:.15s" onmouseover="this.style.color='rgba(240,232,216,.65)'" onmouseout="this.style.color='rgba(240,232,216,.35)'">Términos y condiciones</a>
+      </div>
     </div>
   </footer>
 </div><!-- /page-home -->
@@ -7303,7 +7589,6 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
           </div>
           <div style="display:flex;align-items:center;gap:.5rem">
             <div style="width:32px;height:32px;border-radius:50%;background:rgba(58,125,140,.2);display:flex;align-items:center;justify-content:center;font-size:.85rem">✓</div>
-            <span style="font-size:.78rem;color:rgba(240,232,216,.65)">Cancelación gratuita hasta 24hs</span>
           </div>
         </div>
       </div>
@@ -7340,6 +7625,15 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
               <div id="tipoOptions" style="display:flex;flex-direction:column;gap:.75rem">
                 <!-- Se carga dinámicamente -->
               </div>
+
+              <!-- Card WhatsApp -->
+              <a href="https://wa.me/5491176179836?text=Hola%2C%20no%20sé%20qué%20consulta%20elegir%2C%20¿me%20podés%20ayudar%3F" target="_blank" style="display:flex;align-items:center;gap:1rem;margin-top:1rem;padding:1rem 1.25rem;background:rgba(37,211,102,.06);border:1.5px solid rgba(37,211,102,.2);border-radius:14px;text-decoration:none;transition:.18s" onmouseover="this.style.background='rgba(37,211,102,.12)'" onmouseout="this.style.background='rgba(37,211,102,.06)'">
+                <div style="width:40px;height:40px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem">💬</div>
+                <div>
+                  <div style="font-weight:600;font-size:.88rem;color:#1C1A18">¿No sabés qué consulta elegir?</div>
+                  <div style="font-size:.78rem;color:#3A9A55;margin-top:.15rem">Escribinos por WhatsApp y te ayudamos →</div>
+                </div>
+              </a>
 
               <!-- Modalidad — oculta hasta elegir tipo -->
               <div id="modalidadWrap" style="display:none;margin-top:1.75rem">
@@ -7495,7 +7789,6 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
             <div style="margin-top:auto;border-top:1px solid var(--cream-dk);padding-top:1rem">
               <div style="font-size:.74rem;color:var(--muted);display:flex;flex-direction:column;gap:.35rem">
                 <span>✓ Confirmación por WhatsApp</span>
-                <span>✓ Cancelación gratuita hasta 24hs</span>
                 <span>✓ Videollamada o presencial</span>
               </div>
             </div>
@@ -7828,6 +8121,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       <button class="asb-it" onclick="showAP('medico-horarios',this)"><span>📅</span> Horarios por médica</button>
       <button class="asb-it" onclick="showAP('nutri-dias',this)"><span>🥗</span> Nutri por día</button>
       <button class="asb-it" onclick="showAP('consultas',this)"><span>💼</span> Tipos de consulta</button>
+      <button class="asb-it" onclick="showAP('terminos',this)"><span>📄</span> Términos y condiciones</button>
       <div class="asb-sec">Cuenta</div>
       <button class="asb-it" onclick="goTo('home')"><span>🏠</span> Ver sitio</button>
       <button class="asb-it" onclick="doLogout()"><span>↩️</span> Cerrar sesión</button>
@@ -7838,6 +8132,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
       <div class="atb-title" id="atbTitle">Dashboard</div>
       <div style="display:flex;align-items:center;gap:.75rem">
         <span style="font-size:.8rem;color:var(--muted)">Hola, <strong id="admName">Admin</strong></span>
+        <span id="adminRolBadge" style="display:none;font-size:.65rem;font-weight:700;padding:.2rem .6rem;border-radius:100px;background:rgba(58,125,140,.1);color:var(--teal)"></span>
         <button onclick="goTo('home')" style="padding:.42rem .9rem;border-radius:100px;font-size:.7rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;cursor:pointer;font-family:var(--fb)">Ver sitio →</button>
       </div>
     </div>
@@ -8081,13 +8376,14 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
           <table style="width:100%;border-collapse:collapse;font-size:.83rem" id="usuariosTable">
             <thead><tr style="background:var(--cream)">
               <th style="padding:.65rem 1rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Usuario</th>
+              <th style="padding:.65rem 1rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Rol</th>
               <th style="padding:.65rem 1rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Registrado</th>
               <th style="padding:.65rem 1rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Programas</th>
               <th style="padding:.65rem 1rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Turnos</th>
               <th style="padding:.65rem 1rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Acciones</th>
             </tr></thead>
             <tbody id="usuariosBody">
-              <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">Cargando...</td></tr>
+              <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Cargando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -8546,6 +8842,28 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
           </div>
           <div style="margin-top:.85rem;padding:.85rem 1rem;background:rgba(58,125,140,.07);border-radius:10px;font-size:.78rem;color:var(--teal)">
             💡 Si una médica no atiende un día, ese día no aparecerá disponible en el calendario. Si configurás rango horario (ej: 10:00 a 13:00), solo esos horarios estarán habilitados.
+          </div>
+        </div>
+      </div>
+
+      <!-- TÉRMINOS Y CONDICIONES -->
+      <div id="ap-terminos" class="ap">
+        <p style="font-size:.83rem;color:var(--muted);margin:0 0 1.5rem">Subí el PDF de los términos y condiciones. Aparecerá como link en el footer del sitio.</p>
+        <div style="background:#fff;border-radius:14px;border:1.5px solid var(--cream-dk);padding:1.5rem">
+          <div id="terminosActualUrl" style="margin-bottom:1.25rem;display:none">
+            <div style="font-size:.76rem;font-weight:600;color:var(--muted);margin-bottom:.4rem">DOCUMENTO ACTUAL</div>
+            <a id="terminosActualLink" href="#" target="_blank" style="font-size:.84rem;color:var(--teal);word-break:break-all">Ver documento actual →</a>
+          </div>
+          <div style="font-size:.76rem;font-weight:600;color:var(--muted);margin-bottom:.65rem">SUBIR NUEVO DOCUMENTO</div>
+          <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <input type="url" id="terminosUrlInput" class="form-input" placeholder="O pegá una URL de PDF (Google Drive, etc.)">
+            </div>
+            <button onclick="uploadTerminosPDF()" style="padding:.55rem 1.2rem;border-radius:100px;font-size:.76rem;font-weight:600;border:1.5px solid var(--teal);color:var(--teal);background:#fff;cursor:pointer;font-family:var(--fb);white-space:nowrap">📁 Subir PDF</button>
+            <button onclick="saveTerminosUrl()" style="padding:.55rem 1.2rem;border-radius:100px;font-size:.76rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb);white-space:nowrap">Guardar URL</button>
+          </div>
+          <div style="margin-top:.85rem;padding:.75rem 1rem;background:rgba(58,125,140,.06);border-radius:8px;font-size:.76rem;color:var(--muted);line-height:1.6">
+            💡 Podés subir un PDF directamente o pegar una URL de Google Drive. Si usás Google Drive, asegurate de que el archivo sea público ("Cualquiera con el enlace puede ver").
           </div>
         </div>
       </div>
