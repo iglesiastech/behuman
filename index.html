@@ -1986,7 +1986,7 @@ async function loadADash() {
     // Cargar datos en paralelo
     const [rAppts, rOrders, rConsultas, rMedicos] = await Promise.all([
       fetch(SUPABASE_URL+'/rest/v1/appointments?date=gte.'+desde+'&date=lte.'+hasta+'&select=date,price,status,type,medico_id,sena_amount,sena_status,patient_name,time,modalidad&limit=1000', {headers:h}).then(r=>r.json()),
-      fetch(SUPABASE_URL+'/rest/v1/orders?select=amount,status,program_id&limit=500', {headers:h}).then(r=>r.json()),
+      fetch(SUPABASE_URL+'/rest/v1/orders?select=total,status,created_at&limit=500&order=created_at.desc', {headers:h}).then(r=>r.ok?r.json():Promise.resolve([])),
       fetch(SUPABASE_URL+'/rest/v1/consultation_types?select=id,nombre,icono&activo=eq.true', {headers:h}).then(r=>r.json()),
       fetch(SUPABASE_URL+'/rest/v1/medicos?activo=eq.true&select=id,nombre,color', {headers:h}).then(r=>r.json()),
     ]);
@@ -2004,7 +2004,7 @@ async function loadADash() {
 
     // Ingresos
     const ingresosTurnos   = confirmedAppts.reduce((s,a)=>s+(a.price||0),0);
-    const ingresosPrograms = orders.filter(o=>o.status==='approved').reduce((s,o)=>s+(o.amount||0),0);
+    const ingresosPrograms = orders.filter(o=>o.status==='approved'||o.status==='completed').reduce((s,o)=>s+(o.total||o.amount||0),0);
     const totalIngresos    = ingresosTurnos + ingresosPrograms;
     const senasCobradas    = appts.filter(a=>a.sena_status==='approved').reduce((s,a)=>s+(a.sena_amount||0),0);
 
@@ -2025,7 +2025,7 @@ async function loadADash() {
     confirmedAppts.forEach(a => { dayMap[a.date]=(dayMap[a.date]||0)+(a.price||0); });
     orders.filter(o=>o.status==='approved').forEach(o => {
       const d=(o.created_at||'').split('T')[0];
-      if(d) dayMap[d]=(dayMap[d]||0)+(o.amount||0);
+      if(d) dayMap[d]=(dayMap[d]||0)+(o.total||o.amount||0);
     });
 
     // Generar labels según período
@@ -2322,9 +2322,10 @@ async function saveAImg() {
     }
     document.querySelectorAll('[id="aip-'+aCurrImgKey+'"]').forEach(el=>el.src=url+'?t='+Date.now());
     document.querySelectorAll('[data-site-img="'+aCurrImgKey+'"]').forEach(el=>el.src=url+'?t='+Date.now());
-    toast('✓ Imagen actualizada','ok');
+    toast('✓ Imagen actualizada — cerrá y abrí la página para verla','ok',4000);
     closeAMod('imgMod');
     loadAFotos();
+    applySiteImages();
   } catch(e) { toast('Error: '+e.message,'err'); }
   finally { btn.disabled=false; btn.textContent='Guardar'; }
 }
