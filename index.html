@@ -2289,17 +2289,17 @@ async function saveAImg() {
     if(isUp) {
       if(!aSelFile) { toast('Seleccioná un archivo','err'); btn.disabled=false; btn.textContent='Guardar'; return; }
       const ext  = aSelFile.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
-      const path = `site-images/${aCurrImgKey}-${Date.now()}.${ext}`;
+      const path = `${aCurrImgKey}-${Date.now()}.${ext}`;
+      const formData = new FormData();
+      formData.append('', aSelFile, aSelFile.name);
       const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_ANON,
           'Authorization': 'Bearer ' + token,
-          'Content-Type': aSelFile.type || 'image/jpeg',
           'x-upsert': 'true',
-          'cache-control': '3600'
         },
-        body: aSelFile
+        body: formData
       });
       if(!rUp.ok) {
         const err = await rUp.json().catch(()=>({message:rUp.statusText}));
@@ -2335,17 +2335,17 @@ function triggerImgUpload(targetInputId, folder) {
     try {
       const token = _authToken || localStorage.getItem('bh_token') || SUPABASE_ANON;
       const ext   = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
-      const path  = `${folder||'uploads'}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const path  = `${folder||'uploads'}-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const formData = new FormData();
+      formData.append('', file, file.name);
       const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_ANON,
           'Authorization': 'Bearer ' + token,
-          'Content-Type': file.type || 'application/octet-stream',
           'x-upsert': 'true',
-          'cache-control': '3600'
         },
-        body: file
+        body: formData
       });
       if(!rUp.ok) {
         const err = await rUp.json().catch(()=>({message:rUp.statusText}));
