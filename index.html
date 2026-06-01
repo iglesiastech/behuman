@@ -516,8 +516,9 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
 <body>
 <script>
 // ── API REST directa — sin SDK, sin SharedWorker, sin Headers error ──
-const SUPABASE_URL  = 'https://ncebqouvfkgobbaihuhf.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZWJxb3V2Zmtnb2JiYWlodWhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODAzNzAsImV4cCI6MjA5MzU1NjM3MH0.UUm6RlO9jHDR2FXIB3C0qFAtRtGRdMRhoVeNf9AdMFY';
+const SUPABASE_URL    = 'https://ncebqouvfkgobbaihuhf.supabase.co';
+const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZWJxb3V2Zmtnb2JiYWlodWhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODAzNzAsImV4cCI6MjA5MzU1NjM3MH0.UUm6RlO9jHDR2FXIB3C0qFAtRtGRdMRhoVeNf9AdMFY';
+const SUPABASE_UPLOAD = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZWJxb3V2Zmtnb2JiYWlodWhmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Nzk4MDM3MCwiZXhwIjoyMDkzNTU2MzcwfQ.WBpkb7StchIXAXBO8hbb_dksYoYc1VR4yeuOVTWq2YE';
 
 let _authToken = null; // se llena al hacer login
 
@@ -2290,16 +2291,15 @@ async function saveAImg() {
       if(!aSelFile) { toast('Seleccioná un archivo','err'); btn.disabled=false; btn.textContent='Guardar'; return; }
       const ext  = aSelFile.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
       const path = `${aCurrImgKey}-${Date.now()}.${ext}`;
-      const formData = new FormData();
-      formData.append('', aSelFile, aSelFile.name);
       const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
         method: 'POST',
         headers: {
-          'apikey': SUPABASE_ANON,
-          'Authorization': 'Bearer ' + token,
+          'apikey': SUPABASE_UPLOAD,
+          'Authorization': 'Bearer ' + SUPABASE_UPLOAD,
+          'Content-Type': aSelFile.type || 'image/jpeg',
           'x-upsert': 'true',
         },
-        body: formData
+        body: aSelFile
       });
       if(!rUp.ok) {
         const err = await rUp.json().catch(()=>({message:rUp.statusText}));
@@ -2336,16 +2336,15 @@ function triggerImgUpload(targetInputId, folder) {
       const token = _authToken || localStorage.getItem('bh_token') || SUPABASE_ANON;
       const ext   = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
       const path  = `${folder||'uploads'}-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const formData = new FormData();
-      formData.append('', file, file.name);
       const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
         method: 'POST',
         headers: {
-          'apikey': SUPABASE_ANON,
-          'Authorization': 'Bearer ' + token,
+          'apikey': SUPABASE_UPLOAD,
+          'Authorization': 'Bearer ' + SUPABASE_UPLOAD,
+          'Content-Type': file.type || 'image/jpeg',
           'x-upsert': 'true',
         },
-        body: formData
+        body: file
       });
       if(!rUp.ok) {
         const err = await rUp.json().catch(()=>({message:rUp.statusText}));
