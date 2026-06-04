@@ -519,7 +519,8 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
 // ── API REST directa — sin SDK, sin SharedWorker, sin Headers error ──
 const SUPABASE_URL    = 'https://ncebqouvfkgobbaihuhf.supabase.co';
 const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZWJxb3V2Zmtnb2JiYWlodWhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODAzNzAsImV4cCI6MjA5MzU1NjM3MH0.UUm6RlO9jHDR2FXIB3C0qFAtRtGRdMRhoVeNf9AdMFY';
-const SUPABASE_UPLOAD = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZWJxb3V2Zmtnb2JiYWlodWhmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Nzk4MDM3MCwiZXhwIjoyMDkzNTU2MzcwfQ.WBpkb7StchIXAXBO8hbb_dksYoYc1VR4yeuOVTWq2YE';
+// service_role removida del cliente por seguridad: las subidas a Storage
+// ahora usan el JWT del admin logueado + una policy de Storage en Supabase.
 
 let _authToken = null; // se llena al hacer login
 
@@ -2307,8 +2308,8 @@ async function saveAImg() {
       const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
         method: 'POST',
         headers: {
-          'apikey': SUPABASE_UPLOAD,
-          'Authorization': 'Bearer ' + SUPABASE_UPLOAD,
+          'apikey': SUPABASE_ANON,
+          'Authorization': 'Bearer ' + token,
           'Content-Type': aSelFile.type || 'image/jpeg',
           'x-upsert': 'true',
         },
@@ -2360,8 +2361,8 @@ function triggerImgUpload(targetInputId, folder) {
       const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
         method: 'POST',
         headers: {
-          'apikey': SUPABASE_UPLOAD,
-          'Authorization': 'Bearer ' + SUPABASE_UPLOAD,
+          'apikey': SUPABASE_ANON,
+          'Authorization': 'Bearer ' + token,
           'Content-Type': file.type || 'image/jpeg',
           'x-upsert': 'true',
         },
@@ -6156,10 +6157,11 @@ function uploadTerminosPDF() {
     if(!file) return;
     toast('Subiendo PDF...', 'info', 30000);
     try {
+      const token = _authToken || localStorage.getItem('bh_token');
       const path = 'terminos-'+Date.now()+'.pdf';
       const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
         method:'POST',
-        headers:{ 'apikey':SUPABASE_UPLOAD, 'Authorization':'Bearer '+SUPABASE_UPLOAD, 'Content-Type':'application/pdf', 'x-upsert':'true' },
+        headers:{ 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+token, 'Content-Type':'application/pdf', 'x-upsert':'true' },
         body: file
       });
       if(!rUp.ok) { const e=await rUp.json().catch(()=>({})); throw new Error(e.error||e.message||'Error al subir'); }
