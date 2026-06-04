@@ -716,7 +716,7 @@ function getSB() { return sb(); }
 
 /* ══ NAVIGATION ══ */
 const PAGES = ['home','programas','tienda','turnos','checkout','login','admin','admin-fichas','portal','programa-detalle','prog-checkout','prog-landing','blog','blog-post'];
-function goTo(id){
+function goTo(id, fromHistory){
   PAGES.forEach(p => {
     const el = document.getElementById('page-'+p);
     if(el) el.classList.remove('active');
@@ -753,6 +753,10 @@ function goTo(id){
   if(id==='prog-checkout')     initProgCheckout();
   if(id==='programas')         loadProgramasPage();
   if(id==='blog')              loadBlogPage();
+
+  // Historial del navegador: permite usar el botón "atrás" de Chrome para
+  // volver a la página anterior en vez de salir del sitio.
+  if(!fromHistory){ try { history.pushState({ page:id }, '', '#'+id); } catch(e){} }
 }
 function closeMob(){ document.getElementById('mobMenu').classList.remove('open'); }
 
@@ -7092,6 +7096,17 @@ document.addEventListener('DOMContentLoaded', () => {
     loadConsultasEnTurnos();
     applySiteImages();
     loadHomeProgs();
+
+    // ── Botón "atrás" del navegador ──
+    window.addEventListener('popstate', (e) => {
+      const id = (e.state && e.state.page) || 'home';
+      goTo(PAGES.includes(id) ? id : 'home', true);
+    });
+    // Restaurar página pública por hash al recargar (deep-link); admin/portal/detalle arrancan en home
+    const h0 = (location.hash || '').slice(1);
+    const restorable = ['home','programas','tienda','turnos','blog'];
+    if(restorable.includes(h0) && h0 !== 'home'){ goTo(h0, true); history.replaceState({ page:h0 }, '', '#'+h0); }
+    else { history.replaceState({ page:'home' }, '', '#home'); }
   } catch(e) {
     console.error('DOMContentLoaded error:', e);
   }
