@@ -2311,7 +2311,6 @@ async function saveAImg() {
           'apikey': SUPABASE_ANON,
           'Authorization': 'Bearer ' + token,
           'Content-Type': aSelFile.type || 'image/jpeg',
-          'x-upsert': 'true',
         },
         body: aSelFile
       });
@@ -2364,7 +2363,6 @@ function triggerImgUpload(targetInputId, folder) {
           'apikey': SUPABASE_ANON,
           'Authorization': 'Bearer ' + token,
           'Content-Type': file.type || 'image/jpeg',
-          'x-upsert': 'true',
         },
         body: file
       });
@@ -6161,7 +6159,7 @@ function uploadTerminosPDF() {
       const path = 'terminos-'+Date.now()+'.pdf';
       const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
         method:'POST',
-        headers:{ 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+token, 'Content-Type':'application/pdf', 'x-upsert':'true' },
+        headers:{ 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+token, 'Content-Type':'application/pdf' },
         body: file
       });
       if(!rUp.ok) { const e=await rUp.json().catch(()=>({})); throw new Error(e.error||e.message||'Error al subir'); }
