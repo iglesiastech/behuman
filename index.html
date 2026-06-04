@@ -5118,9 +5118,9 @@ async function loadConsultasEnTurnos() {
 }
 
 
-/* ── EMAIL VIA SUPABASE EDGE FUNCTION ── */
-const RESEND_KEY = 're_4j1tvbvo_DC1LrrA9XGkDbkyd5Zj4v5ab';
-const FROM_MAIL  = 'Be Human <turnos@behuman.com.ar>';
+/* ── EMAIL VIA SUPABASE EDGE FUNCTION ──
+   El envío de mails se hace server-side en la Edge Function `send-email`
+   (que guarda la RESEND_KEY como secreto). El cliente NO maneja la key. */
 
 async function sendEmail(to, subject, html) {
   try {
