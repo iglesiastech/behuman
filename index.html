@@ -746,6 +746,7 @@ function goTo(id){
       applyAdminRol();
     }
   }
+  if(id==='home')              loadHomeProgs();
   if(id==='turnos')            loadConsultasEnTurnos();
   if(id==='portal')            initPortal();
   if(id==='programa-detalle')  {}
@@ -4200,6 +4201,47 @@ async function loadProgramasPage() {
   }
 }
 
+// Programas destacados del HOME — dinámico desde la base (se actualiza solo)
+async function loadHomeProgs() {
+  const grid = document.getElementById('homeProgGrid');
+  if(!grid) return;
+  let progs = _allPrograms;
+  if(!progs || !progs.length) {
+    try {
+      const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+      const r = await fetch(SUPABASE_URL+'/rest/v1/programs?order=name&select=*', {headers:h});
+      const data = await r.json();
+      progs = Array.isArray(data) ? data.filter(p=>p.is_active!==false) : [];
+      _allPrograms = progs;
+    } catch(e) { return; }
+  }
+  const orden = { indomables:0, performance:1 };
+  const sorted = [...progs].sort((a,b)=>{
+    const oa = orden[a.marca]!==undefined?orden[a.marca]:2, ob = orden[b.marca]!==undefined?orden[b.marca]:2;
+    if(oa!==ob) return oa-ob;
+    return (a.price||0)-(b.price||0);
+  });
+  if(!sorted.length){ grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted)">Próximamente nuevos programas.</div>'; return; }
+  const esc = s => String(s||'').replace(/'/g,"\\'").replace(/</g,'&lt;');
+  grid.innerHTML = sorted.map(p=>{
+    const img = p.image_url || PROG_IMG_DEFAULTS[p.slug] || 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=900&q=80';
+    const price = p.price ? '$'+Number(p.price).toLocaleString('es-AR') : 'A consultar';
+    const meta = [p.level, p.category].filter(Boolean);
+    return '<div class="prog-card rv" onclick="abrirLandingPrograma(\''+p.id+'\')">'
+      +'<img class="prog-img" src="'+img+'" alt="'+esc(p.name)+'" loading="lazy">'
+      +'<div class="prog-ov"></div>'
+      +'<div class="prog-body">'
+        +(p.duration?'<div class="prog-tag">'+esc(p.duration)+'</div>':'')
+        +'<div class="prog-name">'+esc(p.name)+'</div>'
+        +'<div class="prog-meta">'+meta.map(m=>'<span>'+esc(m)+'</span>').join('<span>·</span>')+'<div class="prog-price">'+price+'</div></div>'
+      +'</div>'
+      +'<div class="prog-arrow">→</div>'
+    +'</div>';
+  }).join('');
+  if(typeof initReveal==='function') setTimeout(initReveal,50);
+}
+window.loadHomeProgs = loadHomeProgs;
+
 function renderMarcas(progs) {
   const container = document.getElementById('progMarcasContainer');
   if(!container) return;
@@ -7049,6 +7091,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkSession();
     loadConsultasEnTurnos();
     applySiteImages();
+    loadHomeProgs();
   } catch(e) {
     console.error('DOMContentLoaded error:', e);
   }
@@ -7420,32 +7463,7 @@ if(window._pendingNav){ window._goTo(window._pendingNav); window._pendingNav=nul
         <h2 class="stitle">Nuestros programas</h2>
         <p class="ssub">Diseñados para distintos momentos de tu proceso.</p>
       </div>
-      <div class="prog-grid">
-        <div class="prog-card rv" onclick="goTo('programas')">
-          <img class="prog-img" data-site-img="prog_reset_21" src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=900&q=80" alt="Reset">
-          <div class="prog-ov"></div>
-          <div class="prog-body"><div class="prog-tag">21 días</div><div class="prog-name">Reset Integral</div><div class="prog-meta"><span>Principiantes</span><span>·</span><span>Online</span><div class="prog-price">$89.000</div></div></div>
-          <div class="prog-arrow">→</div>
-        </div>
-        <div class="prog-card rv d1" onclick="goTo('programas')">
-          <img class="prog-img" data-site-img="prog_activacion" src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&q=80" alt="Performance">
-          <div class="prog-ov"></div>
-          <div class="prog-body"><div class="prog-tag">8 semanas</div><div class="prog-name">Be Human Performance</div><div class="prog-meta"><span>Intermedio</span><span>·</span><span>Online</span><div class="prog-price">$145.000</div></div></div>
-          <div class="prog-arrow">→</div>
-        </div>
-        <div class="prog-card prog-feat rv d2" onclick="goTo('programas')">
-          <img class="prog-img" data-site-img="prog_indomables" src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&q=80" alt="Indomables">
-          <div class="prog-ov"></div>
-          <div class="prog-body"><div class="prog-tag">⭐ Más elegido · 3 meses</div><div class="prog-name">Indomables by Be Human</div><div class="prog-meta"><span>Programa completo</span><span>·</span><span>Comunidad privada</span><div class="prog-price">$249.000</div></div></div>
-          <div class="prog-arrow">→</div>
-        </div>
-        <div class="prog-card rv d1" onclick="goTo('programas')">
-          <img class="prog-img" data-site-img="prog_reset_mujer" src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=900&q=80" alt="Reset Mujer">
-          <div class="prog-ov"></div>
-          <div class="prog-body"><div class="prog-tag">6 semanas · Hormonal</div><div class="prog-name">Reset Mujer</div><div class="prog-meta"><span>Para ella</span><span>·</span><span>Online</span><div class="prog-price">$119.000</div></div></div>
-          <div class="prog-arrow">→</div>
-        </div>
-      </div>
+      <div class="prog-grid" id="homeProgGrid"></div>
       <div style="text-align:center;margin-top:2.2rem"><button class="btn-outline" onclick="goTo('programas')">Ver todos los programas →</button></div>
     </div>
   </section>
