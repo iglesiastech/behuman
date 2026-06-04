@@ -314,10 +314,13 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
 .sum-empty{font-size:.82rem;color:var(--muted);font-style:italic;text-align:center;padding:.75rem 0}
 .tipo-options{display:flex;flex-direction:column;gap:.9rem}
 .blog-section-card{background:#fff;border-radius:14px;border:1.5px solid var(--cream-dk);padding:1.25rem;margin-bottom:1rem}
-.blog-section-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.85rem}gap:1.1rem;padding:1.25rem 1.4rem;border:2px solid var(--cream-dk);border-radius:16px;cursor:pointer;transition:.2s;background:#fff;width:100%;text-align:left;font-family:var(--fb)}
-.tipo-opt:hover{border-color:var(--teal);background:rgba(58,125,140,.03);transform:translateY(-2px);box-shadow:0 6px 20px rgba(58,125,140,.1)}
+.blog-section-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.85rem}
+.tipo-opt{display:flex;align-items:center;gap:1.1rem;padding:1.25rem 1.4rem;border:2px solid var(--cream-dk);border-radius:16px;cursor:pointer;transition:.2s;background:#fff;width:100%;text-align:left;font-family:var(--fb)}
+.tipo-opt:hover{border-color:var(--teal);background:rgba(58,125,140,.08);transform:translateY(-3px) scale(1.015);box-shadow:0 10px 30px rgba(58,125,140,.25)}
+.tipo-opt:hover .tipo-icon{background:var(--teal);color:#fff;transform:scale(1.06)}
+.tipo-opt:hover .tipo-name{color:var(--teal)}
 .tipo-opt.selected{border-color:var(--teal);background:rgba(58,125,140,.05);box-shadow:0 4px 16px rgba(58,125,140,.12)}
-.tipo-icon{font-size:1.75rem;width:48px;height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--cream);border-radius:12px}
+.tipo-icon{font-size:1.75rem;width:48px;height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--cream);border-radius:12px;transition:.2s}
 .tipo-info{flex:1}
 .tipo-name{font-weight:700;font-size:.98rem;color:#1C1A18;margin-bottom:.25rem}
 .tipo-desc{font-size:.78rem;color:var(--muted);line-height:1.5}
@@ -4210,7 +4213,7 @@ function renderMarcas(progs) {
   });
 
   // Renderizar primero las marcas conocidas, después sin categoría
-  const marcasOrden = ['performance','indomables', ...Object.keys(byMarca).filter(k=>!['performance','indomables'].includes(k))];
+  const marcasOrden = ['indomables','performance', ...Object.keys(byMarca).filter(k=>!['indomables','performance'].includes(k))];
   let html = '';
 
   marcasOrden.forEach(marcaKey => {
