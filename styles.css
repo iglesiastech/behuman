@@ -40,6 +40,8 @@ h1,h2,h3,h4{font-family:var(--fd);font-weight:400;line-height:1.12}
   padding:.85rem clamp(1.2rem,4vw,3rem);
 }
 .nav-logo{display:flex;align-items:center;gap:.6rem;cursor:pointer}
+.nav-logo-default{display:flex;align-items:center;gap:.6rem}
+.nav-logo-img{height:40px;width:auto;max-width:190px;object-fit:contain;display:block}
 .nav-logo-text{font-family:var(--fb);font-size:.78rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-dk);line-height:1.2}
 .nav-logo-sub{font-size:.56rem;letter-spacing:.14em;color:var(--muted);display:block;font-weight:400}
 .nav-links{display:flex;align-items:center;gap:2rem}

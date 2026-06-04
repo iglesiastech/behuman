@@ -193,6 +193,23 @@ function getSB() { return sb(); }
   if(t) _authToken = t;
 })();
 
+/* ══ IMÁGENES DEL SITIO: aplicación + caché (evita el flash de fotos viejas al cargar) ══ */
+function _applySiteImg(key, url){
+  document.querySelectorAll('[data-site-img="'+key+'"]').forEach(el => { el.src = url; });
+  if(key === 'logo'){
+    document.querySelectorAll('[data-site-img="logo"]').forEach(el => { el.style.display = ''; });
+    document.querySelectorAll('.nav-logo-default').forEach(el => { el.style.display = 'none'; });
+  }
+}
+function applyCachedSiteImages(){
+  try {
+    const cached = JSON.parse(localStorage.getItem('bh_site_images') || '{}');
+    Object.keys(cached).forEach(k => _applySiteImg(k, cached[k]));
+  } catch(e){}
+}
+// Aplicar las imágenes cacheadas apenas el DOM está listo (antes del fetch de red) → sin flash
+document.addEventListener('DOMContentLoaded', applyCachedSiteImages);
+
 /* ══ NAVIGATION ══ */
 const PAGES = ['home','programas','tienda','turnos','checkout','login','admin','admin-fichas','portal','programa-detalle','prog-checkout','prog-landing','blog','blog-post'];
 function goTo(id, fromHistory){

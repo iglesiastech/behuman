@@ -387,6 +387,7 @@ async function loadADash() {
 
 /* ── FOTOS ── */
 const SITE_IMGS = [
+  {key:'logo',               name:'Logo (arriba a la izquierda)', section:'general'},
   {key:'hero_consultorio_1', name:'Hero — foto principal', section:'hero'},
   {key:'hero_dra',           name:'Hero — Dra. Dobenau',  section:'hero'},
   {key:'hero_consultorio_2', name:'Hero — foto derecha',  section:'hero'},
@@ -410,12 +411,17 @@ const SITE_IMGS = [
 async function applySiteImages() {
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
   try {
-    const r = await fetch(SUPABASE_URL+'/rest/v1/site_images?select=key,url', {headers:h});
+    const r = await fetch(SUPABASE_URL+'/rest/v1/site_images?select=key,url,updated_at', {headers:h});
     const data = await r.json();
+    const cache = {};
     (Array.isArray(data)?data:[]).forEach(row => {
-      const url = row.url + (row.url.includes('supabase') ? '?t='+Date.now() : '');
-      document.querySelectorAll('[data-site-img="'+row.key+'"]').forEach(el => { el.src = url; });
+      // versión estable por imagen (cachea en el navegador; sólo cambia si la imagen cambia)
+      const ver = row.updated_at ? '?v='+Date.parse(row.updated_at) : '';
+      const url = row.url + (row.url.includes('supabase') ? ver : '');
+      cache[row.key] = url;
+      _applySiteImg(row.key, url);
     });
+    try { localStorage.setItem('bh_site_images', JSON.stringify(cache)); } catch(e){}
   } catch(e) {}
 }
 
