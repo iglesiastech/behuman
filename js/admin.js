@@ -386,26 +386,21 @@ async function loadADash() {
 }
 
 /* ── FOTOS ── */
+// Cada imagen: page (grupo), where (dónde aparece), w×h (medidas recomendadas en px).
 const SITE_IMGS = [
-  {key:'logo',               name:'Logo (arriba a la izquierda)', section:'general'},
-  {key:'hero_consultorio_1', name:'Hero — foto principal', section:'hero'},
-  {key:'hero_dra',           name:'Hero — Dra. Dobenau',  section:'hero'},
-  {key:'hero_consultorio_2', name:'Hero — foto derecha',  section:'hero'},
-  {key:'mariel_portrait',    name:'Sección Mariel',        section:'general'},
-  {key:'prog_reset_21',      name:'Programa Reset 21',     section:'programas'},
-  {key:'prog_activacion',    name:'Programa Performance',  section:'programas'},
-  {key:'prog_indomables',    name:'Programa Indomables',   section:'programas'},
-  {key:'prog_reset_mujer',   name:'Programa Reset Mujer',  section:'programas'},
-  {key:'programas_hero_bg',  name:'Fondo página Programas',section:'programas'},
-  {key:'tienda_hero_bg',     name:'Fondo página Tienda',   section:'tienda'},
-  {key:'portal_bg',          name:'Fondo página Login',    section:'general'},
-  {key:'turnos_hero',        name:'Foto página Turnos',    section:'turnos'},
-  {key:'blog_hero_bg',       name:'Fondo página Blog',     section:'blog'},
-  {key:'pillars_bg',         name:'Fondo sección Pilares', section:'home'},
-  {key:'pillar_1',           name:'Pilar 1 — Diagnóstico', section:'home'},
-  {key:'pillar_2',           name:'Pilar 2 — Nutrición',   section:'home'},
-  {key:'pillar_3',           name:'Pilar 3 — Suplementos', section:'home'},
-  {key:'pillar_4',           name:'Pilar 4 — Acompañamiento', section:'home'},
+  {key:'logo',               page:'🏷️ Marca',          name:'Logo',                          where:'Arriba a la izquierda, en la barra de navegación. Usá PNG con fondo transparente.', w:400,  h:120},
+  {key:'hero_consultorio_1', page:'🏠 Home · Portada',  name:'Hero — foto grande (izquierda)', where:'La foto vertical grande del collage de la portada.',           w:800,  h:1500},
+  {key:'hero_dra',           page:'🏠 Home · Portada',  name:'Hero — foto chica (arriba der.)',where:'Foto chica de arriba a la derecha del collage de la portada.', w:600,  h:800},
+  {key:'hero_consultorio_2', page:'🏠 Home · Portada',  name:'Hero — foto chica (abajo der.)', where:'Foto chica de abajo a la derecha del collage de la portada.',  w:600,  h:800},
+  {key:'pillars_bg',         page:'🏠 Home · 4 Pilares',name:'Fondo sección "4 Pilares"',     where:'Imagen de fondo tenue detrás de los 4 pilares (sección oscura).', w:1920, h:1080},
+  {key:'pillar_1',           page:'🏠 Home · 4 Pilares',name:'Pilar 1 — Diagnóstico',         where:'Foto del primer pilar.',  w:600, h:800},
+  {key:'pillar_2',           page:'🏠 Home · 4 Pilares',name:'Pilar 2 — Nutrición',           where:'Foto del segundo pilar.', w:600, h:800},
+  {key:'pillar_3',           page:'🏠 Home · 4 Pilares',name:'Pilar 3 — Suplementos',         where:'Foto del tercer pilar.',  w:600, h:800},
+  {key:'pillar_4',           page:'🏠 Home · 4 Pilares',name:'Pilar 4 — Acompañamiento',      where:'Foto del cuarto pilar.',  w:600, h:800},
+  {key:'mariel_portrait',    page:'🏠 Home · Mariel',   name:'Retrato Dra. Mariel',           where:'La foto de la sección "Conocé a Mariel".', w:900, h:1200},
+  {key:'turnos_hero',        page:'📅 Turnos',          name:'Foto página Turnos',            where:'La foto al costado del formulario de reserva de turnos.', w:1000, h:900},
+  {key:'tienda_hero_bg',     page:'🛍️ Tienda',          name:'Fondo página Tienda',           where:'Banner de fondo detrás del título de la Tienda.', w:1920, h:700},
+  {key:'portal_bg',          page:'🔑 Login',           name:'Fondo página Login',            where:'Imagen de fondo del panel de inicio de sesión.', w:1200, h:1600},
 ];
 
 async function applySiteImages() {
@@ -428,63 +423,67 @@ async function applySiteImages() {
 async function loadAFotos() {
   const container = document.getElementById('fotosContent');
   if (!container) return;
+
+  // URLs actuales con fetch directo (el getSB legacy fallaba y mostraba todo igual)
   let urls = {};
   try {
-    const sb = getSB();
-    if (sb) {
-      const { data } = await sb.from('site_images').select('key,url,updated_at');
-      (data||[]).forEach(r => { urls[r.key] = r; });
-    }
+    const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
+    const r = await fetch(SUPABASE_URL+'/rest/v1/site_images?select=key,url,updated_at', {headers:h});
+    const data = await r.json();
+    (Array.isArray(data)?data:[]).forEach(rec => { urls[rec.key] = rec; });
   } catch(e) {}
 
-  container.innerHTML = SITE_IMGS.map(img => {
-    const rec = urls[img.key];
-    const src = rec?.url || `https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=50`;
-    const updated = rec?.updated_at ? 'Actualizado ' + timeAgoA(rec.updated_at) : 'Sin actualizar';
-    return `
-      <div class="ic">
-        <div class="ic-prev" onclick="openAImgEditor('${img.key}','${img.name}','${src}')">
-          <img id="aip-${img.key}" src="${src}" alt="${img.name}">
-          <div class="ic-ov"><button class="ic-btn">✏️ Cambiar</button></div>
-        </div>
-        <div class="ic-info">
-          <div class="ic-key">${img.key}</div>
-          <div class="ic-name">${img.name}</div>
-          <div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">${updated}</div>
-        </div>
-        <div class="ic-acts">
-          <button class="ia p" onclick="openAImgEditor('${img.key}','${img.name}','${src}')">✏️ Cambiar</button>
-        </div>
-      </div>`;
-  }).join('');
+  const shapeOf = (w,h) => w > h*1.15 ? 'Horizontal' : (h > w*1.15 ? 'Vertical' : 'Cuadrada');
 
-  // Wrap en secciones
-  const sections = [{id:'hero',label:'🏠 Hero — Homepage'},{id:'home',label:'🏠 Home — Secciones'},{id:'programas',label:'📚 Programas'},{id:'turnos',label:'📅 Turnos'},{id:'blog',label:'✍️ Blog'},{id:'tienda',label:'🛍️ Tienda'},{id:'general',label:'👤 General'}];
-  let html = '';
-  sections.forEach(sec => {
-    const secImgs = SITE_IMGS.filter(i => i.section === sec.id);
-    const secUrls = secImgs.map(img => {
-      const rec = urls[img.key];
-      const src = rec?.url || `https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=50`;
-      const updated = rec?.updated_at ? 'Actualizado ' + timeAgoA(rec.updated_at) : 'Sin actualizar';
-      return `<div class="ic">
-        <div class="ic-prev" onclick="openAImgEditor('${img.key}','${img.name}','${src}')">
-          <img id="aip-${img.key}" src="${src}" alt="${img.name}">
-          <div class="ic-ov"><button class="ic-btn">✏️ Cambiar</button></div>
-        </div>
-        <div class="ic-info"><div class="ic-key">${img.key}</div><div class="ic-name">${img.name}</div><div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">${updated}</div></div>
-        <div class="ic-acts"><button class="ia p" onclick="openAImgEditor('${img.key}','${img.name}','${src}')">✏️ Cambiar</button></div>
-      </div>`;
-    }).join('');
-    html += `<div style="margin-bottom:1.75rem"><div class="imgs-sec-title">${sec.label}</div><div class="ig">${secUrls}</div></div>`;
+  // Agrupar por página (respetando el orden del array)
+  const groups = [];
+  SITE_IMGS.forEach(img => {
+    let g = groups.find(x => x.page === img.page);
+    if(!g){ g = {page:img.page, imgs:[]}; groups.push(g); }
+    g.imgs.push(img);
   });
+
+  let html = '<div class="fto-intro">📸 Cambiá cualquier foto del sitio. Cada tarjeta muestra la <strong>foto actual</strong>, dónde aparece, y las <strong>medidas recomendadas (px)</strong> para que calce perfecto y se vea nítida.</div>';
+
+  groups.forEach(g => {
+    const cards = g.imgs.map(img => {
+      const rec  = urls[img.key];
+      const has  = !!(rec && rec.url);
+      const src  = has ? rec.url : '';
+      const sh   = shapeOf(img.w, img.h);
+      const dims = img.w + ' × ' + img.h + ' px';
+      const nm   = img.name.replace(/'/g, "\\'");
+      const upd  = (rec && rec.updated_at) ? 'Actualizada ' + timeAgoA(rec.updated_at) : 'Sin foto cargada';
+      const click = `openAImgEditor('${img.key}','${nm}','${src}','${dims} · ${sh}')`;
+      return `
+        <div class="fto-card">
+          <div class="fto-prev fto-${sh.toLowerCase()}" onclick="${click}">
+            ${has ? `<img id="aip-${img.key}" src="${src}" alt="">` : `<div class="fto-empty">📷<br>Sin foto cargada</div>`}
+            <span class="fto-shape">${sh}</span>
+            <div class="fto-ov"><span>✏️ Cambiar foto</span></div>
+          </div>
+          <div class="fto-body">
+            <div class="fto-name">${img.name}</div>
+            <div class="fto-where">${img.where}</div>
+            <div class="fto-dims">📐 ${dims} · ${sh}</div>
+            <div class="fto-upd">${upd}</div>
+            <button class="fto-btn" onclick="${click}">✏️ Cambiar foto</button>
+          </div>
+        </div>`;
+    }).join('');
+    html += `<div class="fto-group"><div class="fto-group-title">${g.page}</div><div class="fto-grid">${cards}</div></div>`;
+  });
+
   container.innerHTML = html;
 }
 
-function openAImgEditor(key, name, currentSrc) {
+function openAImgEditor(key, name, currentSrc, hint) {
   aCurrImgKey = key; aSelFile = null;
   document.getElementById('imgModTitle').textContent = 'Cambiar: ' + name;
-  document.getElementById('imgModCurrent').src = currentSrc;
+  const cur = document.getElementById('imgModCurrent');
+  cur.src = currentSrc || ''; cur.style.display = currentSrc ? '' : 'none';
+  const hintEl = document.getElementById('imgModHint');
+  if(hintEl){ if(hint){ hintEl.innerHTML = '📐 Medida recomendada: <strong>'+hint+'</strong>'; hintEl.style.display=''; } else { hintEl.style.display='none'; } }
   document.getElementById('aFN').textContent = '';
   document.getElementById('aFPW').style.display = 'none';
   document.getElementById('aUPrW').style.display = 'none';
