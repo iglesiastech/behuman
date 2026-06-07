@@ -734,6 +734,22 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
 .btn-concluir{display:flex;align-items:center;gap:.5rem;padding:.6rem 1.3rem;border-radius:100px;font-size:.78rem;font-weight:600;border:2px solid #e8e8e8;background:#fff;cursor:pointer;font-family:var(--fb);color:#666;transition:.18s}
 .btn-concluir.done{background:rgba(74,155,111,.1);border-color:rgba(74,155,111,.4);color:#2E7A52}
 .btn-concluir:hover{border-color:var(--teal);color:var(--teal)}
+/* Cartel "siguiente lección" (overlay al terminar el video) + navegación */
+.leccion-next-card{position:absolute;inset:0;background:rgba(20,20,22,.93);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;padding:1.5rem;z-index:5;backdrop-filter:blur(3px)}
+.lnc-check{width:54px;height:54px;border-radius:50%;background:#4A9B6F;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:.85rem}
+.lnc-done{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:1.1rem}
+.lnc-next-label{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.35rem}
+.lnc-next-title{font-family:var(--fd);font-size:clamp(1.1rem,2.5vw,1.6rem);color:#fff;margin-bottom:1.4rem;max-width:600px;line-height:1.25}
+.lnc-actions{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center}
+.lnc-btn{padding:.7rem 1.6rem;border-radius:100px;font-size:.85rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)}
+.lnc-btn:hover{background:#326b78}
+.lnc-replay{padding:.7rem 1.3rem;border-radius:100px;font-size:.85rem;font-weight:600;background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.3);cursor:pointer;font-family:var(--fb)}
+.lnc-replay:hover{background:rgba(255,255,255,.1)}
+.curso-nav{display:flex;justify-content:space-between;align-items:center;gap:.75rem;padding:.85rem 1.25rem;background:#fff;border-bottom:1px solid #f0f0f0}
+.curso-nav-btn{padding:.55rem 1.1rem;border-radius:100px;font-size:.78rem;font-weight:600;border:1.5px solid var(--cream-dk);background:#fff;color:#3A3530;cursor:pointer;font-family:var(--fb);transition:.15s}
+.curso-nav-btn:hover{border-color:var(--teal);color:var(--teal)}
+.curso-nav-next{background:var(--dark);color:var(--cream);border-color:var(--dark)}
+.curso-nav-next:hover{background:var(--teal);border-color:var(--teal);color:#fff}
 
 /* ── Descargables ── */
 .downloads-section{padding:1.25rem 2rem;border-top:1px solid #f0f0f0;background:#fff;margin-top:.5rem}

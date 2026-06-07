@@ -497,18 +497,8 @@ function abrirLeccion(modId, leccionId) {
   const titleEl = document.getElementById('leccionTitulo');
   if(titleEl) titleEl.textContent = leccion.title;
 
-  // Player
-  const player = document.getElementById('cursoPlayer');
-  if(player && leccion.video_url) {
-    let embedUrl = leccion.video_url;
-    const ytm = leccion.video_url.match(/(?:v=|youtu\.be\/)([^&\s]+)/);
-    const vim = leccion.video_url.match(/vimeo\.com\/(\d+)/);
-    if(ytm) embedUrl = `https://www.youtube.com/embed/${ytm[1]}?rel=0&modestbranding=1`;
-    else if(vim) embedUrl = `https://player.vimeo.com/video/${vim[1]}`;
-    player.innerHTML = `<iframe src="${embedUrl}" allowfullscreen allow="autoplay; fullscreen"></iframe>`;
-  } else if(player) {
-    player.innerHTML = `<div class="curso-player-placeholder"><div style="font-size:2rem;margin-bottom:.5rem">📄</div><div>${leccion.title}</div></div>`;
-  }
+  // Player (con detección de fin de video para auto-completar la lección)
+  setupLessonVideo(leccion);
 
   // Descripción
   const descWrap = document.getElementById('leccionDescWrap');
@@ -522,6 +512,10 @@ function abrirLeccion(modId, leccionId) {
 
   // Descargables
   renderLeccionDownloads();
+
+  // Navegación entre lecciones + ocultar el cartel de "siguiente"
+  updateLeccionNav();
+  const _nc = document.getElementById('leccionNextCard'); if(_nc) _nc.style.display = 'none';
 
   // Botón concluir
   const isDone = cursoState.completadas.has(leccionId);
@@ -565,43 +559,130 @@ function renderLeccionDownloads() {
   }).join('');
 }
 
-async function concluirLeccion() {
-  const leccionId = cursoState.leccionActual?.id;
-  if(!leccionId || !cursoState.userId) { toast('Necesitás estar logueada para guardar el progreso','err'); return; }
+function updateConcluirBtn(done){
+  const btnC=document.getElementById('btnConcluir'), btnCI=document.getElementById('btnConcluirIcon'), btnCT=document.getElementById('btnConcluirTxt');
+  if(btnC) btnC.className = 'btn-concluir' + (done?' done':'');
+  if(btnCI) btnCI.textContent = done ? '✓' : '○';
+  if(btnCT) btnCT.textContent = done ? 'Completada' : 'Concluir';
+}
 
-  const yaCompletada = cursoState.completadas.has(leccionId);
+async function marcarCompletada(leccionId, done){
+  if(!leccionId || !cursoState.userId) return;
   const h = {
     'apikey': SUPABASE_ANON,
     'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON),
     'Content-Type': 'application/json',
     'Prefer': 'resolution=merge-duplicates,return=minimal'
   };
-
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/lesson_progress`, {
-      method: 'POST', headers: h,
-      body: JSON.stringify({ user_id: cursoState.userId, lesson_id: leccionId, completed: !yaCompletada, updated_at: new Date().toISOString() })
+      method:'POST', headers:h,
+      body: JSON.stringify({ user_id: cursoState.userId, lesson_id: leccionId, completed: done, updated_at: new Date().toISOString() })
     });
-
-    if(yaCompletada) { cursoState.completadas.delete(leccionId); }
-    else             { cursoState.completadas.add(leccionId); }
-
-    const isDone = cursoState.completadas.has(leccionId);
-    const btnC  = document.getElementById('btnConcluir');
-    const btnCI = document.getElementById('btnConcluirIcon');
-    const btnCT = document.getElementById('btnConcluirTxt');
-    if(btnC) btnC.className = 'btn-concluir' + (isDone?' done':'');
-    if(btnCI) btnCI.textContent = isDone ? '✓' : '○';
-    if(btnCT) btnCT.textContent = isDone ? 'Completada' : 'Concluir';
-
+    if(done) cursoState.completadas.add(leccionId); else cursoState.completadas.delete(leccionId);
+    if(cursoState.leccionActual?.id === leccionId) updateConcluirBtn(done);
     renderSidebar();
     updateCursoProgress();
-    if(isDone) toast('¡Lección completada! ✓','ok');
+  } catch(e){ console.warn('marcarCompletada:', e.message); }
+}
 
-    // Ir a la siguiente lección automáticamente
-    if(isDone) irSiguienteLeccion();
+async function concluirLeccion() {
+  const leccionId = cursoState.leccionActual?.id;
+  if(!leccionId || !cursoState.userId) { toast('Necesitás estar logueada para guardar el progreso','err'); return; }
+  const ya = cursoState.completadas.has(leccionId);
+  await marcarCompletada(leccionId, !ya);
+  if(!ya){ toast('¡Lección completada! ✓','ok'); showNextLessonCard(); }
+}
 
-  } catch(e) { toast('Error: '+e.message,'err'); }
+// ── Navegación entre lecciones (anterior / siguiente / cartel final) ──
+function _flatLessons(){
+  const arr=[];
+  (cursoState.modulos||[]).forEach(m => (m.lecciones||[]).forEach(l => arr.push({ modId:m.id, lessonId:l.id, title:l.title })));
+  return arr;
+}
+function _adjacentLessons(){
+  const flat=_flatLessons();
+  const i=flat.findIndex(x => x.lessonId === cursoState.leccionActual?.id);
+  return { prev: i>0 ? flat[i-1] : null, next: (i>=0 && i<flat.length-1) ? flat[i+1] : null };
+}
+function updateLeccionNav(){
+  const {prev,next}=_adjacentLessons();
+  const pb=document.getElementById('leccionPrevBtn');
+  const nb=document.getElementById('leccionNextBtn');
+  if(pb) pb.style.visibility = prev ? 'visible' : 'hidden';
+  if(nb) nb.style.visibility = next ? 'visible' : 'hidden';
+}
+function lncGoNext(){ const {next}=_adjacentLessons(); if(next) abrirLeccion(next.modId, next.lessonId); }
+function lncGoPrev(){ const {prev}=_adjacentLessons(); if(prev) abrirLeccion(prev.modId, prev.lessonId); }
+function lncReplay(){
+  const nc=document.getElementById('leccionNextCard'); if(nc) nc.style.display='none';
+  try {
+    if(_ytPlayer && _ytPlayer.seekTo){ _ytPlayer.seekTo(0); _ytPlayer.playVideo(); }
+    else if(_vimeoPlayer){ _vimeoPlayer.setCurrentTime(0).then(()=>_vimeoPlayer.play()).catch(()=>{}); }
+  } catch(e){}
+}
+function showNextLessonCard(){
+  const nc=document.getElementById('leccionNextCard'); if(!nc) return;
+  const {next}=_adjacentLessons();
+  const titleEl=document.getElementById('lncNextTitle');
+  const labelEl=document.getElementById('lncNextLabel');
+  const btn=document.getElementById('lncBtn');
+  if(next){
+    if(titleEl) titleEl.textContent = next.title;
+    if(labelEl) labelEl.style.display='';
+    if(btn){ btn.style.display=''; btn.textContent='Ir a la siguiente →'; }
+  } else {
+    if(titleEl) titleEl.textContent = '¡Completaste todas las lecciones! 🎉';
+    if(labelEl) labelEl.style.display='none';
+    if(btn) btn.style.display='none';
+  }
+  nc.style.display='';
+}
+function onLessonVideoEnded(){
+  const id=cursoState.leccionActual?.id;
+  if(id && cursoState.userId && !cursoState.completadas.has(id)) marcarCompletada(id, true);
+  showNextLessonCard();
+}
+
+// ── Reproductor con detección de fin de video (YouTube / Vimeo) ──
+let _ytPlayer=null, _vimeoPlayer=null, _ytApiLoading=false, _ytApiCbs=[], _vimeoApiLoading=false, _vimeoApiCbs=[];
+function ensureYTApi(cb){
+  if(window.YT && window.YT.Player){ cb(); return; }
+  _ytApiCbs.push(cb);
+  if(_ytApiLoading) return;
+  _ytApiLoading=true;
+  const prev=window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady=function(){ if(typeof prev==='function')prev(); _ytApiCbs.forEach(f=>f()); _ytApiCbs=[]; };
+  const s=document.createElement('script'); s.src='https://www.youtube.com/iframe_api'; document.head.appendChild(s);
+}
+function ensureVimeoApi(cb){
+  if(window.Vimeo && window.Vimeo.Player){ cb(); return; }
+  _vimeoApiCbs.push(cb);
+  if(_vimeoApiLoading) return;
+  _vimeoApiLoading=true;
+  const s=document.createElement('script'); s.src='https://player.vimeo.com/api/player.js';
+  s.onload=function(){ _vimeoApiCbs.forEach(f=>f()); _vimeoApiCbs=[]; };
+  document.head.appendChild(s);
+}
+function setupLessonVideo(leccion){
+  const player=document.getElementById('cursoPlayer');
+  if(!player) return;
+  try { if(_ytPlayer && _ytPlayer.destroy) _ytPlayer.destroy(); } catch(e){}
+  try { if(_vimeoPlayer && _vimeoPlayer.unload) _vimeoPlayer.unload(); } catch(e){}
+  _ytPlayer=null; _vimeoPlayer=null;
+  const url=leccion.video_url;
+  if(!url){ player.innerHTML='<div class="curso-player-placeholder"><div style="font-size:2rem;margin-bottom:.5rem">📄</div><div>'+(leccion.title||'')+'</div></div>'; return; }
+  const yt=url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{6,})/);
+  const vim=url.match(/vimeo\.com\/(\d+)/);
+  if(yt){
+    player.innerHTML='<iframe id="cursoVideoIframe" src="https://www.youtube.com/embed/'+yt[1]+'?rel=0&modestbranding=1&enablejsapi=1" allowfullscreen allow="autoplay; fullscreen"></iframe>';
+    ensureYTApi(function(){ try { _ytPlayer=new YT.Player('cursoVideoIframe', { events:{ onStateChange:function(e){ if(e.data===YT.PlayerState.ENDED) onLessonVideoEnded(); } } }); } catch(err){} });
+  } else if(vim){
+    player.innerHTML='<iframe id="cursoVideoIframe" src="https://player.vimeo.com/video/'+vim[1]+'" allowfullscreen allow="autoplay; fullscreen"></iframe>';
+    ensureVimeoApi(function(){ try { _vimeoPlayer=new Vimeo.Player('cursoVideoIframe'); _vimeoPlayer.on('ended', onLessonVideoEnded); } catch(err){} });
+  } else {
+    player.innerHTML='<iframe src="'+url+'" allowfullscreen allow="autoplay; fullscreen"></iframe>';
+  }
 }
 
 function irSiguienteLeccion() {

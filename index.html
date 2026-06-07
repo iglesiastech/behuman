@@ -1965,13 +1965,30 @@
     <!-- Vista del player (al entrar a una lección) -->
     <div id="cursoPlayerView" style="display:none">
       <!-- Player -->
-      <div class="curso-player-wrap">
+      <div class="curso-player-wrap" style="position:relative">
         <div class="curso-player" id="cursoPlayer">
           <div class="curso-player-placeholder">
             <div style="font-size:2.5rem;margin-bottom:.75rem">▶</div>
             <div>Seleccioná una lección para empezar</div>
           </div>
         </div>
+        <!-- Cartel "siguiente lección" (aparece al terminar el video) -->
+        <div id="leccionNextCard" class="leccion-next-card" style="display:none">
+          <div class="lnc-check">✓</div>
+          <div class="lnc-done">Lección completada</div>
+          <div class="lnc-next-label" id="lncNextLabel">Siguiente lección</div>
+          <div class="lnc-next-title" id="lncNextTitle">—</div>
+          <div class="lnc-actions">
+            <button class="lnc-replay" onclick="lncReplay()">↺ Volver a ver</button>
+            <button class="lnc-btn" id="lncBtn" onclick="lncGoNext()">Ir a la siguiente →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navegación entre lecciones -->
+      <div class="curso-nav">
+        <button class="curso-nav-btn" id="leccionPrevBtn" onclick="lncGoPrev()">← Lección anterior</button>
+        <button class="curso-nav-btn curso-nav-next" id="leccionNextBtn" onclick="lncGoNext()">Siguiente lección →</button>
       </div>
 
       <!-- Info lección -->
