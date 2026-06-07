@@ -72,8 +72,8 @@ async function inscribirsePrograma(btn) {
   // Verificar si está logueado
   const token = localStorage.getItem('bh_token');
   if(!token) {
-    toast('Necesitás registrarte para acceder al programa. Solo toma un minuto.','ok',4000);
-    setTimeout(()=>goTo('login'), 800);
+    _loginIntent = { type:'prog', nombre };
+    goTo('login');
     return;
   }
 
@@ -1209,19 +1209,19 @@ async function inscribirmeLanding() {
   if(!_currentLandingProg) return;
   // Simular clic en inscribirsePrograma con los datos del programa actual
   const prog = _currentLandingProg;
-  const token = localStorage.getItem('bh_token');
-  if(!token) {
-    toast('Necesitás registrarte para acceder al programa.','ok',4000);
-    setTimeout(()=>goTo('login'), 800);
-    return;
-  }
-  // Setear datos del checkout directamente
+  // Setear datos del checkout ANTES del check (para poder volver acá tras el login)
   progCheckoutData = {
     nombre: prog.name,
     slug:   prog.id,
     precio: prog.price || 0,
     progId: prog.id
   };
+  const token = localStorage.getItem('bh_token');
+  if(!token) {
+    _loginIntent = { type:'prog', nombre: prog.name };
+    goTo('login');
+    return;
+  }
   goTo('prog-checkout');
   setTimeout(()=>{
     const n = document.getElementById('pcProgName'); if(n) n.textContent = prog.name;

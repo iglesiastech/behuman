@@ -5,6 +5,7 @@ const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 // ahora usan el JWT del admin logueado + una policy de Storage en Supabase.
 
 let _authToken = null; // se llena al hacer login
+let _loginIntent = null; // a dónde volver después de loguearse (ej: compra de programa)
 
 // ── Llamada genérica a la API REST ──
 async function sbFetch(path, options = {}) {
@@ -210,6 +211,19 @@ function applyCachedSiteImages(){
 // Aplicar las imágenes cacheadas apenas el DOM está listo (antes del fetch de red) → sin flash
 document.addEventListener('DOMContentLoaded', applyCachedSiteImages);
 
+// Banner grande en la página de login cuando el usuario venía a comprar un programa
+function applyLoginIntentBanner(){
+  const b = document.getElementById('loginIntentBanner');
+  if(!b) return;
+  if(_loginIntent && _loginIntent.type === 'prog'){
+    const t = document.getElementById('loginIntentText');
+    if(t) t.textContent = 'Para comprar “'+(_loginIntent.nombre||'el programa')+'” necesitás una cuenta. Iniciá sesión o registrate gratis (1 minuto) y volvés acá para terminar la compra.';
+    b.style.display = '';
+  } else {
+    b.style.display = 'none';
+  }
+}
+
 /* ══ NAVIGATION ══ */
 const PAGES = ['home','programas','tienda','turnos','checkout','login','admin','admin-fichas','portal','programa-detalle','prog-checkout','prog-landing','blog','blog-post'];
 function goTo(id, fromHistory){
@@ -249,6 +263,7 @@ function goTo(id, fromHistory){
   if(id==='prog-checkout')     initProgCheckout();
   if(id==='programas')         loadProgramasPage();
   if(id==='blog')              loadBlogPage();
+  if(id==='login')             applyLoginIntentBanner();
 
   // Historial del navegador: permite usar el botón "atrás" de Chrome para
   // volver a la página anterior en vez de salir del sitio.

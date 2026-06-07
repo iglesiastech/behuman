@@ -667,6 +667,18 @@ async function afterLogin(user){
     const nombre = profile?.full_name?.split(' ')[0] || user.email;
     _userRol = rol;
 
+    // Si venía a comprar un programa sin sesión, volver al checkout (no a portal/admin)
+    if(_loginIntent && _loginIntent.type === 'prog'){
+      _loginIntent = null;
+      const isAdmin = (rol === 'super_admin' || rol === 'medica');
+      localStorage.setItem(isAdmin ? 'bh_admin_session' : 'bh_user_session',
+        JSON.stringify({ email:user.email, id:user.id, name: profile?.full_name || user.email }));
+      updateNavUI(isAdmin ? 'admin' : 'user');
+      setLoginLoading(true, '¡Listo! 👋');
+      setTimeout(()=>{ setLoginLoading(false); goTo('prog-checkout'); initProgCheckout(); }, 600);
+      return;
+    }
+
     if(rol === 'super_admin' || rol === 'medica'){
       setLoginLoading(true, '¡Hola!');
       localStorage.setItem('bh_admin_session', JSON.stringify({

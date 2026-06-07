@@ -684,6 +684,15 @@
         <div class="login-card-logo">Be <span>Human</span></div>
         <div class="login-card-sub">Portal de pacientes · Medicina Funcional</div>
 
+        <!-- Banner grande: aparece cuando el usuario venía a comprar un programa -->
+        <div id="loginIntentBanner" class="login-intent-banner" style="display:none">
+          <div class="lib-icon">🔒</div>
+          <div>
+            <div class="lib-title">Iniciá sesión para continuar</div>
+            <div class="lib-text" id="loginIntentText"></div>
+          </div>
+        </div>
+
         <div class="login-tabs">
           <button class="login-tab active" id="ltab-login"    onclick="switchLoginTab('login')">Ingresar</button>
           <button class="login-tab"        id="ltab-register" onclick="switchLoginTab('register')">Registrarse</button>
