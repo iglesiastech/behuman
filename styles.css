@@ -500,6 +500,13 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
   .grid-2{grid-template-columns:1fr}
   #page-turnos>div:first-child{grid-template-columns:1fr!important}
   #page-turnos>div:first-child>div:first-child{display:none!important}
+  /* Cards de tipo de consulta: texto a ancho completo, precio en fila propia */
+  .tipo-opt{flex-wrap:wrap;gap:.55rem .85rem;padding:1.05rem 1.1rem}
+  .tipo-icon{width:42px;height:42px;font-size:1.35rem}
+  .tipo-info{flex:1 1 auto;min-width:0}
+  .tipo-name{font-size:.95rem}
+  .tipo-desc{font-size:.76rem}
+  .tipo-price{flex-basis:100%;order:5;text-align:right;font-size:1.02rem;padding-top:.55rem;margin-top:.15rem;border-top:1px solid var(--cream-dk)}
 }
 @media(max-width:480px){
   .products-grid{grid-template-columns:1fr}
