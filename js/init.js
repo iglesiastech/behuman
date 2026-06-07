@@ -408,7 +408,7 @@ function mostrarLandingModulo(mod) {
   }
 
   // Archivos descargables del módulo
-  const modFiles = (cursoState.downloads||[]).filter(d=>d.module_id===mod.id || !d.module_id);
+  const modFiles = (cursoState.downloads||[]).filter(d=>!d.lesson_id);
   const dlSection = document.getElementById('landingDownloadsSection');
   const dlList    = document.getElementById('landingDownloadsList');
   if(dlSection && dlList) {
@@ -547,10 +547,12 @@ function renderLeccionDownloads() {
   const wrap = document.getElementById('leccionDownloads');
   const list = document.getElementById('leccionDownloadsList');
   if(!wrap || !list) return;
-  if(!cursoState.downloads?.length) { wrap.style.display='none'; return; }
+  const lid = cursoState.leccionActual?.id;
+  const files = (cursoState.downloads||[]).filter(d => d.lesson_id === lid);
+  if(!files.length) { wrap.style.display='none'; return; }
   wrap.style.display = '';
   const icons = {pdf:'📄',doc:'📝',xls:'📊',zip:'📦',mp3:'🎧',default:'📎'};
-  list.innerHTML = cursoState.downloads.map(d => {
+  list.innerHTML = files.map(d => {
     const icon = icons[d.file_type?.toLowerCase()] || icons.default;
     return `<a href="${d.file_url}" target="_blank" download class="download-item">
       <div class="download-icon" style="background:rgba(58,125,140,.1)">${icon}</div>

@@ -267,6 +267,7 @@ function switchProgAdmTab(tab, btn) {
 /* ── ADMIN: CONTENIDO DE PROGRAMAS (Módulos + Lecciones + Descargables) ── */
 
 let currentAdmModId  = null;
+let currentAdmLessonId = null; // lección a la que se adjunta el descargable (null = general del programa)
 
 async function loadProgContent() {
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
@@ -309,31 +310,46 @@ async function loadProgContent() {
           </div>
           <!-- Lecciones -->
           <div style="padding:.6rem">
-            ${mod.lecciones.length ? mod.lecciones.map((l,i)=>`
-              <div style="display:flex;align-items:center;gap:.65rem;padding:.6rem .75rem;background:#fff;border-radius:8px;margin-bottom:.35rem;border:1px solid #f0f0f0">
-                <div style="width:24px;height:24px;border-radius:50%;background:rgba(58,125,140,.1);color:var(--teal);font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
-                <div style="flex:1">
-                  <div style="font-size:.84rem;font-weight:500">${l.title}</div>
-                  <div style="font-size:.7rem;color:var(--muted)">${l.video_url?'▶ Video':'📄 Sin video'} ${l.duration_sec?'· '+Math.round(l.duration_sec/60)+' min':''}</div>
+            ${mod.lecciones.length ? mod.lecciones.map((l,i)=>{
+              const lf = (Array.isArray(downloads)?downloads:[]).filter(d=>d.lesson_id===l.id);
+              return `
+              <div style="background:#fff;border-radius:8px;margin-bottom:.4rem;border:1px solid #f0f0f0;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:.65rem;padding:.6rem .75rem">
+                  <div style="width:24px;height:24px;border-radius:50%;background:rgba(58,125,140,.1);color:var(--teal);font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:.84rem;font-weight:500">${l.title}</div>
+                    <div style="font-size:.7rem;color:var(--muted)">${l.video_url?'▶ Video':'📄 Sin video'} ${l.duration_sec?'· '+Math.round(l.duration_sec/60)+' min':''} · 📎 ${lf.length} archivo${lf.length!==1?'s':''}</div>
+                  </div>
+                  <div style="display:flex;gap:.3rem;flex-shrink:0">
+                    <button onclick="openAddDownload('${l.id}')" title="Agregar archivo descargable a esta lección" style="padding:.28rem .55rem;border-radius:6px;font-size:.68rem;font-weight:600;background:rgba(58,125,140,.12);color:var(--teal);border:none;cursor:pointer;font-family:var(--fb)">📎 + Archivo</button>
+                    <button onclick="editLesson(${JSON.stringify(l).replace(/"/g,'&quot;')})" style="padding:.28rem .6rem;border-radius:6px;font-size:.68rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">✏️</button>
+                    <button onclick="deleteLesson('${l.id}')" style="padding:.28rem .6rem;border-radius:6px;font-size:.68rem;font-weight:600;background:rgba(196,97,74,.1);color:#C4614A;border:1px solid rgba(196,97,74,.2);cursor:pointer;font-family:var(--fb)">✕</button>
+                  </div>
                 </div>
-                <div style="display:flex;gap:.3rem">
-                  <button onclick="editLesson(${JSON.stringify(l).replace(/"/g,'&quot;')})" style="padding:.28rem .6rem;border-radius:6px;font-size:.68rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">✏️</button>
-                  <button onclick="deleteLesson('${l.id}')" style="padding:.28rem .6rem;border-radius:6px;font-size:.68rem;font-weight:600;background:rgba(196,97,74,.1);color:#C4614A;border:1px solid rgba(196,97,74,.2);cursor:pointer;font-family:var(--fb)">✕</button>
-                </div>
-              </div>`).join('')
+                ${lf.length ? `<div style="padding:0 .75rem .55rem 3.05rem;display:flex;flex-direction:column;gap:.28rem">
+                  ${lf.map(d=>`<div style="display:flex;align-items:center;gap:.5rem;font-size:.74rem;background:rgba(58,125,140,.06);padding:.35rem .6rem;border-radius:6px">
+                    <span>📄</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3A3530">${d.title}</span>
+                    <a href="${d.file_url}" target="_blank" style="color:var(--teal);text-decoration:none;font-weight:600">abrir</a>
+                    <button onclick="deleteDownload('${d.id}')" title="Quitar archivo" style="background:none;border:none;color:#C4614A;cursor:pointer;font-size:.85rem;padding:0 .15rem">✕</button>
+                  </div>`).join('')}
+                </div>` : ''}
+              </div>`;
+            }).join('')
             : '<div style="padding:.5rem .75rem;font-size:.8rem;color:var(--muted)">Sin lecciones en este módulo</div>'}
           </div>
         </div>`).join('');
     }
 
-    // Sección descargables
+    // Sección descargables GENERALES del programa (sin lección). Los de cada lección van arriba.
+    const generales = (Array.isArray(downloads)?downloads:[]).filter(d=>!d.lesson_id);
     list.innerHTML += `
       <div style="margin-top:1.25rem;border-top:2px solid var(--cream-dk);padding-top:1rem">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
-          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">📎 Archivos descargables</div>
-          <button onclick="openAddDownload()" style="padding:.35rem .85rem;border-radius:100px;font-size:.72rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">+ Agregar</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem">
+          <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">📎 Archivos generales del programa</div>
+          <button onclick="openAddDownload(null)" style="padding:.35rem .85rem;border-radius:100px;font-size:.72rem;font-weight:600;background:var(--teal);color:#fff;border:none;cursor:pointer;font-family:var(--fb)">+ Agregar</button>
         </div>
-        <div id="downloadsList">${Array.isArray(downloads)&&downloads.length ? downloads.map(d=>`
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:.7rem;line-height:1.5">Opcional — para archivos de todo el programa. Los descargables de <strong>cada lección</strong> se agregan con el botón <strong>📎 + Archivo</strong> de cada lección.</div>
+        <div id="downloadsList">${generales.length ? generales.map(d=>`
           <div style="display:flex;align-items:center;gap:.65rem;padding:.6rem .75rem;background:#fff;border-radius:8px;margin-bottom:.35rem;border:1px solid #f0f0f0">
             <div style="font-size:1.1rem">📄</div>
             <div style="flex:1">
@@ -341,7 +357,7 @@ async function loadProgContent() {
               <div style="font-size:.7rem;color:var(--muted)">${d.description||d.file_type||''}</div>
             </div>
             <button onclick="deleteDownload('${d.id}')" style="padding:.28rem .6rem;border-radius:6px;font-size:.68rem;background:rgba(196,97,74,.1);color:#C4614A;border:1px solid rgba(196,97,74,.2);cursor:pointer;font-family:var(--fb)">✕</button>
-          </div>`).join('') : '<div style="font-size:.8rem;color:var(--muted);padding:.35rem">Sin archivos descargables</div>'}
+          </div>`).join('') : '<div style="font-size:.8rem;color:var(--muted);padding:.35rem">Sin archivos generales</div>'}
         </div>
       </div>`;
 
@@ -482,11 +498,14 @@ async function deleteLesson(id) {
 }
 
 // ── Descargables ──
-function openAddDownload() {
+function openAddDownload(lessonId) {
+  currentAdmLessonId = lessonId || null;
   document.getElementById('dlTitle').value = '';
   document.getElementById('dlUrl').value   = '';
-  document.getElementById('dlDesc').value  = '';
+  if(document.getElementById('dlDesc')) document.getElementById('dlDesc').value = '';
   document.getElementById('dlType').value  = 'pdf';
+  const t = document.getElementById('downloadModTitle');
+  if(t) t.textContent = currentAdmLessonId ? '📎 Archivo descargable de la lección' : '📎 Archivo general del programa';
   openAMod('downloadMod');
 }
 
@@ -497,7 +516,7 @@ async function saveDownload() {
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON), 'Content-Type':'application/json', 'Prefer':'return=minimal' };
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/program_files`, { method:'POST', headers:h,
-      body: JSON.stringify({ program_id: currentAdmProgId, title, file_url: url, file_type: document.getElementById('dlType').value, sort_order: Math.floor(Date.now() / 1000) % 1000000 }) });
+      body: JSON.stringify({ program_id: currentAdmProgId, lesson_id: currentAdmLessonId, title, file_url: url, file_type: document.getElementById('dlType').value, sort_order: Math.floor(Date.now() / 1000) % 1000000 }) });
     toast('Archivo agregado ✓','ok');
     closeAMod('downloadMod');
     loadProgContent();

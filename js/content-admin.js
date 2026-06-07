@@ -86,7 +86,7 @@ function admPreviewOpenModulo(modId) {
   }
 
   // Archivos
-  const modFiles = admPreviewState.downloads.filter(d=>d.module_id===modId || !d.module_id);
+  const modFiles = admPreviewState.downloads.filter(d=>!d.lesson_id);
   const filesEl  = document.getElementById('admLandingFiles');
   const filesListEl = document.getElementById('admLandingFilesList');
   if(filesEl && filesListEl) {
@@ -155,7 +155,7 @@ function admPreviewOpenLeccion(leccionId) {
   descEl.innerHTML = (l.description||'').replace(/\n/g,'<br>');
 
   // Archivos
-  const modFiles = admPreviewState.downloads.filter(d=>d.module_id===mod.id || !d.module_id);
+  const modFiles = admPreviewState.downloads.filter(d=>d.lesson_id===l.id);
   const pf = document.getElementById('admPlayerFiles');
   const pfl = document.getElementById('admPlayerFilesList');
   if(modFiles.length) {
