@@ -35,7 +35,7 @@ async function initPortal() {
     const { data: profile } = await sb.from('profiles').select('full_name,role').eq('id', user.id).single();
     const nombre = profile?.full_name?.split(' ')[0] || user.email.split('@')[0];
     const pwEl = document.getElementById('portalWelcome');
-    if(pwEl) pwEl.textContent = `Bienvenida, ${nombre}`;
+    if(pwEl) pwEl.textContent = `Te damos la bienvenida, ${nombre}`;
     const pnEl = document.getElementById('portalUserName');
     if(pnEl) pnEl.textContent = profile?.full_name || nombre;
     const peEl = document.getElementById('portalUserEmail');
@@ -588,7 +588,7 @@ async function marcarCompletada(leccionId, done){
 
 async function concluirLeccion() {
   const leccionId = cursoState.leccionActual?.id;
-  if(!leccionId || !cursoState.userId) { toast('Necesitás estar logueada para guardar el progreso','err'); return; }
+  if(!leccionId || !cursoState.userId) { toast('Necesitás iniciar sesión para guardar el progreso','err'); return; }
   const ya = cursoState.completadas.has(leccionId);
   await marcarCompletada(leccionId, !ya);
   if(!ya){ toast('¡Lección completada! ✓','ok'); showNextLessonCard(); }

@@ -638,7 +638,7 @@ async function toggleMembership(id, newStatus) {
 /* ── ÓRDENES DE PROGRAMAS ── */
 async function loadOrdenesProgramas() {
   const token = _authToken || localStorage.getItem('bh_token');
-  if(!token) { toast('Necesitás estar logueada para ver las órdenes','err'); return; }
+  if(!token) { toast('Necesitás iniciar sesión para ver las órdenes','err'); return; }
   const h = {
     'apikey': SUPABASE_ANON,
     'Authorization': 'Bearer ' + token
@@ -649,7 +649,7 @@ async function loadOrdenesProgramas() {
     const r1 = await fetch(`${SUPABASE_URL}/rest/v1/orders?order=created_at.desc&limit=100`, {headers:h});
     if(!r1.ok) {
       const err = await r1.json().catch(()=>({}));
-      throw new Error(err.message || err.hint || 'Error '+r1.status+' - verificá que estés logueada como admin');
+      throw new Error(err.message || err.hint || 'Error '+r1.status+' - verificá que hayas iniciado sesión como admin');
     }
     const orders = await r1.json();
     if(!Array.isArray(orders)) throw new Error('Respuesta inválida de la base de datos');

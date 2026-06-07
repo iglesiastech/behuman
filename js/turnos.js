@@ -668,7 +668,7 @@ async function afterLogin(user){
     _userRol = rol;
 
     if(rol === 'super_admin' || rol === 'medica'){
-      setLoginLoading(true, '¡Bienvenida!');
+      setLoginLoading(true, '¡Hola!');
       localStorage.setItem('bh_admin_session', JSON.stringify({
         email: user.email, id: user.id, name: profile?.full_name || user.email
       }));
@@ -679,7 +679,7 @@ async function afterLogin(user){
         goTo('admin');
       }, 600);
     } else {
-      setLoginLoading(true, '¡Bienvenida!');
+      setLoginLoading(true, '¡Hola!');
       localStorage.setItem('bh_user_session', JSON.stringify({
         email: user.email, id: user.id, name: profile?.full_name || user.email
       }));
@@ -687,7 +687,7 @@ async function afterLogin(user){
       setTimeout(()=>{
         setLoginLoading(false);
         goTo('portal');
-        toast(`¡Bienvenida, ${nombre}! 👋`, 'ok');
+        toast(`¡Hola, ${nombre}! 👋`, 'ok');
       }, 600);
     }
   }catch(e){
