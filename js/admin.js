@@ -1117,7 +1117,6 @@ window.openANuevaFicha         = openANuevaFicha;
 window.crearAFicha             = crearAFicha;
 window.openNuevaConsulta       = openNuevaConsulta;
 window.guardarNuevaConsulta    = guardarNuevaConsulta;
-window.abrirFichaDesdeCalendario = abrirFichaDesdeCalendario;
 window.verEvolucionDetalle     = verEvolucionDetalle;
 window.editarEvolucion         = editarEvolucion;
 window.editarFicha             = editarFicha;
