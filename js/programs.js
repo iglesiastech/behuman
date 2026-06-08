@@ -1023,7 +1023,7 @@ function renderProgCard(prog, accentColor) {
   const benefits = Array.isArray(prog.benefits) ? prog.benefits : (tryParseJSON(prog.benefits)||[]);
   const price = prog.price ? fmt(prog.price) : 'A consultar';
 
-  return '<div class="rv" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.07);transition:.2s" onmouseover="this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 32px rgba(0,0,0,.12)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'0 2px 16px rgba(0,0,0,.07)\'">'
+  return '<div class="rv" onclick="abrirLandingPrograma(\''+prog.id+'\')" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.07);transition:.2s;cursor:pointer" onmouseover="this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 32px rgba(0,0,0,.12)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'0 2px 16px rgba(0,0,0,.07)\'">'
     +'<div style="position:relative;height:200px;overflow:hidden">'
       +'<img src="'+img+'" style="width:100%;height:100%;object-fit:cover;transition:.3s" loading="lazy">'
       +(prog.duration?'<div style="position:absolute;top:.75rem;left:.75rem;background:rgba(28,26,24,.7);backdrop-filter:blur(4px);color:#F0E8D8;font-size:.7rem;font-weight:600;padding:.25rem .65rem;border-radius:100px">'+prog.duration+'</div>':'')
@@ -1038,8 +1038,8 @@ function renderProgCard(prog, accentColor) {
       +'<div style="display:flex;align-items:center;justify-content:space-between;padding-top:.85rem;border-top:1px solid #f0ebe3">'
         +'<div><div style="font-family:var(--fd);font-size:1.3rem;font-weight:700;color:'+accentColor+'">'+price+'</div><div style="font-size:.68rem;color:var(--muted)">ARS · Pago único</div></div>'
         +'<div style="display:flex;gap:.5rem">'
-          +'<button onclick="abrirLandingPrograma(\''+prog.id+'\')" style="padding:.5rem 1rem;border-radius:100px;font-size:.75rem;font-weight:600;border:1.5px solid '+accentColor+';color:'+accentColor+';background:transparent;cursor:pointer;font-family:var(--fb)">Más info</button>'
-          +'<button onclick="inscribirsePrograma(this)" data-prog-name="'+prog.name+'" data-prog-id="'+prog.id+'" data-prog-price="'+(prog.price||0)+'" style="padding:.5rem 1rem;border-radius:100px;font-size:.75rem;font-weight:600;border:none;background:'+accentColor+';color:#fff;cursor:pointer;font-family:var(--fb)">Inscribirme</button>'
+          +'<button onclick="event.stopPropagation();abrirLandingPrograma(\''+prog.id+'\')" style="padding:.5rem 1rem;border-radius:100px;font-size:.75rem;font-weight:600;border:1.5px solid '+accentColor+';color:'+accentColor+';background:transparent;cursor:pointer;font-family:var(--fb)">Más info</button>'
+          +'<button onclick="event.stopPropagation();inscribirsePrograma(this)" data-prog-name="'+prog.name+'" data-prog-id="'+prog.id+'" data-prog-price="'+(prog.price||0)+'" style="padding:.5rem 1rem;border-radius:100px;font-size:.75rem;font-weight:600;border:none;background:'+accentColor+';color:#fff;cursor:pointer;font-family:var(--fb)">Inscribirme</button>'
         +'</div>'
       +'</div>'
     +'</div>'
