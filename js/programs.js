@@ -6,7 +6,7 @@ async function loadAPrograms() {
   const grid = document.getElementById('apProgGrid');
   if(!grid) return;
   try {
-    const { data: progs } = await sb.from('programs').select('id,name,description,price,duration,level,image_url,active,slug').order('sort_order');
+    const { data: progs } = await sb.from('programs').select('id,name,subtitle,description,price,duration,level,image_url,active,slug,marca').order('sort_order');
     if(!progs?.length) {
       grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">
         <div style="font-size:2rem;margin-bottom:.75rem">📚</div>
@@ -43,31 +43,24 @@ async function loadAPrograms() {
 let progCheckoutData = { nombre:'', slug:'', precio:0, progId:'' };
 
 async function inscribirsePrograma(btn) {
-  // Buscar datos del programa desde el elemento padre
-  const progTitle = btn.closest('.prog-ctas')?.previousElementSibling?.previousElementSibling;
-  const titleEl = btn.closest('[data-tags]')?.querySelector('[data-prog-name]') ||
-                  btn.closest('.prog-item')?.querySelector('[data-prog-name]');
+  // Los datos están en el propio botón (data-prog-name / data-prog-id / data-prog-price)
+  let nombre = btn?.dataset?.progName || '';
+  let precio = parseInt(btn?.dataset?.progPrice || '0') || 0;
+  let progId = btn?.dataset?.progId || '';
+  const slug = btn?.dataset?.progSlug || '';
 
-  const nombre = titleEl?.dataset?.progName || 'el programa';
-  const slug   = titleEl?.dataset?.progSlug || '';
-  const precio = parseInt(titleEl?.dataset?.progPrice || '0');
+  // Fallback: si faltara el id o el precio, buscarlo en la BD por nombre
+  if((!progId || !precio) && nombre) {
+    try {
+      const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+      const r = await fetch(SUPABASE_URL+'/rest/v1/programs?name=eq.'+encodeURIComponent(nombre)+'&select=id,price', {headers:h});
+      const progs = await r.json();
+      if(progs?.[0]) { progId = progId || progs[0].id; if(!precio) precio = progs[0].price || 0; }
+    } catch(e) {}
+  }
+  if(!nombre) nombre = 'el programa';
 
-  // Buscar el program_id real desde la BD por nombre
-  let progId = slug;
-  try {
-    const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
-    const r = await fetch(SUPABASE_URL+'/rest/v1/programs?name=eq.'+encodeURIComponent(nombre)+'&select=id', {headers:h});
-    const progs = await r.json();
-    if(progs?.[0]?.id) progId = progs[0].id;
-    else {
-      // Intentar por slug
-      const r2 = await fetch(SUPABASE_URL+'/rest/v1/programs?slug=eq.'+slug+'&select=id', {headers:h});
-      const progs2 = await r2.json();
-      if(progs2?.[0]?.id) progId = progs2[0].id;
-    }
-  } catch(e) {}
-
-  progCheckoutData = { nombre, slug: progId, precio, progId };
+  progCheckoutData = { nombre, slug: progId||slug, precio, progId };
 
   // Verificar si está logueado
   const token = localStorage.getItem('bh_token');
