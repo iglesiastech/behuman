@@ -2350,8 +2350,14 @@
               <div style="text-align:right;font-size:.8rem;color:var(--muted)">Pago único<br>Acceso inmediato</div>
             </div>
 
+            <!-- Selector de método de pago -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.1rem">
+              <button type="button" id="pcTabTransfer" onclick="selectPayMethod('transfer')" style="padding:.7rem;border-radius:12px;border:2px solid var(--teal);background:rgba(58,125,140,.08);color:var(--teal);font-weight:700;font-size:.82rem;cursor:pointer;font-family:var(--fb)">🏦 Transferencia</button>
+              <button type="button" id="pcTabMP" onclick="selectPayMethod('mp')" style="padding:.7rem;border-radius:12px;border:2px solid var(--cream-dk);background:#fff;color:var(--muted);font-weight:500;font-size:.82rem;cursor:pointer;font-family:var(--fb)">💳 Mercado Pago</button>
+            </div>
+
             <!-- Transferencia -->
-            <div style="border:2px solid var(--teal);border-radius:14px;padding:1.25rem;background:rgba(58,125,140,.03)">
+            <div id="pcTransferBlock" style="border:2px solid var(--teal);border-radius:14px;padding:1.25rem;background:rgba(58,125,140,.03)">
               <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1rem">
                 <div style="font-size:1.5rem">🏦</div>
                 <div><div style="font-weight:600;font-size:.92rem">Transferencia bancaria</div><div style="font-size:.76rem;color:var(--muted)">Confirmamos tu acceso en menos de 24hs hábiles</div></div>
@@ -2372,10 +2378,18 @@
                 ⚠️ Una vez transferida la seña, enviá el comprobante al <strong>+54 9 11 7617-9836</strong> con tu nombre y apellido. En menos de 24hs hábiles activamos tu acceso al programa.
               </div>
             </div>
+
+            <!-- Mercado Pago -->
+            <div id="pcMPBlock" style="display:none;border:2px solid #009ee3;border-radius:14px;padding:1.6rem 1.25rem;background:rgba(0,158,227,.04);text-align:center">
+              <div style="font-size:2.2rem;margin-bottom:.5rem">💳</div>
+              <div style="font-weight:600;font-size:.95rem;margin-bottom:.35rem">Pagá con Mercado Pago</div>
+              <div style="font-size:.82rem;color:var(--muted);line-height:1.6;margin-bottom:1.2rem">Tarjeta de crédito o débito, dinero en cuenta o efectivo. <strong style="color:#1C1A18">Apenas se aprueba el pago, tenés acceso al programa al instante.</strong></div>
+              <button id="pcMPBtn" onclick="pagarConMercadoPago()" style="width:100%;padding:.95rem;border-radius:100px;font-family:var(--fb);font-size:.85rem;font-weight:700;background:#009ee3;color:#fff;border:none;cursor:pointer">Pagar con Mercado Pago →</button>
+            </div>
           </div>
 
-          <!-- Confirmar -->
-          <div style="padding:1.4rem 1.75rem">
+          <!-- Confirmar (transferencia) -->
+          <div id="pcTransferConfirm" style="padding:1.4rem 1.75rem">
             <button id="pcConfirmBtn" onclick="confirmarCompraPrograma()" style="width:100%;padding:.9rem;border-radius:100px;font-family:var(--fb);font-size:.8rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:var(--gold);color:#fff;border:none;cursor:pointer">
               Confirmar inscripción →
             </button>

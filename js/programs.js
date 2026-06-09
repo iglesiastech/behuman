@@ -93,6 +93,7 @@ function initProgCheckout() {
   const sc = document.getElementById('pcSuccess');
   if(fw) fw.style.display='';
   if(sc) sc.style.display='none';
+  if(typeof selectPayMethod === 'function') selectPayMethod('transfer');
 }
 
 async function confirmarCompraPrograma() {
@@ -173,6 +174,73 @@ async function confirmarCompraPrograma() {
   if(sc) sc.style.display='block';
   btn.disabled=false;
 }
+
+// ── Método de pago en el checkout del programa ──
+function selectPayMethod(m){
+  const isMP = m === 'mp';
+  [['pcTransferBlock',!isMP],['pcTransferConfirm',!isMP],['pcMPBlock',isMP]].forEach(([id,show])=>{
+    const el = document.getElementById(id); if(el) el.style.display = show ? '' : 'none';
+  });
+  const setTab = (el,on)=>{ if(!el) return;
+    el.style.borderColor = on ? 'var(--teal)' : 'var(--cream-dk)';
+    el.style.background  = on ? 'rgba(58,125,140,.08)' : '#fff';
+    el.style.color       = on ? 'var(--teal)' : 'var(--muted)';
+    el.style.fontWeight  = on ? '700' : '500';
+  };
+  setTab(document.getElementById('pcTabTransfer'), !isMP);
+  setTab(document.getElementById('pcTabMP'), isMP);
+}
+
+async function pagarConMercadoPago(){
+  const nom   = document.getElementById('pcNom')?.value.trim();
+  const ape   = document.getElementById('pcApe')?.value.trim();
+  const email = document.getElementById('pcEmail')?.value.trim();
+  if(!nom || !ape || !email){ toast('Completá nombre, apellido y email','err'); return; }
+  const progId = progCheckoutData.progId || progCheckoutData.slug;
+  if(!progId){ toast('No se pudo identificar el programa','err'); return; }
+
+  // user_id desde la sesión (necesario para darte el acceso al pagar)
+  let userId = null;
+  try {
+    const token = _authToken || localStorage.getItem('bh_token');
+    const r = await fetch(SUPABASE_URL+'/auth/v1/user', { headers:{ 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+token } });
+    const u = await r.json(); userId = u && u.id;
+  } catch(e){}
+  if(!userId){ _loginIntent = { type:'prog', nombre: progCheckoutData.nombre }; toast('Iniciá sesión para pagar','err'); goTo('login'); return; }
+
+  const btn = document.getElementById('pcMPBtn');
+  const orig = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Redirigiendo a Mercado Pago…'; }
+  try {
+    const r = await fetch('/api/mp-crear-pago', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ program_id: progId, user_id: userId, email, name: nom+' '+ape })
+    });
+    const data = await r.json().catch(()=>({}));
+    if(data && data.init_point){ window.location.href = data.init_point; return; }
+    toast('No se pudo iniciar el pago: '+((data && data.error) || 'error'),'err',7000);
+  } catch(e){ toast('Error al conectar con el pago: '+e.message,'err',6000); }
+  if(btn){ btn.disabled = false; btn.textContent = orig; }
+}
+
+// Al volver de Mercado Pago (back_urls): ?mp=success|pending|failure
+function checkMPReturn(){
+  let mp;
+  try { mp = new URLSearchParams(location.search).get('mp'); } catch(e){ return; }
+  if(!mp) return;
+  try { history.replaceState({}, '', location.pathname + location.hash); } catch(e){}
+  if(mp === 'success'){
+    toast('¡Pago aprobado! 🎉 Estamos activando tu acceso al programa…','ok',7000);
+    setTimeout(()=>goTo('portal'), 1400);
+  } else if(mp === 'pending'){
+    toast('Tu pago quedó pendiente de acreditación. Te avisamos cuando se confirme.','ok',8000);
+  } else if(mp === 'failure'){
+    toast('El pago no se completó. Podés intentarlo de nuevo.','err',6000);
+  }
+}
+window.selectPayMethod     = selectPayMethod;
+window.pagarConMercadoPago = pagarConMercadoPago;
+window.checkMPReturn       = checkMPReturn;
 
 async function toggleProgram(id, active) {
   try {

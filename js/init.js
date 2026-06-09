@@ -819,6 +819,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadConsultasEnTurnos();
     applySiteImages();
     loadHomeProgs();
+    if(typeof checkMPReturn === 'function') checkMPReturn();
 
     // ── Botón "atrás" del navegador ──
     window.addEventListener('popstate', (e) => {
