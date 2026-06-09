@@ -1,0 +1,7 @@
+project_id = "ncebqouvfkgobbaihuhf"
+
+[functions.mp-crear-pago]
+verify_jwt = false
+
+[functions.mp-webhook]
+verify_jwt = false

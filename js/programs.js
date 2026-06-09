@@ -212,8 +212,9 @@ async function pagarConMercadoPago(){
   const orig = btn ? btn.textContent : '';
   if(btn){ btn.disabled = true; btn.textContent = 'Redirigiendo a Mercado Pago…'; }
   try {
-    const r = await fetch('/api/mp-crear-pago', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+    const r = await fetch(SUPABASE_URL+'/functions/v1/mp-crear-pago', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+(_authToken||localStorage.getItem('bh_token')||SUPABASE_ANON) },
       body: JSON.stringify({ program_id: progId, user_id: userId, email, name: nom+' '+ape })
     });
     const data = await r.json().catch(()=>({}));
