@@ -416,7 +416,7 @@ async function applySiteImages() {
       cache[row.key] = url;
       _applySiteImg(row.key, url);
     });
-    try { localStorage.setItem('bh_site_images', JSON.stringify(cache)); } catch(e){}
+    try { localStorage.setItem('bh_site_images_v2', JSON.stringify(cache)); } catch(e){}
   } catch(e) {}
 }
 

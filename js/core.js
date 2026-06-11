@@ -204,7 +204,7 @@ function _applySiteImg(key, url){
 }
 function applyCachedSiteImages(){
   try {
-    const cached = JSON.parse(localStorage.getItem('bh_site_images') || '{}');
+    const cached = JSON.parse(localStorage.getItem('bh_site_images_v2') || '{}');
     Object.keys(cached).forEach(k => _applySiteImg(k, cached[k]));
   } catch(e){}
 }
