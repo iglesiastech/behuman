@@ -593,6 +593,49 @@ async function deleteDownload(id) {
   loadProgContent();
 }
 
+// Subir un archivo (cualquier tipo) desde la PC a Supabase (bucket site-media)
+function triggerFileUpload(targetInputId, folder, onUploaded){
+  const input = document.createElement('input');
+  input.type = 'file'; input.style.display = 'none';
+  document.body.appendChild(input);
+  input.onchange = async () => {
+    const file = input.files[0];
+    document.body.removeChild(input);
+    if(!file) return;
+    toast('Subiendo archivo…','info',30000);
+    try {
+      const token = _authToken || localStorage.getItem('bh_token') || SUPABASE_ANON;
+      const ext = (file.name.split('.').pop()||'').toLowerCase().replace(/[^a-z0-9]/g,'') || 'bin';
+      const path = `${folder||'archivo'}-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const rUp = await fetch(`${SUPABASE_URL}/storage/v1/object/site-media/${path}`, {
+        method:'POST',
+        headers:{ 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+token, 'Content-Type': file.type || 'application/octet-stream' },
+        body: file
+      });
+      if(!rUp.ok){ const err = await rUp.json().catch(()=>({message:rUp.statusText})); throw new Error(err.error || err.message || 'Error al subir'); }
+      const url = `${SUPABASE_URL}/storage/v1/object/public/site-media/${path}`;
+      const el = document.getElementById(targetInputId);
+      if(el){ el.value = url; el.dispatchEvent(new Event('input')); }
+      if(typeof onUploaded === 'function') onUploaded({ url, name: file.name, ext });
+      toast('✓ Archivo subido','ok');
+    } catch(e){ toast('Error al subir: '+e.message,'err'); }
+  };
+  input.click();
+}
+
+// Subir archivo descargable desde la PC (modal de descargable de la lección)
+function subirArchivoDescargable(){
+  triggerFileUpload('dlUrl', 'material', ({ name, ext }) => {
+    const t = document.getElementById('dlTitle');
+    if(t && !t.value.trim()) t.value = name.replace(/\.[^.]+$/, '');
+    const map = { pdf:'pdf', doc:'doc', docx:'doc', xls:'xls', xlsx:'xls', csv:'xls', zip:'zip', rar:'zip', png:'img', jpg:'img', jpeg:'img', webp:'img', mp3:'mp3', wav:'mp3', m4a:'mp3' };
+    const sel = document.getElementById('dlType');
+    if(sel && map[ext]) sel.value = map[ext];
+  });
+}
+window.triggerFileUpload = triggerFileUpload;
+window.subirArchivoDescargable = subirArchivoDescargable;
+
 // ── Miembros ──
 async function loadProgMembers() {
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+(_authToken||SUPABASE_ANON) };
