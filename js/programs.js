@@ -428,6 +428,7 @@ async function loadProgContent() {
 
 // ── Módulos ──
 async function addModule() {
+  await ensureFreshToken();
   const title = document.getElementById('modTitle')?.value.trim();
   const cover = document.getElementById('modCover')?.value.trim();
   const desc  = document.getElementById('modDesc')?.value.trim();
@@ -523,6 +524,7 @@ function editLesson(l) {
 }
 
 async function saveLesson() {
+  await ensureFreshToken();
   const title = document.getElementById('lessonTitle').value.trim();
   if(!title){ toast('El título es obligatorio','err'); return; }
   const id = document.getElementById('lessonId').value;
@@ -572,6 +574,7 @@ function openAddDownload(lessonId) {
 }
 
 async function saveDownload() {
+  await ensureFreshToken();
   const title = document.getElementById('dlTitle').value.trim();
   const url   = document.getElementById('dlUrl').value.trim();
   if(!title||!url){ toast('Título y URL son obligatorios','err'); return; }

@@ -194,6 +194,37 @@ function getSB() { return sb(); }
   if(t) _authToken = t;
 })();
 
+// ── Auto-renovación del token de sesión (evita "JWT expired" tras estar logueado un rato) ──
+function _decodeJwt(t){ try { const b = t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'); return JSON.parse(atob(b)); } catch(e){ return null; } }
+async function refreshAuthToken(){
+  const refresh = localStorage.getItem('bh_refresh');
+  if(!refresh) return false;
+  try {
+    const r = await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token', {
+      method:'POST', headers:{ 'apikey':SUPABASE_ANON, 'Content-Type':'application/json' },
+      body: JSON.stringify({ refresh_token: refresh })
+    });
+    const d = await r.json();
+    if(r.ok && d.access_token){
+      _authToken = d.access_token;
+      localStorage.setItem('bh_token', d.access_token);
+      if(d.refresh_token) localStorage.setItem('bh_refresh', d.refresh_token);
+      return true;
+    }
+  } catch(e){}
+  return false;
+}
+async function ensureFreshToken(){
+  const t = _authToken || localStorage.getItem('bh_token');
+  if(!t) return;
+  const p = _decodeJwt(t);
+  // renovar si ya venció o vence en menos de 10 minutos
+  if(!p || !p.exp || (p.exp*1000 - Date.now()) < 10*60*1000) await refreshAuthToken();
+}
+ensureFreshToken();                          // al cargar
+setInterval(ensureFreshToken, 4*60*1000);    // y cada 4 min mientras la pestaña esté abierta
+window.ensureFreshToken = ensureFreshToken;
+
 /* ══ IMÁGENES DEL SITIO: aplicación + caché (evita el flash de fotos viejas al cargar) ══ */
 function _applySiteImg(key, url){
   document.querySelectorAll('[data-site-img="'+key+'"]').forEach(el => { el.src = url; });
