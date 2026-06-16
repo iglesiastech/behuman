@@ -74,9 +74,9 @@ function admPreviewOpenModulo(modId) {
   if(playerWrap && primeraLec?.video_url) {
     let eu = primeraLec.video_url;
     const yt = primeraLec.video_url.match(/(?:v=|youtu\.be\/)([^&\s]+)/);
-    const vi = primeraLec.video_url.match(/vimeo\.com\/(\d+)/);
+    const vi = primeraLec.video_url.match(/vimeo\.com\/(\d+)(?:\/(\w+))?/);
     if(yt) eu = 'https://www.youtube.com/embed/'+yt[1]+'?rel=0';
-    else if(vi) eu = 'https://player.vimeo.com/video/'+vi[1];
+    else if(vi) eu = 'https://player.vimeo.com/video/'+vi[1]+(vi[2]?'?h='+vi[2]:'');
     playerWrap.innerHTML = '<iframe src="'+eu+'" style="width:100%;height:100%;border:none" allowfullscreen></iframe>';
   } else if(playerWrap) {
     const thumb = primeraLec ? (primeraLec.thumbnail_url || getYTThumb(primeraLec.video_url)) : null;
@@ -142,9 +142,9 @@ function admPreviewOpenLeccion(leccionId) {
   if(l.video_url) {
     let eu = l.video_url;
     const yt = l.video_url.match(/(?:v=|youtu\.be\/)([^&\s]+)/);
-    const vi = l.video_url.match(/vimeo\.com\/(\d+)/);
+    const vi = l.video_url.match(/vimeo\.com\/(\d+)(?:\/(\w+))?/);
     if(yt) eu = 'https://www.youtube.com/embed/'+yt[1]+'?rel=0';
-    else if(vi) eu = 'https://player.vimeo.com/video/'+vi[1];
+    else if(vi) eu = 'https://player.vimeo.com/video/'+vi[1]+(vi[2]?'?h='+vi[2]:'');
     wrap.innerHTML = `<iframe src="${eu}" style="width:100%;height:100%;border:none" allowfullscreen></iframe>`;
   } else {
     wrap.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:.9rem">Sin video cargado</div>';

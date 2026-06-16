@@ -394,9 +394,9 @@ function mostrarLandingModulo(mod) {
   if(landingPlayer && primeraLec?.video_url) {
     let eu = primeraLec.video_url;
     const yt = primeraLec.video_url.match(/(?:v=|youtu\.be\/)([^&\s]+)/);
-    const vi = primeraLec.video_url.match(/vimeo\.com\/(\d+)/);
+    const vi = primeraLec.video_url.match(/vimeo\.com\/(\d+)(?:\/(\w+))?/);
     if(yt) eu = 'https://www.youtube.com/embed/'+yt[1]+'?rel=0&modestbranding=1';
-    else if(vi) eu = 'https://player.vimeo.com/video/'+vi[1];
+    else if(vi) eu = 'https://player.vimeo.com/video/'+vi[1]+(vi[2]?'?h='+vi[2]:'');
     landingPlayer.innerHTML = '<iframe src="'+eu+'" allowfullscreen allow="autoplay; fullscreen" style="width:100%;height:100%;border:none"></iframe>';
   } else if(landingPlayer) {
     const thumb = primeraLec ? (primeraLec.thumbnail_url || getYTThumb(primeraLec.video_url)) : null;
@@ -673,12 +673,12 @@ function setupLessonVideo(leccion){
   const url=leccion.video_url;
   if(!url){ player.innerHTML='<div class="curso-player-placeholder"><div style="font-size:2rem;margin-bottom:.5rem">📄</div><div>'+(leccion.title||'')+'</div></div>'; return; }
   const yt=url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{6,})/);
-  const vim=url.match(/vimeo\.com\/(\d+)/);
+  const vim=url.match(/vimeo\.com\/(\d+)(?:\/(\w+))?/);
   if(yt){
     player.innerHTML='<iframe id="cursoVideoIframe" src="https://www.youtube.com/embed/'+yt[1]+'?rel=0&modestbranding=1&enablejsapi=1" allowfullscreen allow="autoplay; fullscreen"></iframe>';
     ensureYTApi(function(){ try { _ytPlayer=new YT.Player('cursoVideoIframe', { events:{ onStateChange:function(e){ if(e.data===YT.PlayerState.ENDED) onLessonVideoEnded(); } } }); } catch(err){} });
   } else if(vim){
-    player.innerHTML='<iframe id="cursoVideoIframe" src="https://player.vimeo.com/video/'+vim[1]+'" allowfullscreen allow="autoplay; fullscreen"></iframe>';
+    player.innerHTML='<iframe id="cursoVideoIframe" src="https://player.vimeo.com/video/'+vim[1]+(vim[2]?'?h='+vim[2]:'')+'" allowfullscreen allow="autoplay; fullscreen"></iframe>';
     ensureVimeoApi(function(){ try { _vimeoPlayer=new Vimeo.Player('cursoVideoIframe'); _vimeoPlayer.on('ended', onLessonVideoEnded); } catch(err){} });
   } else {
     player.innerHTML='<iframe src="'+url+'" allowfullscreen allow="autoplay; fullscreen"></iframe>';
