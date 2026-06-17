@@ -1069,10 +1069,10 @@ async function loadHomeProgs() {
 }
 window.loadHomeProgs = loadHomeProgs;
 
-/* ── ECOSISTEMA (home) — tarjetas con precio dinámico y routing ── */
+/* ── ECOSISTEMA (home) — cuadro completo, precios dinámicos y routing ── */
 async function loadEcosistema() {
-  const grid = document.getElementById('ecoGrid');
-  if(!grid) return;
+  const cols = document.getElementById('ecoCols');
+  if(!cols) return;
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
 
   // Programas (reusa cache si existe)
@@ -1120,39 +1120,55 @@ async function loadEcosistema() {
   const pConsulta = consultaPrice>0 ? { label:fmtMoney(consultaPrice), prefix:'Desde' } : { label:'A consultar', prefix:'' };
 
   const cards = [
-    { num:1, ac:'#7C9E73', soft:'rgba(124,158,115,.14)', icon:'🌱', tag:'21 días',
-      eyebrow:'Quiero empezar', title:'Reset Energético', sub:'Ordená tu energía y tu alimentación con un primer paso simple.',
-      feats:['Recuperá tu energía','Mejorá tu metabolismo','Creá nuevos hábitos'],
-      price:pReset, onclick:"goTo('programas')" },
-    { num:2, ac:'#C9935A', soft:'rgba(201,147,90,.14)', icon:'🦋', tag:'El método completo',
-      eyebrow:'Quiero transformarme', title:'Método Indomables', sub:'Transformá tu metabolismo, tu cuerpo, tu mente y tu relación con la vida.',
-      feats:['Nutrición · Estrés · Hormonas','Intestino · Movimiento · Emociones','Suplementación · Acción'],
-      price:pIndom, onclick: flagIndom ? "abrirLandingPrograma('"+flagIndom.id+"')" : "goTo('programas')" },
-    { num:3, ac:'#3A7D8C', soft:'rgba(58,125,140,.13)', icon:'🔬', tag:'Personalizado',
-      eyebrow:'Necesito personalizarlo', title:'Consulta Integral', sub:'Evaluación médica y nutricional completa, con una estrategia adaptada a vos.',
-      feats:['Historia clínica completa','Análisis de laboratorio','Plan nutricional y suplementación'],
-      price:pConsulta, onclick:"goTo('turnos')" },
-    { num:4, ac:'#2E5A52', soft:'rgba(46,90,82,.13)', icon:'🏋️', tag:'Online o presencial',
-      eyebrow:'Quiero potenciarme', title:'Be Human Performance', sub:'Llevá tus resultados al máximo con entrenamiento inteligente.',
-      feats:['Fuerza y composición corporal','Salud metabólica','Movilidad y bienestar'],
-      price:pPerf, onclick:"goTo('programas')" },
+    { num:1, ac:'#7C9E73', soft:'rgba(124,158,115,.14)', icon:'🌱',
+      eyb:'Quiero empezar', eys:'A ordenar mi energía y alimentación',
+      title:'Reset Energético', subbox:'♀ Reset Mujer',
+      price:pReset, priceTop:'21 días', priceSuffix:'c/u',
+      desc:'Para recuperar tu energía, mejorar tu metabolismo y crear nuevos hábitos.',
+      feats:[], onclick:"goTo('programas')" },
+    { num:2, ac:'#C9935A', soft:'rgba(201,147,90,.14)', icon:'🦋',
+      eyb:'Quiero transformarme', eys:'Y aprender el método completo',
+      title:'Método Indomables',
+      price:pIndom,
+      desc:'Un método integral para transformar tu metabolismo, tu cuerpo, tu mente y tu relación con la vida.',
+      feats:['Nutrición · Estrés · Hormonas','Intestino · Movimiento · Emociones','Suplementación · Acción','Planificación · Y mucho más'],
+      onclick: flagIndom ? "abrirLandingPrograma('"+flagIndom.id+"')" : "goTo('programas')" },
+    { num:3, ac:'#8E7A9E', soft:'rgba(142,122,158,.14)', icon:'🩺',
+      eyb:'Necesito personalizarlo', eys:'Y una estrategia adaptada a mí',
+      title:'Consulta Integral Be Human',
+      price:pConsulta,
+      desc:'Evaluación médica y nutricional completa para diseñar un plan personalizado y efectivo.',
+      feats:['Historia clínica completa','Análisis de laboratorio','Plan nutricional y suplementación','Estrategia personalizada'],
+      onclick:"goTo('turnos')" },
+    { num:4, ac:'#3A7D8C', soft:'rgba(58,125,140,.13)', icon:'🏋️',
+      eyb:'Quiero potenciarme', eys:'Y llevarlo al máximo con entrenamiento inteligente',
+      title:'Be Human Performance', boxsub:'Online o presencial',
+      price:pPerf,
+      desc:'Programas de entrenamiento para fuerza, salud metabólica y rendimiento.',
+      feats:['Fuerza y composición corporal','Salud metabólica','Movilidad y bienestar','Acompañamiento profesional'],
+      onclick:"goTo('programas')" },
   ];
 
-  grid.innerHTML = cards.map(c =>
-    '<div class="eco-card rv" style="--eco-ac:'+c.ac+';--eco-ac-soft:'+c.soft+'" onclick="'+c.onclick+'">'
-      +'<div class="eco-num">'+c.num+'</div>'
-      +'<div class="eco-icon">'+c.icon+'</div>'
-      +'<div class="eco-eyebrow">'+c.eyebrow+'</div>'
-      +'<div class="eco-card-title">'+c.title+'</div>'
-      +'<div class="eco-card-sub">'+c.sub+'</div>'
-      +(c.tag?'<span class="eco-tag">'+c.tag+'</span>':'')
-      +'<ul class="eco-feats">'+c.feats.map(f=>'<li>'+f+'</li>').join('')+'</ul>'
-      +'<div class="eco-card-foot">'
-        +'<div class="eco-price">'+(c.price.prefix?'<small>'+c.price.prefix+'</small>':'')+c.price.label+'</div>'
-        +'<div class="eco-arrow">→</div>'
-      +'</div>'
-    +'</div>'
-  ).join('');
+  const colHtml = c =>
+    '<div class="eco-col rv" style="--eco-ac:'+c.ac+';--eco-ac-soft:'+c.soft+'" onclick="'+c.onclick+'">'
+      +'<div class="eco-col-num">'+c.num+'</div>'
+      +'<div class="eco-col-ic">'+c.icon+'</div>'
+      +'<div class="eco-col-eyb">'+c.eyb+'</div>'
+      +'<div class="eco-col-eys">'+c.eys+'</div>'
+      +'<div class="eco-col-box"><div class="eco-col-title">'+c.title+'</div>'+(c.boxsub?'<div style="font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:.25rem">'+c.boxsub+'</div>':'')+'</div>'
+      +(c.subbox?'<div class="eco-col-subbox">'+c.subbox+'</div>':'')
+      +'<div class="eco-col-price">'+(c.priceTop?'<small>'+c.priceTop+'</small>':'')+(c.price.prefix?c.price.prefix+' ':'')+c.price.label+(c.priceSuffix&&c.price.label!=='A consultar'?' '+c.priceSuffix:'')+'</div>'
+      +'<div class="eco-col-desc">'+c.desc+'</div>'
+      +(c.feats.length?'<ul class="eco-col-feats">'+c.feats.map(f=>'<li>'+f+'</li>').join('')+'</ul>':'')
+    +'</div>';
+
+  // columnas con flechas intercaladas (color = acento de la columna izquierda)
+  let html = '';
+  cards.forEach((c,i)=>{
+    html += colHtml(c);
+    if(i < cards.length-1) html += '<div class="eco-col-arrow" style="--eco-arrow:'+c.ac+'">→</div>';
+  });
+  cols.innerHTML = html;
   if(typeof initReveal==='function') setTimeout(initReveal,50);
 }
 window.loadEcosistema = loadEcosistema;
