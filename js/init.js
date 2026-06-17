@@ -819,6 +819,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadConsultasEnTurnos();
     applySiteImages();
     loadHomeProgs();
+    if(typeof loadEcosistema === 'function') loadEcosistema();
     if(typeof checkMPReturn === 'function') checkMPReturn();
 
     // ── Botón "atrás" del navegador ──

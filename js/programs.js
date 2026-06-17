@@ -1069,6 +1069,94 @@ async function loadHomeProgs() {
 }
 window.loadHomeProgs = loadHomeProgs;
 
+/* ── ECOSISTEMA (home) — tarjetas con precio dinámico y routing ── */
+async function loadEcosistema() {
+  const grid = document.getElementById('ecoGrid');
+  if(!grid) return;
+  const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
+
+  // Programas (reusa cache si existe)
+  let progs = _allPrograms;
+  if(!progs || !progs.length) {
+    try {
+      const r = await fetch(SUPABASE_URL+'/rest/v1/programs?order=name&select=*', {headers:h});
+      const data = await r.json();
+      progs = Array.isArray(data) ? data.filter(p=>p.is_active!==false) : [];
+      _allPrograms = progs;
+    } catch(e) { progs = []; }
+  }
+
+  // Precio mínimo de la Consulta Integral (base + precios por médica), mismo criterio que turnos
+  let consultaPrice = 0;
+  try {
+    const [rc, rm] = await Promise.all([
+      fetch(SUPABASE_URL+'/rest/v1/consultation_types?id=eq.integral&select=precio', {headers:h}),
+      fetch(SUPABASE_URL+'/rest/v1/medico_consultas?consulta_id=eq.integral&select=precio', {headers:h})
+    ]);
+    const ct = await rc.json(), mc = await rm.json();
+    const base = (Array.isArray(ct) && ct[0] && ct[0].precio) || 0;
+    const med  = (Array.isArray(mc) ? mc : []).map(x=>x.precio).filter(Boolean);
+    const all  = [...med, ...(base?[base]:[])];
+    consultaPrice = all.length ? Math.min(...all) : 0;
+  } catch(e) {}
+
+  const fmtMoney = n => '$'+Number(n).toLocaleString('es-AR');
+  // precio mínimo de un set de programas (ignora valores de prueba <= 1)
+  const priceOf = (arr, forzarDesde) => {
+    const vals = arr.map(p=>Number(p.price)).filter(v=>v>1);
+    if(!vals.length) return { label:'A consultar', prefix:'' };
+    return { label: fmtMoney(Math.min(...vals)), prefix: (forzarDesde || vals.length>1) ? 'Desde' : '' };
+  };
+
+  // Matching contra la base
+  const resets = progs.filter(p=>/reset/i.test(p.name));
+  const indom  = progs.filter(p=>/indomables/i.test(p.name) && !/reset/i.test(p.name));
+  const perf   = progs.filter(p=>p.marca==='performance');
+  const flagIndom = indom[0];
+
+  const pReset    = priceOf(resets, true);
+  const pPerf     = priceOf(perf, true);
+  const pIndom    = (flagIndom && Number(flagIndom.price)>1) ? { label:fmtMoney(flagIndom.price), prefix:'' } : { label:'A consultar', prefix:'' };
+  const pConsulta = consultaPrice>0 ? { label:fmtMoney(consultaPrice), prefix:'Desde' } : { label:'A consultar', prefix:'' };
+
+  const cards = [
+    { num:1, ac:'#7C9E73', soft:'rgba(124,158,115,.14)', icon:'🌱', tag:'21 días',
+      eyebrow:'Quiero empezar', title:'Reset Energético', sub:'Ordená tu energía y tu alimentación con un primer paso simple.',
+      feats:['Recuperá tu energía','Mejorá tu metabolismo','Creá nuevos hábitos'],
+      price:pReset, onclick:"goTo('programas')" },
+    { num:2, ac:'#C9935A', soft:'rgba(201,147,90,.14)', icon:'🦋', tag:'El método completo',
+      eyebrow:'Quiero transformarme', title:'Método Indomables', sub:'Transformá tu metabolismo, tu cuerpo, tu mente y tu relación con la vida.',
+      feats:['Nutrición · Estrés · Hormonas','Intestino · Movimiento · Emociones','Suplementación · Acción'],
+      price:pIndom, onclick: flagIndom ? "abrirLandingPrograma('"+flagIndom.id+"')" : "goTo('programas')" },
+    { num:3, ac:'#3A7D8C', soft:'rgba(58,125,140,.13)', icon:'🔬', tag:'Personalizado',
+      eyebrow:'Necesito personalizarlo', title:'Consulta Integral', sub:'Evaluación médica y nutricional completa, con una estrategia adaptada a vos.',
+      feats:['Historia clínica completa','Análisis de laboratorio','Plan nutricional y suplementación'],
+      price:pConsulta, onclick:"goTo('turnos')" },
+    { num:4, ac:'#2E5A52', soft:'rgba(46,90,82,.13)', icon:'🏋️', tag:'Online o presencial',
+      eyebrow:'Quiero potenciarme', title:'Be Human Performance', sub:'Llevá tus resultados al máximo con entrenamiento inteligente.',
+      feats:['Fuerza y composición corporal','Salud metabólica','Movilidad y bienestar'],
+      price:pPerf, onclick:"goTo('programas')" },
+  ];
+
+  grid.innerHTML = cards.map(c =>
+    '<div class="eco-card rv" style="--eco-ac:'+c.ac+';--eco-ac-soft:'+c.soft+'" onclick="'+c.onclick+'">'
+      +'<div class="eco-num">'+c.num+'</div>'
+      +'<div class="eco-icon">'+c.icon+'</div>'
+      +'<div class="eco-eyebrow">'+c.eyebrow+'</div>'
+      +'<div class="eco-card-title">'+c.title+'</div>'
+      +'<div class="eco-card-sub">'+c.sub+'</div>'
+      +(c.tag?'<span class="eco-tag">'+c.tag+'</span>':'')
+      +'<ul class="eco-feats">'+c.feats.map(f=>'<li>'+f+'</li>').join('')+'</ul>'
+      +'<div class="eco-card-foot">'
+        +'<div class="eco-price">'+(c.price.prefix?'<small>'+c.price.prefix+'</small>':'')+c.price.label+'</div>'
+        +'<div class="eco-arrow">→</div>'
+      +'</div>'
+    +'</div>'
+  ).join('');
+  if(typeof initReveal==='function') setTimeout(initReveal,50);
+}
+window.loadEcosistema = loadEcosistema;
+
 function renderMarcas(progs) {
   const container = document.getElementById('progMarcasContainer');
   if(!container) return;
