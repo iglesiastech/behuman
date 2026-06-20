@@ -895,3 +895,109 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
   .curso-wrap{grid-template-columns:1fr}
   .curso-sidebar{position:static;height:auto;border-left:none;border-top:1px solid #e8e8e8}
 }
+
+/* ════ Landing Método Indomables ════ */
+.indo-top{position:sticky;top:70px;z-index:10;display:flex;align-items:center;gap:1rem;background:#fff;border-bottom:1px solid var(--cream-dk);padding:.7rem clamp(1rem,4vw,2.5rem)}
+.indo-back{font-size:.8rem;color:var(--muted);background:none;border:1.5px solid var(--cream-dk);border-radius:100px;padding:.35rem .9rem;cursor:pointer;font-family:var(--fb);white-space:nowrap}
+.indo-back:hover{border-color:var(--gold);color:var(--gold-dk)}
+.indo-top-title{font-size:.9rem;font-weight:600;color:var(--dark);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.indo-top-cta{padding:.55rem 1.4rem;font-size:.74rem;white-space:nowrap}
+
+/* Hero */
+.indo-hero{position:relative;min-height:460px;display:flex;align-items:center;background:var(--dark);overflow:hidden}
+.indo-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center right;opacity:.5}
+.indo-hero-ov{position:absolute;inset:0;background:linear-gradient(105deg,rgba(28,26,24,.94) 38%,rgba(28,26,24,.55) 70%,rgba(28,26,24,.25))}
+.indo-hero-inner{position:relative;z-index:2;width:100%;max-width:1180px;margin:0 auto;padding:3.5rem clamp(1.5rem,5vw,4rem);display:flex;align-items:center;justify-content:space-between;gap:2rem}
+.indo-hero-text{max-width:600px}
+.indo-eyebrow{font-size:.68rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:1.1rem}
+.indo-h1{font-family:var(--fd);font-size:clamp(2.1rem,5vw,3.5rem);font-weight:400;color:var(--cream);line-height:1.08;margin-bottom:1.2rem}
+.indo-hero-sub{font-size:1.05rem;color:rgba(240,232,216,.82);line-height:1.65;max-width:480px;margin-bottom:1.9rem}
+.indo-hero-sub em{font-style:normal;color:var(--gold-lt);font-weight:500}
+.indo-hero-btns{display:flex;gap:1rem;flex-wrap:wrap}
+.indo-btn-ghost{padding:.85rem 1.9rem;border-radius:100px;font-family:var(--fb);font-size:.76rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:1.5px solid rgba(240,232,216,.4);color:var(--cream);background:none;cursor:pointer;transition:var(--tf)}
+.indo-btn-ghost:hover{background:rgba(240,232,216,.1)}
+.indo-seal{flex-shrink:0;width:190px;background:linear-gradient(160deg,#26241F,#1A1815);border:1px solid rgba(201,147,90,.35);border-radius:16px;padding:1.6rem 1rem;text-align:center;color:var(--gold-lt)}
+.indo-seal-top{font-family:var(--fd);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-lt);margin-bottom:1rem}
+.indo-seal-bf{width:62px;height:62px;margin:0 auto 1rem;color:var(--gold-lt)}
+.indo-seal-list{display:flex;flex-direction:column;gap:.4rem;border-top:1px solid rgba(201,147,90,.25);padding-top:1rem}
+.indo-seal-list span{font-size:.64rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(240,232,216,.7)}
+
+/* Secciones */
+.indo-sec{padding:4rem clamp(1.5rem,5vw,4rem);background:#fff}
+.indo-sec--cream{background:var(--cream)}
+.indo-wrap{max-width:1180px;margin:0 auto}
+.indo-h2{font-family:var(--fd);font-size:clamp(1.7rem,3.5vw,2.4rem);font-weight:400;color:var(--dark);text-align:center;margin-bottom:.6rem}
+.indo-h2--orn{display:flex;align-items:center;justify-content:center;gap:1.2rem;margin-bottom:2.4rem}
+.indo-h2--orn::before,.indo-h2--orn::after{content:'';width:clamp(30px,8vw,90px);height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
+.indo-h2--orn::after{background:linear-gradient(90deg,var(--gold),transparent)}
+.indo-sub-center{text-align:center;font-size:.92rem;color:var(--muted);line-height:1.6;max-width:620px;margin:0 auto 2.6rem}
+
+/* Cards (recibir) */
+.indo-grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:1rem}
+.indo-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+.indo-card{position:relative;background:var(--cream);border:1px solid transparent;border-radius:16px;padding:1.5rem 1.3rem;transition:var(--tr)}
+.indo-sec--cream .indo-card{background:#fff}
+.indo-card:hover{transform:translateY(-4px);box-shadow:var(--sh)}
+.indo-card--excl{background:#fff;border-color:var(--gold);box-shadow:0 6px 26px rgba(201,147,90,.16)}
+.indo-card-badge{position:absolute;top:1.3rem;right:1.3rem;font-size:.55rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-dk)}
+.indo-card-ic{width:46px;height:46px;border-radius:12px;background:rgba(201,147,90,.13);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem}
+.indo-card--excl .indo-card-ic{background:rgba(201,147,90,.2)}
+.indo-card-t{font-family:var(--fd);font-size:1.05rem;font-weight:500;color:var(--dark);line-height:1.2;margin-bottom:.55rem}
+.indo-card-d{font-size:.82rem;color:var(--muted);line-height:1.55}
+.indo-card-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.35rem}
+.indo-card-list li{position:relative;padding-left:1rem;font-size:.81rem;color:var(--text);line-height:1.4}
+.indo-card-list li::before{content:'·';position:absolute;left:.2rem;color:var(--gold);font-weight:700}
+
+/* Para quién + Coach */
+.indo-2col{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem}
+.indo-quien,.indo-coach{display:flex;align-items:center;gap:1.3rem;background:#fff;border:1px solid var(--cream-dk);border-radius:18px;padding:1.8rem}
+.indo-quien-ic{width:58px;height:58px;border-radius:50%;background:rgba(58,125,140,.12);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0}
+.indo-block-t{font-family:var(--fd);font-size:1.25rem;font-weight:500;color:var(--dark);margin-bottom:.5rem}
+.indo-block-d{font-size:.86rem;color:var(--muted);line-height:1.65}
+.indo-coach-badge{flex-shrink:0;width:96px;height:96px;border-radius:50%;background:var(--teal);color:var(--cream);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:.15rem}
+.indo-coach-badge>span{font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.indo-coach-bf{width:30px;height:30px;color:var(--gold-lt)}
+
+/* Timeline 12 estaciones */
+.indo-timeline{display:grid;grid-template-columns:repeat(6,1fr);gap:1.4rem .9rem}
+.indo-station{position:relative;text-align:center;padding-top:.6rem}
+.indo-station-num{width:30px;height:30px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:.82rem;font-weight:600;margin:0 auto .7rem;border:3px solid #fff;box-shadow:0 2px 6px rgba(28,26,24,.12)}
+.indo-station-ic{font-size:1.5rem;margin-bottom:.45rem;line-height:1}
+.indo-station-t{font-family:var(--fd);font-size:.92rem;font-weight:600;color:var(--dark);line-height:1.2;margin-bottom:.35rem}
+.indo-station-d{font-size:.74rem;color:var(--muted);line-height:1.45}
+
+/* Bonus */
+.indo-bonus{padding:3.5rem clamp(1.5rem,5vw,4rem);background:linear-gradient(160deg,#214049,#16323A)}
+.indo-bonus-title{font-family:var(--fd);font-size:clamp(1.5rem,3vw,2rem);font-weight:400;color:var(--gold-lt);text-align:center;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2.4rem}
+.indo-bonus-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.6rem 2rem;max-width:1180px;margin:0 auto}
+.indo-bonus-it{display:flex;gap:.9rem;align-items:flex-start}
+.indo-bonus-ic{width:42px;height:42px;border-radius:50%;background:rgba(240,232,216,.1);border:1px solid rgba(240,232,216,.18);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.indo-bonus-t{font-size:.92rem;font-weight:600;color:var(--cream);line-height:1.25;margin-bottom:.3rem}
+.indo-bonus-d{font-size:.8rem;color:rgba(240,232,216,.62);line-height:1.55}
+
+/* Cierre */
+.indo-close{background:var(--cream);text-align:center;padding:4rem clamp(1.5rem,5vw,4rem)}
+.indo-close-1{font-family:var(--fd);font-size:clamp(1.3rem,2.6vw,1.7rem);color:var(--muted);margin-bottom:.3rem}
+.indo-close-2{font-family:var(--fd);font-size:clamp(1.6rem,3.4vw,2.3rem);font-weight:500;color:var(--dark);line-height:1.25;max-width:680px;margin:0 auto 2rem}
+.indo-close-cta{padding:1rem 3rem;font-size:.82rem;letter-spacing:.1em}
+
+/* Responsive */
+@media(max-width:1080px){
+  .indo-grid5{grid-template-columns:repeat(3,1fr)}
+  .indo-grid4{grid-template-columns:repeat(2,1fr)}
+  .indo-timeline{grid-template-columns:repeat(4,1fr)}
+  .indo-bonus-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:760px){
+  .indo-hero-inner{flex-direction:column;align-items:flex-start}
+  .indo-seal{align-self:center;width:170px}
+  .indo-2col{grid-template-columns:1fr}
+  .indo-quien,.indo-coach{flex-direction:column;text-align:center}
+  .indo-timeline{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:540px){
+  .indo-grid5,.indo-grid4{grid-template-columns:1fr 1fr}
+  .indo-timeline{grid-template-columns:1fr 1fr}
+  .indo-bonus-grid{grid-template-columns:1fr}
+  .indo-top-title{display:none}
+}

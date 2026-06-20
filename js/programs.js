@@ -1296,6 +1296,11 @@ function renderProgLanding(prog, modules) {
   const content = document.getElementById('plContent');
   if(!content) return;
 
+  // Landing especial: Método Indomables — Despierta y Acciona
+  if(/indomables/i.test(prog.name||'') && /despierta/i.test(prog.name||'')) {
+    return renderIndomablesLanding(prog);
+  }
+
   const benefits = Array.isArray(prog.benefits) ? prog.benefits : (tryParseJSON(prog.benefits)||[]);
   const faqs     = Array.isArray(prog.faqs)     ? prog.faqs     : (tryParseJSON(prog.faqs)||[]);
   const gallery  = Array.isArray(prog.gallery)  ? prog.gallery  : (tryParseJSON(prog.gallery)||[]);
@@ -1405,6 +1410,151 @@ function renderProgLanding(prog, modules) {
   }
 
   content.innerHTML = html;
+}
+
+/* ── LANDING DEDICADA: MÉTODO INDOMABLES — DESPIERTA Y ACCIONA ── */
+function renderIndomablesLanding(prog) {
+  const content = document.getElementById('plContent');
+  if(!content) return;
+  const heroImg = prog.hero_image_url || prog.image_url || '';
+
+  const bf = '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M12 7c-1-2.5-3.5-4-6-3.5C3.5 4 2.5 6.5 3.5 9c.8 2 3 3 5 3 1.5 0 3-.8 3.5-2.2"/><path d="M12 7c1-2.5 3.5-4 6-3.5C20.5 4 21.5 6.5 20.5 9c-.8 2-3 3-5 3-1.5 0-3-.8-3.5-2.2"/><path d="M12 12c-1 2-3 3.2-4.8 3-1.6-.2-2.6-1.8-2-3.3"/><path d="M12 12c1 2 3 3.2 4.8 3 1.6-.2 2.6-1.8 2-3.3"/></svg>';
+
+  const recibir1 = [
+    {ic:'🎬', t:'12 estaciones grabadas', d:'Contenido exclusivo en video para que avances a tu ritmo.'},
+    {ic:'📖', t:'Workbooks y guías prácticas', d:'Material descargable para aplicar cada enseñanza.'},
+    {ic:'📚', t:'Recursos complementarios', d:'Meditaciones, audios, lecturas y herramientas de apoyo.'},
+    {ic:'✅', t:'Seguimiento de tu progreso', d:'Marca tus estaciones, lleva registro y celebra tus avances.'},
+    {ic:'🤖', t:'Coach 4H', d:'Tu agente IA entrenado por la Dra. Mariel Dobenau para acompañarte 24/7 en tu transformación.', badge:'Exclusivo'},
+  ];
+  const recibir2 = [
+    {ic:'🍽️', t:'Estrategias nutricionales', list:['Keto / Low Carb / Ciclado','Cálculo de proteínas','Reemplazos inteligentes','Guías completas','Cómo adaptar y sostener tu estrategia']},
+    {ic:'🍲', t:'Recetas prácticas y deliciosas', d:'Recetas simples, nutritivas y antiinflamatorias para tu día a día.'},
+    {ic:'🛒', t:'Listas de compras inteligentes', d:'Organizadas por estrategia para que tengas todo claro y ahorres tiempo.'},
+    {ic:'🌿', t:'Educación aplicada y profunda', d:'Para entender tu biología y tomar decisiones con criterio.'},
+  ];
+  const estaciones = [
+    {ic:'🌅', t:'Despertar', d:'No podés cambiar aquello que no podés ver.'},
+    {ic:'🧬', t:'Biología vs Entorno', d:'Entender tu biología para dejar de pelear con ella.'},
+    {ic:'🧘', t:'Volver a la Calma', d:'Regular tu estrés para recuperar tu energía.'},
+    {ic:'🌙', t:'Recuperar el Ritmo', d:'Dormir, luz, movimiento y rutinas que sanan.'},
+    {ic:'🦠', t:'El Segundo Cerebro', d:'Alimentar tu intestino para transformar tu salud.'},
+    {ic:'⚖️', t:'Hormonas y Energía', d:'Equilibrar tus hormonas para recuperar tu vitalidad.'},
+    {ic:'⏳', t:'Ayuno Consciente', d:'Usar el ayuno como herramienta, no como castigo.'},
+    {ic:'💪', t:'El Músculo es Medicina', d:'Entrenar tu cuerpo para proteger tu futuro.'},
+    {ic:'💊', t:'Suplementar con Criterio', d:'Suplementos sí, pero con estrategia y propósito.'},
+    {ic:'❤️', t:'Emociones y Coherencia', d:'Sanar tu mundo emocional para sanar tu cuerpo.'},
+    {ic:'🧩', t:'Integrar', d:'Convertir lo aprendido en un estilo de vida.'},
+    {ic:'🎯', t:'Tu Plan de Acción', d:'Diseñar tu plan para sostener tu transformación.'},
+  ];
+  const bonus = [
+    {ic:'📅', t:'10 sesiones del Método Be Human Performance', d:'Entrenamiento integral para elevar tu rendimiento físico, mental y emocional.'},
+    {ic:'🎯', t:'Guía de Enfoque', d:'Claridad para definir prioridades y avanzar sin dispersarte.'},
+    {ic:'⛰️', t:'Guía de No Abandono', d:'Estrategias para sostener tu motivación y atravesar los momentos clave.'},
+    {ic:'🗓️', t:'Plan de los Próximos 90 Días', d:'Una hoja de ruta práctica para integrar el método a tu vida y sostener tus cambios.'},
+    {ic:'🤖', t:'Coach 4H IA', d:'Acompañamiento 24/7 para resolver dudas, reforzar conceptos y seguir avanzando.'},
+    {ic:'📖', t:'Biblioteca de recursos Be Human', d:'Meditaciones, guías, audios y materiales exclusivos.'},
+  ];
+
+  const card = c =>
+    '<div class="indo-card'+(c.badge?' indo-card--excl':'')+'">'
+      +(c.badge?'<span class="indo-card-badge">'+c.badge+'</span>':'')
+      +'<div class="indo-card-ic">'+c.ic+'</div>'
+      +'<div class="indo-card-t">'+c.t+'</div>'
+      +(c.list?'<ul class="indo-card-list">'+c.list.map(x=>'<li>'+x+'</li>').join('')+'</ul>'
+              :'<div class="indo-card-d">'+c.d+'</div>')
+    +'</div>';
+
+  let html = '';
+
+  // Topbar
+  html += '<div class="indo-top">'
+    +'<button class="indo-back" onclick="goTo(\'programas\')">&#8592; Programas</button>'
+    +'<span class="indo-top-title">Método Indomables — Despierta y Acciona</span>'
+    +'<button class="btn-gold indo-top-cta" onclick="inscribirmeLanding()">Inscribirme ahora</button>'
+  +'</div>';
+
+  // Hero
+  html += '<section class="indo-hero">'
+    +(heroImg?'<img class="indo-hero-img" src="'+heroImg+'" alt="">':'')
+    +'<div class="indo-hero-ov"></div>'
+    +'<div class="indo-hero-inner">'
+      +'<div class="indo-hero-text">'
+        +'<div class="indo-eyebrow">12 semanas de transformación</div>'
+        +'<h1 class="indo-h1">Método Indomables<br>Despierta y Acciona</h1>'
+        +'<p class="indo-hero-sub">El método para liberar una biología secuestrada y recuperar <em>tu energía, tu salud y tu libertad.</em></p>'
+        +'<div class="indo-hero-btns">'
+          +'<button class="btn-gold" onclick="inscribirmeLanding()">Inscribirme ahora</button>'
+          +'<button class="indo-btn-ghost" onclick="document.getElementById(\'indoRecibir\').scrollIntoView({behavior:\'smooth\'})">Ver programa</button>'
+        +'</div>'
+      +'</div>'
+      +'<div class="indo-seal">'
+        +'<div class="indo-seal-top">Método Indomables</div>'
+        +'<div class="indo-seal-bf">'+bf+'</div>'
+        +'<div class="indo-seal-list"><span>Transformación</span><span>Ciencia</span><span>Acción</span><span>Autonomía</span></div>'
+      +'</div>'
+    +'</div>'
+  +'</section>';
+
+  // Todo lo que vas a recibir
+  html += '<section class="indo-sec" id="indoRecibir"><div class="indo-wrap">'
+    +'<h2 class="indo-h2 indo-h2--orn">Todo lo que vas a recibir</h2>'
+    +'<div class="indo-grid5">'+recibir1.map(card).join('')+'</div>'
+    +'<div class="indo-grid4">'+recibir2.map(card).join('')+'</div>'
+  +'</div></section>';
+
+  // Para quién + Coach 4H
+  html += '<section class="indo-sec indo-sec--cream"><div class="indo-wrap indo-2col">'
+    +'<div class="indo-quien">'
+      +'<div class="indo-quien-ic">👤</div>'
+      +'<div><h3 class="indo-block-t">Para quién es este programa</h3>'
+      +'<p class="indo-block-d">Para quienes buscan una transformación profunda y sostenida en el tiempo, con respaldo médico, ciencia y un enfoque integral que trabaja cuerpo, mente, emociones y entorno.</p></div>'
+    +'</div>'
+    +'<div class="indo-coach">'
+      +'<div class="indo-coach-badge"><span>Coach 4H</span><div class="indo-coach-bf">'+bf+'</div><span>Indomables</span></div>'
+      +'<div><h3 class="indo-block-t">Conocé a tu Coach 4H (24/7)</h3>'
+      +'<p class="indo-block-d">Tu agente de inteligencia artificial entrenado por la Dra. Mariel Dobenau con todo el Método Indomables. Responde tus dudas, te guía, te recuerda tus señales y te ayuda a tomar mejores decisiones todos los días.</p></div>'
+    +'</div>'
+  +'</div></section>';
+
+  // Contenido del programa
+  html += '<section class="indo-sec"><div class="indo-wrap">'
+    +'<h2 class="indo-h2">Contenido del programa</h2>'
+    +'<p class="indo-sub-center">Un recorrido de 12 semanas para reprogramar tu biología y construir una nueva identidad.</p>'
+    +'<div class="indo-timeline">'
+    + estaciones.map((e,i)=>
+        '<div class="indo-station">'
+          +'<div class="indo-station-num">'+(i+1)+'</div>'
+          +'<div class="indo-station-ic">'+e.ic+'</div>'
+          +'<div class="indo-station-t">'+e.t+'</div>'
+          +'<div class="indo-station-d">'+e.d+'</div>'
+        +'</div>'
+      ).join('')
+    +'</div>'
+  +'</div></section>';
+
+  // Bonus exclusivos
+  html += '<section class="indo-bonus"><div class="indo-wrap">'
+    +'<h2 class="indo-bonus-title">Bonus exclusivos</h2>'
+    +'<div class="indo-bonus-grid">'
+    + bonus.map(b=>
+        '<div class="indo-bonus-it">'
+          +'<div class="indo-bonus-ic">'+b.ic+'</div>'
+          +'<div><div class="indo-bonus-t">'+b.t+'</div><div class="indo-bonus-d">'+b.d+'</div></div>'
+        +'</div>'
+      ).join('')
+    +'</div>'
+  +'</div></section>';
+
+  // Cierre
+  html += '<section class="indo-close">'
+    +'<p class="indo-close-1">Este no es un programa más.</p>'
+    +'<p class="indo-close-2">Es el método para recuperar tu salud, tu energía y tu libertad.</p>'
+    +'<button class="btn-gold indo-close-cta" onclick="inscribirmeLanding()">Inscribirme ahora</button>'
+  +'</section>';
+
+  content.innerHTML = html;
+  if(typeof initReveal==='function') setTimeout(initReveal,50);
 }
 
 
