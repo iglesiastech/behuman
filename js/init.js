@@ -179,6 +179,7 @@ async function abrirPrograma(progId, membId) {
       cursoState.progName = prog.name;
       document.getElementById('cursoTopTitle').textContent = prog.name;
     }
+    renderCursoWelcome(prog);
 
     // Traer módulos
     const r2 = await fetch(`${SUPABASE_URL}/rest/v1/program_modules?program_id=eq.${progId}&order=sort_order`, {headers:h});
@@ -224,6 +225,69 @@ function updateCursoProgress() {
   if(el1) el1.textContent = `${pct}% completado`;
   if(el2) el2.textContent = `${pct}%`;
   if(el3) el3.textContent = `${done}/${total} lecciones`;
+}
+
+/* ── Banner de bienvenida (solo Método Indomables) ── */
+function renderCursoWelcome(prog) {
+  const box = document.getElementById('cursoWelcomeBanner');
+  if(!box) return;
+  const name = (prog && prog.name) || '';
+  if(!(/indomables/i.test(name) && /despierta/i.test(name))) { box.innerHTML = ''; return; }
+
+  const heroImg = 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1100&q=80';
+  const bf = '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M12 7c-1-2.5-3.5-4-6-3.5C3.5 4 2.5 6.5 3.5 9c.8 2 3 3 5 3 1.5 0 3-.8 3.5-2.2"/><path d="M12 7c1-2.5 3.5-4 6-3.5C20.5 4 21.5 6.5 20.5 9c-.8 2-3 3-5 3-1.5 0-3-.8-3.5-2.2"/><path d="M12 12c-1 2-3 3.2-4.8 3-1.6-.2-2.6-1.8-2-3.3"/><path d="M12 12c1 2 3 3.2 4.8 3 1.6-.2 2.6-1.8 2-3.3"/></svg>';
+
+  const pasos = [
+    {ic:'📖', t:'Guía de inicio', d:'Prepará tu mente y tu propósito.'},
+    {ic:'🌿', t:'Estaciones del método', d:'Recorré las 12 estaciones a tu ritmo.'},
+    {ic:'🏋️', t:'Bonus Be Human Performance', d:'10 sesiones para empezar a implementar el movimiento.'},
+    {ic:'🎯', t:'Implementar', d:'Tomá acción, creá hábitos y aplicá lo aprendido.'},
+    {ic:'⛰️', t:'Construir una nueva identidad', d:'Sostené tu transformación y viví en coherencia.'},
+  ];
+
+  let stepsHtml = '';
+  pasos.forEach((p,i)=>{
+    stepsHtml += '<div class="iw-step">'
+      +'<div class="iw-step-ic">'+p.ic+'<span class="iw-step-num">'+(i+1)+'</span></div>'
+      +'<div class="iw-step-t">'+p.t+'</div>'
+      +'<div class="iw-step-d">'+p.d+'</div>'
+    +'</div>';
+    if(i < pasos.length-1) stepsHtml += '<div class="iw-step-arrow">→</div>';
+  });
+
+  box.innerHTML =
+    '<div class="iw">'
+      +'<div class="iw-head">'
+        +'<div class="iw-logo"><div class="iw-logo-name">Be Human</div><div class="iw-logo-tag">Entre la ciencia y el alma</div></div>'
+        +'<div class="iw-brand"><div class="iw-brand-bf">'+bf+'</div><div><div class="iw-brand-name">Indomables</div><div class="iw-brand-tag">El método</div></div></div>'
+      +'</div>'
+      +'<div class="iw-hero">'
+        +'<div class="iw-hero-img" style="background-image:url('+heroImg+')"></div>'
+        +'<div class="iw-hero-body">'
+          +'<div class="iw-hero-text">'
+            +'<div class="iw-eyebrow">Bienvenido al</div>'
+            +'<h2 class="iw-title">Método Indomables</h2>'
+            +'<p class="iw-tagline">El método para liberar una biología secuestrada.</p>'
+            +'<p>Vivimos en un entorno que envía señales equivocadas a nuestro cerebro: ultraprocesados, estrés, sedentarismo, exceso de pantallas, mal descanso y sobreestimulación constante.</p>'
+            +'<p>El resultado no es falta de voluntad. <strong>Es una biología que aprendió a sobrevivir.</strong></p>'
+            +'<p>En este método no vas a aprender una dieta. Vas a aprender a darle señales correctas a tu cuerpo para que vuelva a trabajar a tu favor.</p>'
+            +'<p>No buscamos que comas menos. <strong>Buscamos que tu cerebro vuelva a regular naturalmente el hambre, la energía y el metabolismo.</strong></p>'
+            +'<p class="iw-empieza">Tu transformación empieza hoy.</p>'
+          +'</div>'
+          +'<div class="iw-quote">'
+            +'<div class="iw-quote-mark">&ldquo;</div>'
+            +'<p class="iw-quote-1">El cerebro siempre responde.</p>'
+            +'<div class="iw-quote-div"></div>'
+            +'<p class="iw-quote-2">La pregunta es: ¿qué señales le estás dando todos los días?</p>'
+            +'<div class="iw-quote-bf">'+bf+'</div>'
+          +'</div>'
+        +'</div>'
+      +'</div>'
+      +'<div class="iw-recorrido">'
+        +'<div class="iw-recorrido-title"><div class="iw-recorrido-bf">'+bf+'</div> Tu recorrido</div>'
+        +'<div class="iw-steps">'+stepsHtml+'</div>'
+      +'</div>'
+    +'</div>';
 }
 
 function renderModulosGrid() {
