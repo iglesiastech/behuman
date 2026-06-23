@@ -458,9 +458,9 @@ function mostrarLandingModulo(mod) {
   if(landingPlayer && primeraLec?.video_url) {
     let eu = primeraLec.video_url;
     const yt = primeraLec.video_url.match(/(?:v=|youtu\.be\/)([^&\s]+)/);
-    const vi = primeraLec.video_url.match(/vimeo\.com\/(\d+)(?:\/(\w+))?/);
+    const vi = parseVimeoId(primeraLec.video_url);
     if(yt) eu = 'https://www.youtube.com/embed/'+yt[1]+'?rel=0&modestbranding=1';
-    else if(vi) eu = 'https://player.vimeo.com/video/'+vi[1]+(vi[2]?'?h='+vi[2]:'');
+    else if(vi) eu = 'https://player.vimeo.com/video/'+vi[0]+(vi[1]?'?h='+vi[1]:'');
     landingPlayer.innerHTML = '<iframe src="'+eu+'" allowfullscreen allow="autoplay; fullscreen" style="width:100%;height:100%;border:none"></iframe>';
   } else if(landingPlayer) {
     const thumb = primeraLec ? (primeraLec.thumbnail_url || getYTThumb(primeraLec.video_url)) : null;
@@ -710,6 +710,17 @@ function onLessonVideoEnded(){
 
 // ── Reproductor con detección de fin de video (YouTube / Vimeo) ──
 let _ytPlayer=null, _vimeoPlayer=null, _ytApiLoading=false, _ytApiCbs=[], _vimeoApiLoading=false, _vimeoApiCbs=[];
+// Extrae [videoId, hash|null] de cualquier URL de Vimeo, incluidas URLs del panel de admin
+function parseVimeoId(url) {
+  if(!url) return null;
+  // URL del panel: vimeo.com/manage/...?video=123456
+  const mgr = url.match(/[?&]video=(\d+)/);
+  if(mgr) return [mgr[1], null];
+  // URL normal: vimeo.com/123456 o vimeo.com/123456/hash
+  const std = url.match(/vimeo\.com\/(\d+)(?:\/(\w+))?/);
+  if(std) return [std[1], std[2]||null];
+  return null;
+}
 function ensureYTApi(cb){
   if(window.YT && window.YT.Player){ cb(); return; }
   _ytApiCbs.push(cb);
@@ -737,12 +748,12 @@ function setupLessonVideo(leccion){
   const url=leccion.video_url;
   if(!url){ player.innerHTML='<div class="curso-player-placeholder"><div style="font-size:2rem;margin-bottom:.5rem">📄</div><div>'+(leccion.title||'')+'</div></div>'; return; }
   const yt=url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{6,})/);
-  const vim=url.match(/vimeo\.com\/(\d+)(?:\/(\w+))?/);
+  const vim=parseVimeoId(url);
   if(yt){
     player.innerHTML='<iframe id="cursoVideoIframe" src="https://www.youtube.com/embed/'+yt[1]+'?rel=0&modestbranding=1&enablejsapi=1" allowfullscreen allow="autoplay; fullscreen"></iframe>';
     ensureYTApi(function(){ try { _ytPlayer=new YT.Player('cursoVideoIframe', { events:{ onStateChange:function(e){ if(e.data===YT.PlayerState.ENDED) onLessonVideoEnded(); } } }); } catch(err){} });
   } else if(vim){
-    player.innerHTML='<iframe id="cursoVideoIframe" src="https://player.vimeo.com/video/'+vim[1]+(vim[2]?'?h='+vim[2]:'')+'" allowfullscreen allow="autoplay; fullscreen"></iframe>';
+    player.innerHTML='<iframe id="cursoVideoIframe" src="https://player.vimeo.com/video/'+vim[0]+(vim[1]?'?h='+vim[1]:'')+'" allowfullscreen allow="autoplay; fullscreen"></iframe>';
     ensureVimeoApi(function(){ try { _vimeoPlayer=new Vimeo.Player('cursoVideoIframe'); _vimeoPlayer.on('ended', onLessonVideoEnded); } catch(err){} });
   } else {
     player.innerHTML='<iframe src="'+url+'" allowfullscreen allow="autoplay; fullscreen"></iframe>';
