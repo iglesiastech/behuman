@@ -982,6 +982,7 @@ window.rechazarOrdenPrograma = rechazarOrdenPrograma;
 
 /* ── PROGRAMAS DINÁMICOS ── */
 let _allPrograms = [];
+let _progFilter  = null;
 
 
 // Configuración de marcas — SOLO DOS, todo dinámico por campo `marca`
@@ -1015,18 +1016,21 @@ const PROG_IMG_DEFAULTS = {
 
 async function loadProgramasPage() {
   const container = document.getElementById('progMarcasContainer');
-  if(_allPrograms.length) { renderMarcas(_allPrograms); return; }
-
+  const filterReset = _progFilter === 'reset';
+  _progFilter = null;
+  const applyFilter = ps => filterReset ? ps.filter(p=>/reset/i.test(p.name||'')) : ps;
+  if(_allPrograms.length) { renderMarcas(applyFilter(_allPrograms)); return; }
   const h = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer '+SUPABASE_ANON };
   try {
     const r = await fetch(SUPABASE_URL+'/rest/v1/programs?order=name&select=*', {headers:h});
     const progs = await r.json();
     _allPrograms = Array.isArray(progs) ? progs.filter(p=>p.is_active!==false) : [];
-    renderMarcas(_allPrograms);
+    renderMarcas(applyFilter(_allPrograms));
   } catch(e) {
     if(container) container.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--muted)">Error al cargar programas.</div>';
   }
 }
+function goToResets() { _progFilter = 'reset'; goTo('programas'); }
 
 // Programas destacados del HOME — dinámico desde la base (se actualiza solo)
 async function loadHomeProgs() {
@@ -1125,7 +1129,7 @@ async function loadEcosistema() {
       title:'Reset Energético', subbox:'♀ Reset Mujer',
       price:pReset, priceTop:'21 días', priceSuffix:'c/u',
       desc:'Para recuperar tu energía, mejorar tu metabolismo y crear nuevos hábitos.',
-      feats:[], onclick:"goTo('programas')" },
+      feats:[], onclick:"goToResets()" },
     { num:2, ac:'#C9935A', soft:'rgba(201,147,90,.14)', icon:'🦋',
       eyb:'Quiero transformarme', eys:'Y aprender el método completo',
       title:'Método Indomables',
@@ -1299,6 +1303,13 @@ function renderProgLanding(prog, modules) {
   // Landing especial: Método Indomables — Despierta y Acciona
   if(/indomables/i.test(prog.name||'') && /despierta/i.test(prog.name||'')) {
     return renderIndomablesLanding(prog);
+  }
+  // Landings especiales: Reset Mujer y Reset Energético
+  if(/reset/i.test(prog.name||'') && /mujer/i.test(prog.name||'')) {
+    return renderResetMujerLanding(prog);
+  }
+  if(/reset/i.test(prog.name||'')) {
+    return renderResetEnergeticoLanding(prog);
   }
 
   const benefits = Array.isArray(prog.benefits) ? prog.benefits : (tryParseJSON(prog.benefits)||[]);
@@ -1591,10 +1602,139 @@ async function inscribirmeLanding() {
   }, 100);
 }
 
+function renderResetEnergeticoLanding(prog) {
+  const content = document.getElementById('plContent');
+  if(!content) return;
+  const heroImg = prog.hero_image_url || prog.image_url || 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80';
+  const price = prog.price && Number(prog.price) > 1 ? fmt(prog.price) : null;
+  const G = '#2D5016', GA = '#4A7C2A';
+  const ben = (ic,t) => '<div style="display:flex;flex-direction:column;align-items:center;gap:.4rem;text-align:center;min-width:72px"><div style="font-size:1.4rem">'+ic+'</div><div style="font-size:.68rem;color:rgba(240,232,216,.7);max-width:80px;line-height:1.3">'+t+'</div></div>';
+  const recCard = (ic,t,d) => '<div style="background:#fff;border-radius:14px;padding:1.25rem;box-shadow:0 2px 10px rgba(0,0,0,.06)"><div style="font-size:1.8rem;margin-bottom:.6rem">'+ic+'</div><div style="font-weight:700;font-size:.84rem;color:#1C1A18;margin-bottom:.35rem">'+t+'</div><div style="font-size:.77rem;color:var(--muted);line-height:1.5">'+d+'</div></div>';
+  const check = (t) => '<div style="display:flex;gap:.6rem;margin-bottom:.55rem"><span style="color:'+G+';font-weight:700;flex-shrink:0">✓</span><span style="font-size:.84rem;color:#3A3530;line-height:1.45">'+t+'</span></div>';
+  let html = '';
+  // Topbar
+  html += '<div style="background:#fff;border-bottom:1px solid #e8e8e8;padding:.7rem 1.5rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:70px;z-index:10"><button onclick="goTo(\'programas\')" style="font-size:.8rem;color:var(--muted);background:none;border:1.5px solid var(--cream-dk);border-radius:100px;padding:.35rem .85rem;cursor:pointer;font-family:var(--fb)">&#8592; Programas</button><span style="font-size:.9rem;font-weight:600;color:#1C1A18;flex:1">Reset Energético</span><button class="btn-gold" style="padding:.55rem 1.4rem;font-size:.76rem" onclick="inscribirmeLanding()">Inscribirme ahora</button></div>';
+  // Hero
+  html += '<section style="position:relative;min-height:520px;background:#1C2E10;display:flex;align-items:center;overflow:hidden">';
+  if(heroImg) html += '<img src="'+heroImg+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.3">';
+  html += '<div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(28,46,16,.95) 40%,rgba(28,46,16,.5))"></div>';
+  html += '<div style="position:relative;z-index:2;padding:3.5rem clamp(1.5rem,5vw,5rem);max-width:700px">';
+  html += '<span style="display:inline-block;background:'+G+';color:#fff;font-size:.62rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:.25rem .8rem;border-radius:100px;margin-bottom:1.1rem">Programa Online</span>';
+  html += '<h1 style="font-family:var(--fd);font-size:clamp(2.4rem,5.5vw,4rem);font-weight:700;color:#F0E8D8;line-height:1.05;margin:0 0 .5rem">RESET ENERGÉTICO</h1>';
+  html += '<p style="font-size:.75rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:'+GA+';margin:0 0 1.2rem;line-height:1.5">21 días para ordenar tu biología,<br>recuperar energía y sentirte mejor</p>';
+  html += '<p style="font-size:.92rem;color:rgba(240,232,216,.75);line-height:1.75;margin:0 0 2rem;max-width:520px">Dale a tu cuerpo las señales correctas para desinflamarte, recuperar claridad mental y volver a una pura versión de vos con más energía y vitalidad.</p>';
+  html += '<div style="display:flex;gap:1.5rem;flex-wrap:wrap">';
+  [['⚡','Más energía y vitalidad'],['🧠','Claridad mental'],['🔻','Menos inflamación'],['⚖️','Mejor composición'],['🥗','Mejor relación con la comida']].forEach(([ic,t])=>{ html += ben(ic,t); });
+  html += '</div></div>';
+  // Hero right panel
+  html += '<div style="position:relative;z-index:2;padding:2rem clamp(1rem,3vw,3rem);display:flex;flex-direction:column;gap:1rem;margin-left:auto;min-width:240px;max-width:300px">';
+  html += '<div style="background:'+G+';color:#fff;border-radius:14px;padding:1.4rem;text-align:center"><div style="font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:.3rem">Para vos</div><div style="font-family:var(--fd);font-size:1.15rem;font-weight:700;margin-bottom:.5rem">UN GRAN<br>PRIMER PASO</div><div style="font-size:.77rem;line-height:1.55;color:rgba(255,255,255,.8)">para ordenar tu biología y empezar tu transformación. El punto de partida que tu cuerpo necesita.</div></div>';
+  html += '<div style="background:var(--cream);border:2px solid var(--gold);border-radius:14px;padding:1.2rem;text-align:center"><div style="font-size:1.4rem;margin-bottom:.35rem">🎁</div><div style="font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.3rem">Bonus Exclusivo</div><div style="font-family:var(--fd);font-size:.95rem;font-weight:600;color:#1C1A18;line-height:1.3">10 sesiones de entrenamiento en BHP</div></div>';
+  html += '</div></section>';
+  // Tu camino
+  html += '<section style="background:#fff;padding:3rem clamp(1.5rem,5vw,4rem)"><div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center">';
+  html += '<div><div style="font-size:.62rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:'+G+';margin-bottom:.75rem">Tu punto de partida</div><h2 style="font-family:var(--fd);font-size:1.75rem;color:#1C1A18;margin:0 0 1rem;line-height:1.2">EL PRIMER PASO<br>DE TU TRANSFORMACIÓN</h2><p style="font-size:.88rem;color:#5A544E;line-height:1.7;margin:0 0 .75rem"><strong>Reset Energético</strong> es la puerta de entrada al cambio. En 21 días vas a ordenar tu biología, recuperar energía y aprender las bases para construir hábitos que te acompañen toda la vida.</p><p style="font-size:.87rem;color:#5A544E;line-height:1.7;margin:0"><strong>Luego, podrás profundizar tu transformación con el Método Indomables.</strong></p></div>';
+  html += '<div><div style="font-size:.6rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;text-align:center">Tu camino en Be Human</div><div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;justify-content:center">';
+  [{ic:'🌿',t:'Reset Energético',active:true},{ic:'🦋',t:'Método Indomables'},{ic:'🩺',t:'Consulta Personalizada'},{ic:'🏋️',t:'Be Human Performance'}].forEach((s,i,arr)=>{
+    html += '<div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:.3rem;min-width:75px;max-width:90px;padding:.55rem .35rem;border-radius:10px;background:'+(s.active?G:'var(--cream)')+';border:1.5px solid '+(s.active?G:'var(--cream-dk)')+'"><div style="font-size:1rem">'+s.ic+'</div><div style="font-size:.58rem;font-weight:700;color:'+(s.active?'#fff':'#1C1A18')+';line-height:1.2">'+s.t+'</div></div>';
+    if(i<arr.length-1) html += '<div style="color:var(--muted);font-size:.9rem;flex-shrink:0">→</div>';
+  });
+  html += '</div></div></div></section>';
+  // Todo lo que vas a recibir
+  html += '<section style="background:var(--cream);padding:3.5rem clamp(1.5rem,5vw,4rem)"><div style="max-width:1100px;margin:0 auto"><h2 style="font-family:var(--fd);font-size:1.85rem;color:#1C1A18;text-align:center;margin:0 0 2.5rem;letter-spacing:.03em">TODO LO QUE VAS A RECIBIR</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.2rem">';
+  [['📅','Menú Keto Estratégico de 21 días','Dos semanas con menús completos para recuperar energía, mejorar la saciedad y reducir los antojos.'],['🌱','Semana 3: Transición a la autonomía','Aprendés a construir tus propios platos y tomar decisiones sin depender de un menú fijo.'],['🥗','Versión vegetariana completa','Con menús y guías específicas para quienes eligen hacer una alimentación vegetariana.'],['💪','Guía para calcular tu proteína','Aprendé cuánto necesitás y cómo distribuirla para mejorar energía, composición corporal y saciedad.'],['🔄','Guía de reemplazos inteligentes','Para adaptar el programa a tu vida real y mantener flexibilidad sin perder estructura.'],['📆','Calendario de seguimiento de 21 días','Una herramienta simple para acompañar el proceso y sostener hábitos.']].forEach(([ic,t,d])=>{ html += recCard(ic,t,d); });
+  html += '</div></div></section>';
+  // Cápsulas en video
+  html += '<section style="background:#fff;padding:3.5rem clamp(1.5rem,5vw,4rem)"><div style="max-width:1100px;margin:0 auto"><h2 style="font-family:var(--fd);font-size:1.85rem;color:#1C1A18;text-align:center;margin:0 0 .4rem;letter-spacing:.03em">CÁPSULAS EN VIDEO INCLUIDAS</h2><p style="text-align:center;color:var(--muted);font-size:.8rem;margin:0 0 2rem">Videos breves, claros y fáciles de implementar.</p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:.75rem">';
+  [['🥦','Pilares fundamentales de la alimentación'],['🍽️','Alimentación eficiente'],['⏱️','Ayuno inteligente'],['🌙','Ritmos circadianos'],['🏃','Actividad física'],['❤️','Emociones y hábitos'],['🥑','Alimentación baja en carbohidratos'],['🫙','Cetoadaptación'],['🍳','Cómo armar un plato eficiente'],['🎥','Videorecetas saludables']].forEach(([ic,t])=>{
+    html += '<div style="background:var(--cream);border-radius:12px;padding:.8rem .45rem;display:flex;flex-direction:column;align-items:center;gap:.3rem;text-align:center"><div style="font-size:1.4rem">'+ic+'</div><div style="font-size:.68rem;color:#3A3530;line-height:1.3">'+t+'</div></div>';
+  });
+  html += '</div></div></section>';
+  // Qué puede darte
+  html += '<section style="background:var(--cream);padding:3.5rem clamp(1.5rem,5vw,4rem)"><div style="max-width:1100px;margin:0 auto"><h2 style="font-family:var(--fd);font-size:1.85rem;color:#1C1A18;text-align:center;margin:0 0 2.5rem">¿QUÉ PUEDE DARTE ESTE RESET?</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:2.5rem">';
+  html += '<div>';
+  ['Más energía y vitalidad','Menos inflamación y retención','Mayor claridad mental','Menos hambre y ansiedad por la comida'].forEach(t=>{ html += check(t); });
+  html += '</div><div>';
+  ['Mejor composición corporal','Una relación más simple con la alimentación','Herramientas para toda la vida'].forEach(t=>{ html += check(t); });
+  html += '<div style="background:linear-gradient(135deg,'+G+','+GA+');color:#fff;border-radius:16px;padding:1.5rem;margin-top:1.5rem"><div style="font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.65);margin-bottom:.35rem">Bonus Exclusivo</div><div style="font-family:var(--fd);font-size:1.1rem;margin-bottom:.5rem">10 sesiones de entrenamiento en Be Human Performance</div><div style="font-size:.8rem;line-height:1.6;color:rgba(255,255,255,.82)">Porque la salud no se construye solamente con comida. Vas a recibir 10 clases de entrenamiento para empezar a desarrollar fuerza, mejorar tu metabolismo y experimentar el movimiento como una herramienta de salud.</div></div>';
+  html += '</div></div></div></section>';
+  // Cierre
+  html += '<section style="background:'+G+';padding:4rem clamp(1.5rem,5vw,5rem);text-align:center"><div style="max-width:720px;margin:0 auto"><p style="font-family:var(--fd);font-size:1.3rem;color:#fff;line-height:1.65;margin:0 0 1.2rem"><strong>El objetivo no es hacer una dieta durante 21 días.</strong><br>El objetivo es volver a darle a tu cuerpo las señales correctas para recuperar energía, claridad mental y desinflamarte. Ese es el primer paso para tu transformación.</p><p style="font-family:var(--fd);font-style:italic;font-size:1.35rem;color:var(--gold)">Pequeñas decisiones. Grandes cambios. 💚</p></div></section>';
+  // Footer icons + CTA
+  html += '<section style="background:#fff;padding:3rem clamp(1.5rem,5vw,4rem)"><div style="max-width:900px;margin:0 auto"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-bottom:2.5rem;text-align:center">';
+  [['📱','100% Online','Accedé desde donde estés y a tu ritmo.'],['♾️','Acceso para siempre','Volvé al contenido cada vez que lo necesites.'],['✅','Simple y práctico','Herramientas claras para aplicar en tu vida real.'],['🔬','Ciencia y humanidad','Basado en evidencia y en nuestra experiencia.']].forEach(([ic,t,d])=>{
+    html += '<div><div style="font-size:1.7rem;margin-bottom:.4rem">'+ic+'</div><div style="font-weight:700;font-size:.8rem;color:#1C1A18;margin-bottom:.2rem">'+t+'</div><div style="font-size:.73rem;color:var(--muted);line-height:1.4">'+d+'</div></div>';
+  });
+  html += '</div><div style="text-align:center"><p style="font-family:var(--fd);font-size:1.05rem;color:#1C1A18;margin:0 0 .3rem">¿LISTO PARA DAR TU PRIMER GRAN PASO?</p>';
+  if(price) html += '<p style="font-size:1.4rem;font-family:var(--fd);color:var(--gold);margin:.3rem 0 1rem">'+price+'</p>';
+  html += '<button onclick="inscribirmeLanding()" style="background:'+G+';color:#fff;border:none;padding:1rem 2.5rem;border-radius:100px;font-size:.87rem;font-weight:700;cursor:pointer;font-family:var(--fb);letter-spacing:.04em">QUIERO MI RESET ENERGÉTICO ⚡</button><p style="font-size:.73rem;color:var(--muted);margin:.7rem 0 0">Acceso inmediato y para siempre</p></div></div></section>';
+  content.innerHTML = html;
+  if(typeof initReveal === 'function') setTimeout(initReveal, 50);
+}
+
+function renderResetMujerLanding(prog) {
+  const content = document.getElementById('plContent');
+  if(!content) return;
+  const heroImg = prog.hero_image_url || prog.image_url || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&q=80';
+  const price = prog.price && Number(prog.price) > 1 ? fmt(prog.price) : null;
+  const ROSE = '#B85070', ROSESOFT = 'rgba(184,80,112,.12)', GREEN = '#2C4A3A';
+  const check = (t) => '<div style="display:flex;gap:.6rem;margin-bottom:.5rem"><span style="color:'+ROSE+';font-weight:700;flex-shrink:0">✓</span><span style="font-size:.83rem;color:#3A3530;line-height:1.45">'+t+'</span></div>';
+  const videoItem = (t) => '<div style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-bottom:1px solid '+ROSESOFT+'"><div style="width:18px;height:18px;border-radius:50%;background:'+ROSE+';display:flex;align-items:center;justify-content:center;font-size:.45rem;color:#fff;flex-shrink:0">▶</div><span style="font-size:.82rem;color:#3A3530">'+t+'</span></div>';
+  const recItem = (ic,t,d) => '<div style="display:flex;gap:.8rem;margin-bottom:1rem"><div style="width:34px;height:34px;border-radius:50%;background:'+ROSESOFT+';display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0">'+ic+'</div><div><div style="font-weight:600;font-size:.84rem;color:#1C1A18;margin-bottom:.18rem">'+t+'</div><div style="font-size:.75rem;color:var(--muted);line-height:1.4">'+d+'</div></div></div>';
+  let html = '';
+  // Topbar
+  html += '<div style="background:#fff;border-bottom:1px solid #e8e8e8;padding:.7rem 1.5rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:70px;z-index:10"><button onclick="goTo(\'programas\')" style="font-size:.8rem;color:var(--muted);background:none;border:1.5px solid var(--cream-dk);border-radius:100px;padding:.35rem .85rem;cursor:pointer;font-family:var(--fb)">&#8592; Programas</button><span style="font-size:.9rem;font-weight:600;color:#1C1A18;flex:1">Reset Mujer</span><button style="background:'+ROSE+';color:#fff;border:none;padding:.55rem 1.4rem;border-radius:100px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:var(--fb)" onclick="inscribirmeLanding()">Inscribirme ahora</button></div>';
+  // Hero
+  html += '<section style="position:relative;min-height:560px;background:#2A1A20;display:flex;align-items:center;overflow:hidden">';
+  html += '<img src="'+heroImg+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.32">';
+  html += '<div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(28,14,20,.92) 40%,rgba(28,14,20,.45))"></div>';
+  html += '<div style="position:relative;z-index:2;padding:3.5rem clamp(1.5rem,5vw,5rem);max-width:680px">';
+  html += '<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.4rem"><div style="font-size:1.2rem">🦋</div><div><div style="font-size:.52rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:'+ROSE+';line-height:1">Indomables</div><div style="font-size:.52rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45);line-height:1.4">By Be Human</div></div></div>';
+  html += '<h1 style="font-family:var(--fd);font-size:clamp(2.4rem,5.5vw,4rem);font-weight:700;color:#F0E8D8;line-height:1;margin:0 0 .5rem">RESET MUJER ♀</h1>';
+  html += '<p style="font-family:var(--fd);font-size:clamp(1rem,2.4vw,1.35rem);color:rgba(240,232,216,.7);margin:0 0 1.1rem;line-height:1.4">21 días para recuperar tu <em style="color:'+ROSE+'">energía hormonal</em></p>';
+  html += '<p style="font-size:.95rem;font-weight:700;color:#F0E8D8;margin:0 0 .6rem">No estás fallando. Tu cuerpo cambió y necesita nuevas estrategias.</p>';
+  html += '<p style="font-size:.87rem;color:rgba(240,232,216,.68);line-height:1.72;margin:0 0 1.8rem;max-width:480px">Este programa fue diseñado para acompañarte en la transición hormonal con ciencia, alimentación real y hábitos que respetan tu fisiología.</p>';
+  html += '<div style="display:flex;gap:1.1rem;flex-wrap:wrap">';
+  [['⚡','Más energía y claridad mental'],['🔻','Menos inflamación y ansiedad por dulces'],['🌙','Mejor descanso y humor'],['💪','Más fuerza y masa muscular'],['💚','Volver a sentirte vos']].forEach(([ic,t])=>{
+    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:.32rem;text-align:center;min-width:68px"><div style="width:38px;height:38px;border-radius:50%;background:rgba(184,80,112,.25);display:flex;align-items:center;justify-content:center;font-size:1rem">'+ic+'</div><div style="font-size:.63rem;color:rgba(240,232,216,.62);max-width:78px;line-height:1.3">'+t+'</div></div>';
+  });
+  html += '</div></div></section>';
+  // Banner
+  html += '<div style="background:var(--cream-dk);padding:1.2rem clamp(1.5rem,5vw,4rem);text-align:center"><p style="font-family:var(--fd);font-size:1.1rem;color:#1C1A18;margin:0">No es una dieta. Es un primer paso para <em style="color:'+ROSE+'">recuperar tu poder.</em></p></div>';
+  // 2-col: recibir + videos
+  html += '<section style="background:#fff;padding:3.5rem clamp(1.5rem,5vw,4rem)"><div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:3rem">';
+  html += '<div><div style="background:'+GREEN+';color:#fff;border-radius:10px;padding:.5rem 1rem;display:flex;align-items:center;gap:.5rem;margin-bottom:1.4rem"><span style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase">¿Qué vas a recibir?</span><span style="margin-left:auto">🌿</span></div>';
+  [['📚','Guía completa Reset Mujer','Con explicación de los cambios hormonales y cómo acompañarlos con alimentación, músculo y hábitos.'],['🍽️','Menú de 21 días','Con estrategia keto flexible y low carb inteligente.'],['📅','Calendario semanal de seguimiento','Para acompañar tus hábitos diarios y observar tu evolución.'],['🌿','Guía práctica de gestión del estrés','Herramientas simples para regular el sistema nervioso y recuperar la calma.'],['💪','Estrategia de proteína y composición corporal','Aprendé cuánto necesitás y cómo distribuirla para preservar masa muscular.'],['🔄','Flexibilidad metabólica','Aprendé a usar los carbohidratos a tu favor, sin miedo y sin extremos.'],['🏋️','10 sesiones de entrenamiento BHP','Rutinas cortas, efectivas y funcionales para ganar fuerza, energía y confianza.']].forEach(([ic,t,d])=>{ html += recItem(ic,t,d); });
+  html += '</div>';
+  html += '<div><div style="background:'+ROSE+';color:#fff;border-radius:10px;padding:.5rem 1rem;display:flex;align-items:center;gap:.5rem;margin-bottom:1.4rem"><span style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase">Cápsulas en video incluidas</span><span style="margin-left:auto">▶</span></div>';
+  ['Pilares fundamentales','Entendiendo la biología femenina','Alimentación eficiente','Ritmo circadiano','Ayuno inteligente','Actividad física','Emociones y hábitos','¿Por qué una dieta baja en carbohidratos?','Cómo armar un plato eficiente','Videorecetas saludables'].forEach(t=>{ html += videoItem(t); });
+  html += '<div style="background:'+ROSESOFT+';border-radius:10px;padding:.8rem 1rem;margin-top:.85rem;display:flex;align-items:center;gap:.65rem"><span style="font-size:1.1rem">🎬</span><span style="font-size:.76rem;color:var(--muted);line-height:1.4">Videos breves, claros y fáciles de implementar.</span></div>';
+  html += '</div></div></section>';
+  // Este reset no busca que hagas más
+  html += '<section style="background:var(--cream);padding:3.5rem clamp(1.5rem,5vw,4rem);text-align:center"><div style="max-width:960px;margin:0 auto"><h2 style="font-family:var(--fd);font-size:1.7rem;color:#1C1A18;margin:0 0 .35rem">ESTE RESET NO BUSCA QUE HAGAS MÁS</h2><p style="color:var(--muted);font-size:.82rem;margin:0 0 2rem">Busca darle a tu cuerpo las señales correctas para que pueda:</p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:1rem">';
+  [['🔥','Desinflamarse'],['⚡','Recuperar energía'],['🧠','Ganar claridad mental'],['🌙','Dormir mejor'],['💪','Preservar músculo'],['❤️','Mejorar tu relación con la comida']].forEach(([ic,t])=>{
+    html += '<div style="background:#fff;border-radius:14px;padding:1.2rem .7rem;box-shadow:0 2px 8px rgba(0,0,0,.05)"><div style="font-size:1.7rem;margin-bottom:.45rem">'+ic+'</div><div style="font-size:.76rem;font-weight:600;color:#3A3530;line-height:1.3">'+t+'</div></div>';
+  });
+  html += '</div></div></section>';
+  // Primer paso + ideal si hoy sentís
+  html += '<section style="background:#fff;padding:3.5rem clamp(1.5rem,5vw,4rem)"><div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:3rem">';
+  html += '<div style="background:'+GREEN+';border-radius:16px;padding:2rem;color:#fff"><div style="font-size:.6rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:.55rem">Tu transformación</div><h2 style="font-family:var(--fd);font-size:1.4rem;margin:0 0 1rem;line-height:1.2">EL PRIMER PASO DE TU TRANSFORMACIÓN 🦋</h2><p style="font-size:.83rem;line-height:1.65;color:rgba(255,255,255,.82);margin:0 0 .7rem"><strong>RESET MUJER</strong> es la puerta de entrada.</p><p style="font-size:.83rem;line-height:1.65;color:rgba(255,255,255,.82);margin:0 0 .7rem">En 21 días vas a empezar a ordenar tu biología, comprender tu etapa hormonal y construir hábitos sostenibles.</p><p style="font-size:.83rem;line-height:1.65;color:rgba(255,255,255,.82);margin:0 0 1.4rem">Y cuando estés lista, podrás profundizar tu transformación con el Método Indomables.</p><button onclick="inscribirmeLanding()" style="background:'+ROSE+';color:#fff;border:none;padding:.8rem 1.4rem;border-radius:100px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:var(--fb)">🦋 TRANSFORMÁ TU ETAPA EN TU MEJOR VERSIÓN</button></div>';
+  html += '<div><div style="background:var(--cream);border-radius:14px;padding:1.5rem"><h3 style="font-family:var(--fd);font-size:1.05rem;color:#1C1A18;margin:0 0 1rem">IDEAL SI HOY SENTÍS</h3>';
+  ['Fatiga constante','Más ansiedad por dulces o harinas','Dificultad para perder grasa abdominal','Alteraciones del sueño','Sofocos y cambios de humor','Menos fuerza y energía','Que haciendo lo mismo de siempre ya no obtenés los mismos resultados'].forEach(t=>{ html += check(t); });
+  html += '</div>';
+  if(price) html += '<div style="text-align:center;margin-top:1rem;background:linear-gradient(135deg,'+GREEN+','+ROSE+');border-radius:14px;padding:1.4rem;color:#fff"><div style="font-family:var(--fd);font-size:1.7rem;margin-bottom:.3rem">'+price+'</div><button onclick="inscribirmeLanding()" style="background:#fff;color:'+ROSE+';border:none;padding:.65rem 1.6rem;border-radius:100px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:var(--fb);margin-top:.7rem">Inscribirme ahora</button></div>';
+  html += '</div></div></section>';
+  // Footer quote
+  html += '<section style="background:#1C1A18;padding:4rem clamp(1.5rem,5vw,5rem);text-align:center"><div style="max-width:680px;margin:0 auto"><p style="font-family:var(--fd);font-size:1.15rem;color:rgba(240,232,216,.7);margin:0 0 .4rem">No estás perdiendo tu vitalidad.</p><p style="font-family:var(--fd);font-size:1.65rem;font-style:italic;color:'+ROSE+';margin:0 0 .7rem">La menopausia no es el final. ♡</p><p style="font-size:.88rem;color:rgba(240,232,216,.55);margin:0 0 1.5rem">Es el comienzo de una nueva forma de cuidar tu cuerpo.</p><p style="font-family:var(--fd);font-size:1rem;color:rgba(240,232,216,.4)">Pequeñas decisiones. Grandes cambios.</p><div style="margin-top:.5rem;font-size:1.4rem">🦋</div></div></section>';
+  content.innerHTML = html;
+  if(typeof initReveal === 'function') setTimeout(initReveal, 50);
+}
+
 window.abrirLandingPrograma = abrirLandingPrograma;
 window.inscribirmeLanding   = inscribirmeLanding;
 window.toggleFaq            = toggleFaq;
 window.loadProgramasPage    = loadProgramasPage;
+window.goToResets           = goToResets;
 
 /* ── ADMIN: EDITOR DE LANDING DE PROGRAMA ── */
 async function loadLandingData() {
