@@ -1120,7 +1120,7 @@ async function loadEcosistema() {
   const pConsulta = consultaPrice>0 ? { label:fmtMoney(consultaPrice), prefix:'Desde' } : { label:'A consultar', prefix:'' };
 
   const cards = [
-    { num:1, ac:'#7C9E73', soft:'rgba(124,158,115,.14)', icon:'🌱',
+    { num:1, ac:'#7C9E73', soft:'rgba(124,158,115,.14)', icon:'🔥',
       eyb:'Quiero empezar', eys:'A ordenar mi energía y alimentación',
       title:'Reset Energético', subbox:'♀ Reset Mujer',
       price:pReset, priceTop:'21 días', priceSuffix:'c/u',
