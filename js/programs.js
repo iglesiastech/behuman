@@ -1190,10 +1190,10 @@ function renderMarcas(progs) {
   const container = document.getElementById('progMarcasContainer');
   if(!container) return;
 
-  // Agrupar por marca — los que tengan "reset" en el nombre van siempre a la sección reset
+  // Agrupar por marca según el campo `marca` de la DB (editable desde el admin)
   const byMarca = {};
   progs.forEach(p => {
-    const m = /reset/i.test(p.name||'') ? 'reset' : (p.marca || 'sin-categoria');
+    const m = p.marca || 'sin-categoria';
     if(!byMarca[m]) byMarca[m] = [];
     byMarca[m].push(p);
   });
