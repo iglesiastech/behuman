@@ -532,7 +532,7 @@ async function saveLesson() {
     module_id:    currentAdmModId,
     program_id:   currentAdmProgId,
     title,
-    video_url:     extractVideoSrc(document.getElementById('lessonVideo').value.trim())||null,
+    video_url:     document.getElementById('lessonVideo').value.trim()||null,
     thumbnail_url: document.getElementById('lessonThumb').value.trim()||null,
     duration_sec:  (parseInt(document.getElementById('lessonDur').value)||0)*60,
     description:  document.getElementById('lessonDesc').value.trim()||null,

@@ -457,9 +457,8 @@ function mostrarLandingModulo(mod) {
   const primeraLec = mod.lecciones?.[0];
   if(landingPlayer && primeraLec?.video_url) {
     let eu = primeraLec.video_url;
-    eu = extractVideoSrc(primeraLec.video_url) || eu;
-    const yt = eu.match(/(?:v=|youtu\.be\/)([^&\s]+)/);
-    const vi = parseVimeoId(eu);
+    const yt = primeraLec.video_url.match(/(?:v=|youtu\.be\/)([^&\s]+)/);
+    const vi = parseVimeoId(primeraLec.video_url);
     if(yt) eu = 'https://www.youtube.com/embed/'+yt[1]+'?rel=0&modestbranding=1';
     else if(vi) eu = 'https://player.vimeo.com/video/'+vi[0]+(vi[1]?'?h='+vi[1]:'');
     landingPlayer.innerHTML = '<iframe src="'+eu+'" allowfullscreen allow="autoplay; fullscreen" style="width:100%;height:100%;border:none"></iframe>';
@@ -711,24 +710,14 @@ function onLessonVideoEnded(){
 
 // ── Reproductor con detección de fin de video (YouTube / Vimeo) ──
 let _ytPlayer=null, _vimeoPlayer=null, _ytApiLoading=false, _ytApiCbs=[], _vimeoApiLoading=false, _vimeoApiCbs=[];
-// Si el input es un código <iframe>, extrae el src. Si no, lo devuelve como está.
-function extractVideoSrc(input) {
-  if(!input) return null;
-  const t = input.trim();
-  if(t.includes('<iframe')) {
-    const m = t.match(/src=["']([^"']+)["']/);
-    return m ? m[1] : null;
-  }
-  return t;
-}
 // Extrae [videoId, hash|null] de cualquier URL de Vimeo, incluidas URLs del panel de admin
 function parseVimeoId(url) {
   if(!url) return null;
   // URL del panel: vimeo.com/manage/...?video=123456
   const mgr = url.match(/[?&]video=(\d+)/);
   if(mgr) return [mgr[1], null];
-  // URL normal: vimeo.com/123456 o vimeo.com/123456/hash o player.vimeo.com/video/123456
-  const std = url.match(/vimeo\.com\/(?:video\/)?(\d+)(?:\/(\w+))?/);
+  // URL normal: vimeo.com/123456 o vimeo.com/123456/hash
+  const std = url.match(/vimeo\.com\/(\d+)(?:\/(\w+))?/);
   if(std) return [std[1], std[2]||null];
   return null;
 }
@@ -756,7 +745,7 @@ function setupLessonVideo(leccion){
   try { if(_ytPlayer && _ytPlayer.destroy) _ytPlayer.destroy(); } catch(e){}
   try { if(_vimeoPlayer && _vimeoPlayer.unload) _vimeoPlayer.unload(); } catch(e){}
   _ytPlayer=null; _vimeoPlayer=null;
-  const url=extractVideoSrc(leccion.video_url);
+  const url=leccion.video_url;
   if(!url){ player.innerHTML='<div class="curso-player-placeholder"><div style="font-size:2rem;margin-bottom:.5rem">📄</div><div>'+(leccion.title||'')+'</div></div>'; return; }
   const yt=url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{6,})/);
   const vim=parseVimeoId(url);
