@@ -987,6 +987,24 @@ let _progFilter  = null;
 
 // Configuración de marcas — SOLO DOS, todo dinámico por campo `marca`
 const MARCAS = {
+  indomables: {
+    nombre: 'Indomables',
+    tagline: 'Nutrición funcional y planes de alimentación',
+    descripcion: 'Programas de alimentación diseñados por expertas. Recuperá tu metabolismo, tu energía y tu relación con la comida.',
+    color: '#2C4A3E',
+    colorAccent: '#3A7D8C',
+    bg: 'linear-gradient(135deg,#1C3A30 0%,#2C4A3E 100%)',
+    img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80',
+  },
+  reset: {
+    nombre: 'Reset',
+    tagline: 'El primer paso de tu transformación',
+    descripcion: 'Programas de 21 días para ordenar tu biología, recuperar energía y empezar tu transformación desde adentro.',
+    color: '#1C3A18',
+    colorAccent: '#7C9E73',
+    bg: 'linear-gradient(135deg,#1C3A18 0%,#2D5016 100%)',
+    img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80',
+  },
   performance: {
     nombre: 'Be Human Performance',
     tagline: 'Entrenamiento funcional y composición corporal',
@@ -996,15 +1014,6 @@ const MARCAS = {
     bg: 'linear-gradient(135deg,#1C1A18 0%,#2C2820 100%)',
     img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80',
   },
-  indomables: {
-    nombre: 'Indomables',
-    tagline: 'Nutrición funcional y planes de alimentación',
-    descripcion: 'Programas de alimentación diseñados por expertas. Recuperá tu metabolismo, tu energía y tu relación con la comida.',
-    color: '#2C4A3E',
-    colorAccent: '#3A7D8C',
-    bg: 'linear-gradient(135deg,#1C3A30 0%,#2C4A3E 100%)',
-    img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80',
-  }
 };
 
 const PROG_IMG_DEFAULTS = {
@@ -1181,16 +1190,15 @@ function renderMarcas(progs) {
   const container = document.getElementById('progMarcasContainer');
   if(!container) return;
 
-  // Agrupar por marca
+  // Agrupar por marca — los que tengan "reset" en el nombre van siempre a la sección reset
   const byMarca = {};
   progs.forEach(p => {
-    const m = p.marca || 'sin-categoria';
+    const m = /reset/i.test(p.name||'') ? 'reset' : (p.marca || 'sin-categoria');
     if(!byMarca[m]) byMarca[m] = [];
     byMarca[m].push(p);
   });
 
-  // Renderizar primero las marcas conocidas, después sin categoría
-  const marcasOrden = ['indomables','performance', ...Object.keys(byMarca).filter(k=>!['indomables','performance'].includes(k))];
+  const marcasOrden = ['indomables','reset','performance', ...Object.keys(byMarca).filter(k=>!['indomables','reset','performance'].includes(k))];
   let html = '';
 
   marcasOrden.forEach(marcaKey => {
