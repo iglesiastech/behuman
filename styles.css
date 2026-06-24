@@ -62,10 +62,22 @@ h1,h2,h3,h4{font-family:var(--fd);font-weight:400;line-height:1.12}
 .btn-nav:hover{background:#2d6a79}
 .hamburger{display:none;flex-direction:column;gap:5px;padding:6px;cursor:pointer}
 .hamburger span{display:block;width:22px;height:1.5px;background:var(--text);border-radius:2px}
-.mob-menu{display:none;position:fixed;inset:0;background:var(--dark);z-index:99;flex-direction:column;align-items:center;justify-content:center;gap:2rem}
-.mob-menu.open{display:flex}
-.mob-menu .nav-link{font-family:var(--fd);font-size:2rem;color:var(--cream);opacity:.8;font-weight:400;letter-spacing:0;text-transform:none}
-.mob-menu .nav-link:hover{opacity:1}
+.mob-menu{display:none}
+
+/* ════ Mobile Bottom Nav ════ */
+.mob-btm{display:none;position:fixed;bottom:0;left:0;right:0;z-index:90;background:rgba(240,232,216,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(201,147,90,.18);box-shadow:0 -4px 28px rgba(28,26,24,.07);padding-bottom:env(safe-area-inset-bottom,0px)}
+.mob-btm-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;cursor:pointer;color:var(--muted);font-family:var(--fb);padding:.5rem .25rem;flex:1;position:relative;transition:color .18s;-webkit-tap-highlight-color:transparent}
+.mob-btm-item.active{color:var(--gold-dk)}
+.mob-btm-item.active::before{content:'';position:absolute;top:0;left:28%;right:28%;height:2px;background:var(--gold);border-radius:0 0 3px 3px}
+.mob-btm-ic{width:22px;height:22px;transition:transform .18s}
+.mob-btm-item.active .mob-btm-ic{transform:translateY(-1px)}
+.mob-btm-lb{font-size:.5rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;line-height:1}
+@media(max-width:768px){
+  .mob-btm{display:flex}
+  .hamburger{display:none!important}
+  body{padding-bottom:calc(62px + env(safe-area-inset-bottom,0px))}
+  .curso-wrap{height:calc(100vh - 70px - 62px - env(safe-area-inset-bottom,0px))!important}
+}
 .mob-close{position:absolute;top:1.5rem;right:1.5rem;color:var(--cream);font-size:1.3rem;opacity:.6;cursor:pointer;background:none;border:none}
 
 /* ─── BUTTONS ─── */

@@ -267,6 +267,11 @@ function goTo(id, fromHistory){
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   const nl = document.getElementById('nl-'+id);
   if(nl) nl.classList.add('active');
+  // Sincronizar bottom nav mobile
+  document.querySelectorAll('.mob-btm-item').forEach(b=>b.classList.remove('active'));
+  const mobMap = {home:'home',programas:'programas',turnos:'turnos',tienda:'tienda',login:'cuenta',portal:'cuenta',admin:'cuenta','admin-fichas':'cuenta'};
+  const mbi = document.getElementById('mbi-'+(mobMap[id]||''));
+  if(mbi) mbi.classList.add('active');
   window.scrollTo(0,0);
 
   // Ocultar nav principal en admin y admin-fichas
@@ -300,7 +305,13 @@ function goTo(id, fromHistory){
   // volver a la página anterior en vez de salir del sitio.
   if(!fromHistory){ try { history.pushState({ page:id }, '', '#'+id); } catch(e){} }
 }
-function closeMob(){ document.getElementById('mobMenu').classList.remove('open'); }
+function closeMob(){ /* mob-menu reemplazado por bottom nav */ }
+function mobCuentaClick(){
+  if(_userRol==='admin'||_userRol==='medico') goTo('admin');
+  else if(_authToken||localStorage.getItem('bh_token')) goTo('portal');
+  else goTo('login');
+}
+window.mobCuentaClick = mobCuentaClick;
 
 /* ══ NAV SCROLL ══ */
 window.addEventListener('scroll',()=>{
@@ -343,8 +354,8 @@ const Cart={
   openDrawer(){ document.getElementById('cartOv').classList.add('open'); document.getElementById('cartDw').classList.add('open'); },
   closeDrawer(){ document.getElementById('cartOv').classList.remove('open'); document.getElementById('cartDw').classList.remove('open'); },
   ui(){
-    const n=this.count(); const b=document.getElementById('cartBadge');
-    b.textContent=n; b.classList.toggle('show',n>0); this.renderDw();
+    const n=this.count(); const b=document.getElementById('cartBadge'); const bm=document.getElementById('cartBadgeMob');
+    if(b){b.textContent=n; b.classList.toggle('show',n>0);} if(bm){bm.textContent=n; bm.classList.toggle('show',n>0);} this.renderDw();
   },
   renderDw(){
     const items=this.get(); const bd=document.getElementById('cartBd'); const ft=document.getElementById('cartFt');

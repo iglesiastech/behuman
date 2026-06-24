@@ -67,23 +67,30 @@
   </div>
 </nav>
 
-<div class="mob-menu" id="mobMenu">
-  <button class="mob-close" id="mobClose">✕</button>
-  <button class="nav-link" onclick="goTo('home');closeMob()">Home</button>
-  <button class="nav-link" onclick="goTo('programas');closeMob()">Programas</button>
-  <button class="nav-link" onclick="goTo('turnos');closeMob()">Turnos</button>
-  <button class="nav-link" onclick="goTo('tienda');closeMob()">Tienda</button>
-  <!-- Mobile: botones de sesión -->
-  <div id="mobBtnGuest"><button class="btn-primary" style="margin-top:1rem" onclick="goTo('login');closeMob()">Ingresar</button></div>
-  <div id="mobBtnAdmin" style="display:none;flex-direction:column;align-items:center;gap:.75rem;margin-top:1rem">
-    <button class="btn-primary" style="background:var(--gold)" onclick="goTo('admin');closeMob()">⚙️ Panel admin</button>
-    <button style="font-size:.8rem;color:rgba(240,232,216,.5);background:none;border:none;cursor:pointer;font-family:var(--fb)" onclick="doLogout()">Cerrar sesión</button>
-  </div>
-  <div id="mobBtnUser" style="display:none;flex-direction:column;align-items:center;gap:.75rem;margin-top:1rem">
-    <button class="btn-primary" onclick="goTo('home');closeMob()">👤 Mi cuenta</button>
-    <button style="font-size:.8rem;color:rgba(240,232,216,.5);background:none;border:none;cursor:pointer;font-family:var(--fb)" onclick="doLogout()">Cerrar sesión</button>
-  </div>
-</div>
+<!-- ═══ MOBILE BOTTOM NAV ═══ -->
+<nav class="mob-btm" id="mobBtm">
+  <button class="mob-btm-item active" id="mbi-home" onclick="goTo('home')">
+    <svg class="mob-btm-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span class="mob-btm-lb">Home</span>
+  </button>
+  <button class="mob-btm-item" id="mbi-programas" onclick="goTo('programas')">
+    <svg class="mob-btm-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span class="mob-btm-lb">Programas</span>
+  </button>
+  <button class="mob-btm-item" id="mbi-turnos" onclick="goTo('turnos')">
+    <svg class="mob-btm-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span class="mob-btm-lb">Turnos</span>
+  </button>
+  <button class="mob-btm-item" id="mbi-tienda" onclick="goTo('tienda')" style="position:relative">
+    <svg class="mob-btm-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    <span class="cart-badge" id="cartBadgeMob" style="position:absolute;top:4px;right:calc(50% - 18px)">0</span>
+    <span class="mob-btm-lb">Tienda</span>
+  </button>
+  <button class="mob-btm-item" id="mbi-cuenta" onclick="mobCuentaClick()">
+    <svg class="mob-btm-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span class="mob-btm-lb" id="mbiCuentaLb">Cuenta</span>
+  </button>
+</nav>
 
 <!-- ════════════════════════════════════════════
      HOME PAGE
