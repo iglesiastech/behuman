@@ -27,7 +27,7 @@ h1,h2,h3,h4{font-family:var(--fd);font-weight:400;line-height:1.12}
 .nav{position:fixed;top:0;left:0;right:0;z-index:100;transition:var(--tr)}
 .nav-inner{
   display:flex;align-items:center;justify-content:space-between;
-  padding:.85rem clamp(1.2rem,4vw,3rem);
+  padding:.25rem clamp(1.2rem,4vw,3rem);
   background:rgba(240,232,216,.97);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   box-shadow:0 1px 0 rgba(201,147,90,.15);
@@ -37,7 +37,7 @@ h1,h2,h3,h4{font-family:var(--fd);font-weight:400;line-height:1.12}
   background:rgba(240,232,216,.98);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   box-shadow:0 1px 0 rgba(201,147,90,.15);
-  padding:.85rem clamp(1.2rem,4vw,3rem);
+  padding:.25rem clamp(1.2rem,4vw,3rem);
 }
 .nav-logo{display:flex;align-items:center;gap:.6rem;cursor:pointer}
 .nav-logo-default{display:flex;align-items:center;gap:.6rem}
@@ -76,7 +76,7 @@ h1,h2,h3,h4{font-family:var(--fd);font-weight:400;line-height:1.12}
   .mob-btm{display:flex}
   .hamburger{display:none!important}
   body{padding-bottom:calc(62px + env(safe-area-inset-bottom,0px))}
-  .curso-wrap{height:calc(100vh - 70px - 62px - env(safe-area-inset-bottom,0px))!important}
+  .curso-wrap{height:calc(100vh - 80px - 62px - env(safe-area-inset-bottom,0px))!important}
 }
 .mob-close{position:absolute;top:1.5rem;right:1.5rem;color:var(--cream);font-size:1.3rem;opacity:.6;cursor:pointer;background:none;border:none}
 
@@ -807,7 +807,7 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
 .portal-user-avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--teal));display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--fd);font-size:1.6rem;margin-bottom:1rem}
 
 /* ── CURSO: Layout ── */
-.curso-wrap{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 70px);background:#f5f5f5;overflow:hidden}
+.curso-wrap{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 80px);background:#f5f5f5;overflow:hidden}
 .curso-main{overflow-y:auto;height:100%}
 .curso-sidebar{background:#fff;border-left:1px solid #e8e8e8;overflow-y:auto;height:100%}
 
@@ -910,7 +910,7 @@ footer{background:var(--dark2);padding:4rem 0 2rem;color:rgba(240,232,216,.42)}
 }
 
 /* ════ Landing Método Indomables ════ */
-.indo-top{position:sticky;top:70px;z-index:10;display:flex;align-items:center;gap:1rem;background:#fff;border-bottom:1px solid var(--cream-dk);padding:.7rem clamp(1rem,4vw,2.5rem)}
+.indo-top{position:sticky;top:80px;z-index:10;display:flex;align-items:center;gap:1rem;background:#fff;border-bottom:1px solid var(--cream-dk);padding:.7rem clamp(1rem,4vw,2.5rem)}
 .indo-back{font-size:.8rem;color:var(--muted);background:none;border:1.5px solid var(--cream-dk);border-radius:100px;padding:.35rem .9rem;cursor:pointer;font-family:var(--fb);white-space:nowrap}
 .indo-back:hover{border-color:var(--gold);color:var(--gold-dk)}
 .indo-top-title{font-size:.9rem;font-weight:600;color:var(--dark);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

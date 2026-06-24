@@ -1330,7 +1330,7 @@ function renderProgLanding(prog, modules) {
   let html = '';
 
   // Topbar
-  html += '<div style="background:#fff;border-bottom:1px solid #e8e8e8;padding:.7rem 1.5rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:70px;z-index:10">';
+  html += '<div style="background:#fff;border-bottom:1px solid #e8e8e8;padding:.7rem 1.5rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:80px;z-index:10">';
   html += '<button onclick="goTo(\'programas\')" style="font-size:.8rem;color:var(--muted);background:none;border:1.5px solid var(--cream-dk);border-radius:100px;padding:.35rem .85rem;cursor:pointer;font-family:var(--fb)">&#8592; Programas</button>';
   html += '<span style="font-size:.9rem;font-weight:600;color:#1C1A18;flex:1">' + prog.name + '</span>';
   html += '<button class="btn-gold" style="padding:.55rem 1.4rem;font-size:.76rem" onclick="inscribirmeLanding()">Inscribirme ahora</button>';
@@ -1621,7 +1621,7 @@ function renderResetEnergeticoLanding(prog) {
   const check = (t) => '<div style="display:flex;gap:.6rem;margin-bottom:.55rem"><span style="color:'+G+';font-weight:700;flex-shrink:0">✓</span><span style="font-size:.84rem;color:#3A3530;line-height:1.45">'+t+'</span></div>';
   let html = '';
   // Topbar
-  html += '<div style="background:#fff;border-bottom:1px solid #e8e8e8;padding:.7rem 1.5rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:70px;z-index:10"><button onclick="goTo(\'programas\')" style="font-size:.8rem;color:var(--muted);background:none;border:1.5px solid var(--cream-dk);border-radius:100px;padding:.35rem .85rem;cursor:pointer;font-family:var(--fb)">&#8592; Programas</button><span style="font-size:.9rem;font-weight:600;color:#1C1A18;flex:1">Reset Energético</span><button class="btn-gold" style="padding:.55rem 1.4rem;font-size:.76rem" onclick="inscribirmeLanding()">Inscribirme ahora</button></div>';
+  html += '<div style="background:#fff;border-bottom:1px solid #e8e8e8;padding:.7rem 1.5rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:80px;z-index:10"><button onclick="goTo(\'programas\')" style="font-size:.8rem;color:var(--muted);background:none;border:1.5px solid var(--cream-dk);border-radius:100px;padding:.35rem .85rem;cursor:pointer;font-family:var(--fb)">&#8592; Programas</button><span style="font-size:.9rem;font-weight:600;color:#1C1A18;flex:1">Reset Energético</span><button class="btn-gold" style="padding:.55rem 1.4rem;font-size:.76rem" onclick="inscribirmeLanding()">Inscribirme ahora</button></div>';
   // Hero
   html += '<section style="position:relative;min-height:520px;background:#1C2E10;display:flex;align-items:center;overflow:hidden">';
   if(heroImg) html += '<img src="'+heroImg+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.3">';
@@ -1691,7 +1691,7 @@ function renderResetMujerLanding(prog) {
   const recItem = (ic,t,d) => '<div style="display:flex;gap:.8rem;margin-bottom:1rem"><div style="width:34px;height:34px;border-radius:50%;background:'+ROSESOFT+';display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0">'+ic+'</div><div><div style="font-weight:600;font-size:.84rem;color:#1C1A18;margin-bottom:.18rem">'+t+'</div><div style="font-size:.75rem;color:var(--muted);line-height:1.4">'+d+'</div></div></div>';
   let html = '';
   // Topbar
-  html += '<div style="background:#fff;border-bottom:1px solid #e8e8e8;padding:.7rem 1.5rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:70px;z-index:10"><button onclick="goTo(\'programas\')" style="font-size:.8rem;color:var(--muted);background:none;border:1.5px solid var(--cream-dk);border-radius:100px;padding:.35rem .85rem;cursor:pointer;font-family:var(--fb)">&#8592; Programas</button><span style="font-size:.9rem;font-weight:600;color:#1C1A18;flex:1">Reset Mujer</span><button style="background:'+ROSE+';color:#fff;border:none;padding:.55rem 1.4rem;border-radius:100px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:var(--fb)" onclick="inscribirmeLanding()">Inscribirme ahora</button></div>';
+  html += '<div style="background:#fff;border-bottom:1px solid #e8e8e8;padding:.7rem 1.5rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:80px;z-index:10"><button onclick="goTo(\'programas\')" style="font-size:.8rem;color:var(--muted);background:none;border:1.5px solid var(--cream-dk);border-radius:100px;padding:.35rem .85rem;cursor:pointer;font-family:var(--fb)">&#8592; Programas</button><span style="font-size:.9rem;font-weight:600;color:#1C1A18;flex:1">Reset Mujer</span><button style="background:'+ROSE+';color:#fff;border:none;padding:.55rem 1.4rem;border-radius:100px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:var(--fb)" onclick="inscribirmeLanding()">Inscribirme ahora</button></div>';
   // Hero
   html += '<section style="position:relative;min-height:560px;background:#2A1A20;display:flex;align-items:center;overflow:hidden">';
   html += '<img src="'+heroImg+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.32">';
