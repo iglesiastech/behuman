@@ -1432,10 +1432,24 @@ function renderProgLanding(prog, modules) {
 }
 
 /* ── LANDING DEDICADA: MÉTODO INDOMABLES — DESPIERTA Y ACCIONA ── */
+// Genera el iframe de un video de Vimeo/YouTube a partir de su URL
+function landingVideoEmbed(url){
+  if(!url) return '';
+  const yt = url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{6,})/);
+  let vim = null;
+  if(typeof parseVimeoId==='function') vim = parseVimeoId(url);
+  else { const m = url.match(/vimeo\.com\/(\d+)(?:\/(\w+))?/); if(m) vim=[m[1],m[2]||null]; }
+  let src = url;
+  if(yt) src = 'https://www.youtube.com/embed/'+yt[1]+'?rel=0&modestbranding=1';
+  else if(vim) src = 'https://player.vimeo.com/video/'+vim[0]+(vim[1]?'?h='+vim[1]:'');
+  return '<iframe src="'+src+'" allowfullscreen allow="autoplay; fullscreen" style="width:100%;height:100%;border:none"></iframe>';
+}
+
 function renderIndomablesLanding(prog) {
   const content = document.getElementById('plContent');
   if(!content) return;
   const heroImg = prog.hero_image_url || prog.image_url || '';
+  const adminBenefits = Array.isArray(prog.benefits) ? prog.benefits : (tryParseJSON(prog.benefits)||[]);
 
   const bf = '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M12 7c-1-2.5-3.5-4-6-3.5C3.5 4 2.5 6.5 3.5 9c.8 2 3 3 5 3 1.5 0 3-.8 3.5-2.2"/><path d="M12 7c1-2.5 3.5-4 6-3.5C20.5 4 21.5 6.5 20.5 9c-.8 2-3 3-5 3-1.5 0-3-.8-3.5-2.2"/><path d="M12 12c-1 2-3 3.2-4.8 3-1.6-.2-2.6-1.8-2-3.3"/><path d="M12 12c1 2 3 3.2 4.8 3 1.6-.2 2.6-1.8 2-3.3"/></svg>';
 
@@ -1515,11 +1529,32 @@ function renderIndomablesLanding(prog) {
     +'</div>'
   +'</section>';
 
-  // Todo lo que vas a recibir
+  // Video de presentación (si se cargó desde el admin)
+  if(prog.hero_video_url){
+    html += '<section class="indo-video-sec"><div class="indo-wrap">'
+      +'<div class="indo-video-box">'+landingVideoEmbed(prog.hero_video_url)+'</div>'
+    +'</div></section>';
+  }
+
+  // Todo lo que vas a recibir — usa los beneficios del admin si están cargados
+  let recibirHtml;
+  if(adminBenefits.length){
+    const benCard = b => {
+      const parts = b.split(/\s+[—–]\s+|:\s+/);
+      const t = parts[0]||b, d = parts.slice(1).join(': ');
+      return '<div class="indo-card"><div class="indo-card-ic">✦</div>'
+        +'<div class="indo-card-t">'+t+'</div>'
+        +(d?'<div class="indo-card-d">'+d+'</div>':'')
+      +'</div>';
+    };
+    recibirHtml = '<div class="indo-grid5">'+adminBenefits.map(benCard).join('')+'</div>';
+  } else {
+    recibirHtml = '<div class="indo-grid5">'+recibir1.map(card).join('')+'</div>'
+      +'<div class="indo-grid4">'+recibir2.map(card).join('')+'</div>';
+  }
   html += '<section class="indo-sec" id="indoRecibir"><div class="indo-wrap">'
     +'<h2 class="indo-h2 indo-h2--orn">Todo lo que vas a recibir</h2>'
-    +'<div class="indo-grid5">'+recibir1.map(card).join('')+'</div>'
-    +'<div class="indo-grid4">'+recibir2.map(card).join('')+'</div>'
+    + recibirHtml
   +'</div></section>';
 
   // Para quién + Coach 4H
@@ -1760,6 +1795,8 @@ async function loadLandingData() {
     document.getElementById('plLevel').value       = p.level||'';
     document.getElementById('plImageUrl').value   = p.image_url||'';
     document.getElementById('plHeroImage').value  = p.hero_image_url||'';
+    const plHeroVideo = document.getElementById('plHeroVideo');
+    if(plHeroVideo) plHeroVideo.value = p.hero_video_url||'';
     document.getElementById('plDesc').value        = p.description||'';
     document.getElementById('plDescLong').value   = p.description_long||'';
     document.getElementById('plForWho').value      = p.for_who||'';
@@ -1814,6 +1851,7 @@ async function saveLandingData() {
     level:            document.getElementById('plLevel').value.trim()||null,
     image_url:        document.getElementById('plImageUrl').value.trim()||null,
     hero_image_url:   document.getElementById('plHeroImage').value.trim()||null,
+    hero_video_url:   document.getElementById('plHeroVideo')?.value.trim()||null,
     description:      document.getElementById('plDesc').value.trim()||null,
     description_long: document.getElementById('plDescLong').value.trim()||null,
     for_who:          document.getElementById('plForWho').value.trim()||null,
